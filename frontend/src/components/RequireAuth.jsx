@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { apiUrl, getToken, clearToken } from '../helper/auth';
+import { apiUrl, getToken, clearToken, hasVerifiedToken } from '../helper/auth';
 
 export default function RequireAuth() {
-  const [status, setStatus] = useState('loading');
+  const [status, setStatus] = useState(() => hasVerifiedToken() ? 'authenticated' : 'loading');
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
+    if (hasVerifiedToken()) return;
     const controller = new AbortController();
     const token = getToken();
     if (!token) { setStatus('unauthenticated'); return; }

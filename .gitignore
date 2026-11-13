@@ -1,6 +1,3 @@
-node_modules/
+/frontend/node_modules/
 
-# Local frontend environment configuration
-/frontend/.env
-/frontend/.env.local
-/frontend/.env.*.local
+/frontend/dist/

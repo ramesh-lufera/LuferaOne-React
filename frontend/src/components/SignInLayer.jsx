@@ -1,7 +1,9 @@
+import FacebookSignIn from "./FacebookSignIn";
+import GoogleSignIn from "./GoogleSignIn";
 import { Icon } from "@iconify/react/dist/iconify.js";
 
 import { useEffect, useState } from "react";
-import { saveToken, getToken, clearToken, apiUrl } from "../helper/auth";
+import { saveToken, getToken, clearToken, markTokenVerified, apiUrl } from "../helper/auth";
 import { Link, useNavigate } from "react-router-dom";
 import "./SignInLayer.css";
 
@@ -29,7 +31,10 @@ const SignInLayer = () => {
         if (getToken() === token) clearToken();
       } else if (response.ok) {
         const data = await response.json();
-        if (active && data.user) navigate('/', { replace: true });
+        if (active && data.user) {
+          markTokenVerified(token);
+          navigate('/', { replace: true });
+        }
       }
     }).catch(() => {
       // Keep the form available when the server cannot be reached.
@@ -56,6 +61,7 @@ const SignInLayer = () => {
         return;
       }
       saveToken(data.token, remember);
+      markTokenVerified(data.token);
       navigate('/', { replace: true });
     } catch {
       setError('Unable to connect to the server. Please try again.');
@@ -157,26 +163,8 @@ const SignInLayer = () => {
               <span className='bg-base z-1 px-4'>Or sign in with</span>
             </div>
             <div className='mt-32 d-flex align-items-center gap-3'>
-              <button
-                type='button'
-                className='fw-semibold text-primary-light py-16 px-24 w-50 border radius-12 text-md d-flex align-items-center justify-content-center gap-12 line-height-1 bg-hover-primary-50'
-              >
-                <Icon
-                  icon='ic:baseline-facebook'
-                  className='text-primary-600 text-xl line-height-1'
-                />
-                Facebook
-              </button>
-              <button
-                type='button'
-                className='fw-semibold text-primary-light py-16 px-24 w-50 border radius-12 text-md d-flex align-items-center justify-content-center gap-12 line-height-1 bg-hover-primary-50'
-              >
-                <Icon
-                  icon='logos:google-icon'
-                  className='text-primary-600 text-xl line-height-1'
-                />
-                Google
-              </button>
+              <FacebookSignIn remember={remember} disabled={loading || restoringSession} onBusyChange={setLoading} />
+              <GoogleSignIn remember={remember} disabled={loading || restoringSession} onBusyChange={setLoading} />
             </div>
             <div className='mt-32 text-center text-sm'>
               <p className='mb-0'>

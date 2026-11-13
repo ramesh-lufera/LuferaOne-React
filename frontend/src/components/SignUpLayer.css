@@ -25,3 +25,5 @@
 .signup-page button:focus-visible, .signup-page a:focus-visible { outline: 3px solid #198b8b; outline-offset: 3px; }
 
 .signup-page .signup-policy-pending { color: #008b8b; font-weight: 600; }
+
+.signup-page .signup-social:not(:disabled) { cursor: pointer; }
