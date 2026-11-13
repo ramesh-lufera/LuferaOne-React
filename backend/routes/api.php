@@ -13,3 +13,7 @@ Route::get('/health', function () {
 });
 
 Route::post('/register', RegisterController::class)->middleware('throttle:5,1')->name('register');
+
+Route::post('/login', [\App\Http\Controllers\AuthController::class, 'login'])->middleware('throttle:5,1');
+Route::get('/user', [\App\Http\Controllers\AuthController::class, 'user'])->middleware('auth:sanctum');
+Route::post('/logout', [\App\Http\Controllers\AuthController::class, 'logout'])->middleware('auth:sanctum');
