@@ -1,0 +1,34 @@
+.sign-in-panel { background: #fff; color: #4b5b73; }
+.sign-in-panel > div { max-width: 464px; }
+.sign-in-panel .sign-in-brand { display: inline-flex; align-items: center; color: #172c2e; font-size: 26px; font-weight: 600; letter-spacing: -1.2px; line-height: 32px; }
+.sign-in-brand > svg { width: 30px; height: 30px; color: #26899a; }
+.sign-in-brand-accent { color: #007779; }
+.sign-in-panel h4 { font-size: 36px; font-weight: 600; line-height: 1.2; color: #0d1627; margin-bottom: 16px; }
+.sign-in-panel .text-secondary-light { color: #4b5b73 !important; }
+.sign-in-panel .form-control { background: #f5f6fa !important; border-color: #cfd4df; color: #4b5b73; }
+.sign-in-panel .form-control::placeholder { color: #4b5b73; }
+.sign-in-panel .btn-primary { background: #208d8f; border-color: #208d8f; color: #081321; height: 56px; }
+.sign-in-panel .btn-primary:hover { background: #197d7f; border-color: #197d7f; }
+.sign-in-panel .text-primary-600 { color: #0097a5 !important; }
+.sign-in-panel .iconify--ic { color: #0866ff !important; }
+.sign-in-panel .center-border-horizontal::before { background: #d3d8e0; }
+.sign-in-panel .center-border-horizontal > span { background: #fff !important; }
+.sign-in-panel button[type='button'] { height: 54px; background: #fff; border-color: #e1e5ec !important; color: #0d1627; }
+
+.sign-in-panel button.password-visibility-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 20px;
+}
+.sign-in-panel .password-visibility-toggle:focus-visible {
+  outline: 2px solid #208d8f;
+  outline-offset: 2px;
+}
+.sign-in-panel #your-password { padding-right: 52px; }
+

@@ -1,3 +1,4 @@
+import RequireAuth from "./components/RequireAuth";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import HomePageOne from "./pages/HomePageOne";
 import HomePageTwo from "./pages/HomePageTwo";
@@ -111,6 +112,7 @@ function App() {
       <RouteScrollToTop />
       <Routes>
 
+        <Route element={<RequireAuth />}>
         <Route exact path='/' element={<HomePageOne />} />
         <Route exact path='/index-2' element={<HomePageTwo />} />
         <Route exact path='/index-3' element={<HomePageThree />} />
@@ -131,6 +133,8 @@ function App() {
         <Route exact path='/index-18' element={<HomePageEighteen />} />
         <Route exact path='/index-19' element={<HomePageNineteen />} />
         <Route exact path='/index-20' element={<HomePageTwenty />} />
+
+        </Route>
 
         {/* SL */}
         <Route exact path='/add-user' element={<AddUserPage />} />
