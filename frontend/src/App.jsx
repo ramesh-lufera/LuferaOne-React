@@ -106,6 +106,8 @@ import HomePageEighteen from "./pages/HomePageEighteen";
 import HomePageNineteen from "./pages/HomePageNineteen";
 import HomePageTwenty from "./pages/HomePageTwenty";
 
+import ActivityLogPage from "./pages/ActivityLogPage";
+
 function App() {
   return (
     <BrowserRouter>
@@ -113,6 +115,7 @@ function App() {
       <Routes>
 
         <Route element={<RequireAuth />}>
+        <Route path='/activity-log' element={<ActivityLogPage />} />
         <Route exact path='/' element={<HomePageOne />} />
         <Route exact path='/index-2' element={<HomePageTwo />} />
         <Route exact path='/index-3' element={<HomePageThree />} />

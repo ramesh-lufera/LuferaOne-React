@@ -16,13 +16,19 @@ class AuthController extends Controller
             'remember' => ['sometimes', 'boolean'],
         ]);
 
-        $user = User::where('email', $data['email'])->first();
+        $email = mb_strtolower(trim($data['email']));
+        $user = User::where('email', $email)->first();
         if (! $user || ! Hash::check($data['password'], $user->password)) {
+            $request->attributes->set('activity_failed_email', $email);
+
             return response()->json(['message' => 'Invalid email or password.'], 401);
         }
 
         $expiresAt = ! empty($data['remember']) ? now()->addDays(30) : now()->addHours(8);
         $token = $user->createToken('sign-in', ['*'], $expiresAt)->plainTextToken;
+
+        $request->attributes->set('activity_actor', $user);
+        $request->attributes->set('activity_entity_id', $user->id);
 
         return response()->json(['token' => $token, 'user' => $user]);
     }
@@ -35,6 +41,7 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
+
         return response()->json(['message' => 'Signed out.']);
     }
 }
