@@ -1,0 +1,27 @@
+.signup-page { color: #111827; background: #fff; }
+.signup-page .auth-left { position: relative; background: #c5cdc0; overflow: hidden; }
+.signup-page .signup-reference-image { width: 100%; height: 100%; position: absolute; inset: 0; object-fit: cover; }
+.signup-page .signup-art { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #187e85; padding: 40px; }
+.signup-page .signup-art > svg { width: 140px; height: 140px; }
+.signup-page .signup-art > span { font-size: 36px; }
+.signup-page .signup-art p { margin-top: 16px; }
+.signup-page .signup-logo { display: flex; align-items: center; font-size: 25px; color: #183b40; margin-bottom: 32px; line-height: 1.4; }
+.signup-page .signup-logo > svg { color: #188b8b; width: 32px; height: 32px; }
+.signup-page .signup-logo span span { color: #087a7e; }
+.signup-page .signup-logo img { max-width: 220px; max-height: 48px; object-fit: contain; }
+.signup-page .auth-right { background: #fff; }
+.signup-page .form-control { background-color: #f5f6fa; border: 1px solid #d1d5df; color: #475467; }
+.signup-page .form-control:focus { border-color: #198c8c; box-shadow: 0 0 0 3px #198c8c20; }
+.signup-page .form-control[type="password"], .signup-page #signup-password { padding-right: 48px; }
+.signup-page .signup-fields { border: 0; margin: 0; padding: 0; min-width: 0; }
+.signup-page .signup-password-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: transparent; border: 0; color: #475467; padding: 4px; display: flex; }
+.signup-page .signup-terms { margin-top: 20px; gap: 12px; }
+.signup-page a { color: #008b8b; }
+.signup-page .signup-terms a { font-weight: 600; }
+.signup-page .signup-submit { background: #198b8b; color: #071b1b; border: 1px solid #198b8b; }
+.signup-page .signup-submit:hover { background: #147777; color: #fff; }
+.signup-page .signup-submit:disabled { opacity: .65; cursor: wait; }
+.signup-page .signup-social { background: #fff; color: #111827; opacity: 1; cursor: not-allowed; }
+.signup-page button:focus-visible, .signup-page a:focus-visible { outline: 3px solid #198b8b; outline-offset: 3px; }
+
+.signup-page .signup-policy-pending { color: #008b8b; font-weight: 600; }
