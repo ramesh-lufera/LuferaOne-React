@@ -1,3 +1,5 @@
+import FacebookSignIn from "./FacebookSignIn";
+import GoogleSignIn from "./GoogleSignIn";
 import { useRef, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link } from "react-router-dom";
@@ -20,7 +22,6 @@ const SignUpLayer = () => {
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const submissionLock = useRef(false);
-  const imageUrl = import.meta.env.VITE_SIGNUP_IMAGE_URL;
   const logoUrl = import.meta.env.VITE_SIGNUP_LOGO_URL;
 
   function changeField(event) {
@@ -89,7 +90,9 @@ const SignUpLayer = () => {
   return (
     <section className="auth signup-page bg-base d-flex flex-wrap">
       <div className="auth-left d-lg-block d-none" aria-hidden="true">
-        {imageUrl ? <img className="signup-reference-image" src={imageUrl} alt="" /> : <div className="signup-art"><Icon icon="solar:cloud-linear" /><span>LuferaInfotech</span><p>Technology that connects possibilities.</p></div>}
+        <div className="d-flex align-items-center flex-column h-100 justify-content-center">
+          <img src="/assets/images/auth/auth-img.png" alt="" />
+        </div>
       </div>
       <div className="auth-right py-32 px-24 d-flex flex-column justify-content-center">
         <div className="max-w-464-px mx-auto w-100">
@@ -119,8 +122,8 @@ const SignUpLayer = () => {
             </fieldset>
             <div className="mt-32 center-border-horizontal text-center"><span className="bg-base z-1 px-4">Or sign up with</span></div>
             <div className="mt-32 d-flex align-items-center gap-3">
-              <button type="button" disabled title="Facebook sign up is not configured" className="signup-social fw-semibold py-16 px-24 w-50 border radius-12 text-md d-flex align-items-center justify-content-center gap-12"><Icon icon="ic:baseline-facebook" className="text-primary-600 text-xl" />Facebook</button>
-              <button type="button" disabled title="Google sign up is not configured" className="signup-social fw-semibold py-16 px-24 w-50 border radius-12 text-md d-flex align-items-center justify-content-center gap-12"><Icon icon="logos:google-icon" className="text-xl" />Google</button>
+              <FacebookSignIn mode="signup" terms={values.terms} disabled={submitting} onBusyChange={(busy) => { submissionLock.current = busy; setSubmitting(busy); }} />
+              <GoogleSignIn mode="signup" terms={values.terms} disabled={submitting} onBusyChange={(busy) => { submissionLock.current = busy; setSubmitting(busy); }} />
             </div>
             <div className="mt-32 text-center text-sm"><p className="mb-0">Already have an account? <Link to="/sign-in" className="fw-semibold">Sign In</Link></p></div>
           </form>

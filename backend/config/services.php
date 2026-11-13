@@ -14,6 +14,19 @@ return [
     |
     */
 
+    'facebook' => [
+        'app_id' => env('FACEBOOK_APP_ID'),
+        'app_secret' => env('FACEBOOK_APP_SECRET'),
+        'graph_version' => env('FACEBOOK_GRAPH_VERSION', 'v27.0'),
+        'ca_bundle' => env('FACEBOOK_CA_BUNDLE', env('GOOGLE_CA_BUNDLE')),
+    ],
+
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'ca_bundle' => env('GOOGLE_CA_BUNDLE'),
+    ],
+
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
     ],
