@@ -31,6 +31,9 @@ class RegisterController extends Controller
             throw ValidationException::withMessages($errors);
         }
 
+        request()->attributes->set('activity_actor', $user);
+        request()->attributes->set('activity_entity_id', $user->id);
+
         return response()->json([
             'message' => 'Account created successfully. Please sign in.',
             'user' => $user->only(['id', 'name', 'email', 'phone', 'username']),

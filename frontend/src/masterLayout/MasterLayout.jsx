@@ -1,3 +1,4 @@
+import { api } from "../services/api";
 import { signOut } from "../helper/auth";
 /* eslint-disable react/prop-types */
 import { useEffect, useState } from "react";
@@ -8,6 +9,13 @@ import ThemeToggleButton from "../helper/ThemeToggleButton";
 const MasterLayout = ({ children }) => {
   let [sidebarActive, seSidebarActive] = useState(false);
   let [mobileMenu, setMobileMenu] = useState(false);
+  const [logoutError, setLogoutError] = useState('');
+  const [canViewActivity, setCanViewActivity] = useState(false);
+  useEffect(() => {
+    const controller = new AbortController();
+    api('/user', { signal: controller.signal }).then(({ user }) => setCanViewActivity(Boolean(user))).catch(() => {});
+    return () => controller.abort();
+  }, []);
   const location = useLocation(); // Hook to get the current route
 
   useEffect(() => {
@@ -1016,6 +1024,7 @@ const MasterLayout = ({ children }) => {
               </ul>
             </li>
 
+            {canViewActivity && <li><NavLink to='/activity-log'><Icon icon='solar:history-outline' className='menu-icon' /><span>Activity Log</span></NavLink></li>}
             {/* Role & Access Dropdown */}
             <li className='dropdown'>
               <Link to='#'>
@@ -2037,7 +2046,7 @@ const MasterLayout = ({ children }) => {
                       <li>
                         <Link
                           className='dropdown-item text-black px-0 py-8 hover-bg-transparent hover-text-danger d-flex align-items-center gap-3'
-                          onClick={(event) => { event.preventDefault(); signOut().catch(() => {}); }}
+                          onClick={(event) => { event.preventDefault(); signOut().catch(() => setLogoutError('Unable to sign out. Please try again.')); }}
                           to='#'
                         >
                           <Icon icon='lucide:power' className='icon text-xl' />{" "}
@@ -2054,7 +2063,7 @@ const MasterLayout = ({ children }) => {
         </div>
 
         {/* dashboard-main-body */}
-        <div className='dashboard-main-body'>{children}</div>
+        <div className='dashboard-main-body'>{logoutError && <div className='alert alert-danger' role='alert'>{logoutError}</div>}{children}</div>
 
         {/* Footer section */}
         <footer className='d-footer'>

@@ -1,19 +1,13 @@
-import { useEffect } from "react";
-import $ from "jquery";
-import "datatables.net-dt";
+import { useRef } from "react";
+import useDataTable from "../hook/useDataTable";
+const tableOptions = { pageLength: 10 };
 
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link } from "react-router-dom";
 
 const TableDataLayer = () => {
-  useEffect(() => {
-    const table = $("#dataTable").DataTable({
-      pageLength: 10,
-    });
-    return () => {
-      table.destroy(true);
-    };
-  }, []);
+  const tableRef = useRef(null);
+  useDataTable(tableRef, tableOptions);
   return (
     <div className='card basic-data-table'>
       <div className='card-header'>
@@ -23,6 +17,7 @@ const TableDataLayer = () => {
         <table
           className='table bordered-table mb-0'
           id='dataTable'
+          ref={tableRef}
           data-page-length={10}
         >
           <thead>
