@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\User;
+use App\Services\RoleAccess;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -21,6 +22,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Gate::define('view-activity-logs', fn (User $user): bool => true);
+        Gate::define('view-activity-logs', fn (User $user): bool => app(RoleAccess::class)->allows($user, 'activity-log'));
     }
 }

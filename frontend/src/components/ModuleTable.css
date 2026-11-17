@@ -1,0 +1,74 @@
+.module-pagination .dt-paging {
+  flex-wrap: wrap;
+}
+
+.module-pagination .dt-paging-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: var(--text-secondary-light);
+}
+
+.module-pagination .dt-paging-button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.module-table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.module-table th,
+.module-table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.module-cell-content {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: help;
+}
+
+.module-cell-content:focus-visible {
+  outline: 2px solid var(--primary-600);
+  outline-offset: -2px;
+  border-radius: 4px;
+}
+
+.module-content-popover {
+  max-width: min(560px, calc(100vw - 32px));
+}
+
+.module-content-popover .popover-body {
+  max-height: 60vh;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.module-table td {
+  vertical-align: middle;
+}
+
+.module-table-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.module-table-action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

@@ -1,0 +1,171 @@
+.role-wizard-dialog {
+  width: calc(100% - 32px);
+  max-width: 800px;
+  margin-inline: auto;
+}
+
+.role-wizard-dialog .modal-content {
+  border: 1px solid var(--neutral-200, #e4e7ec);
+  border-radius: 16px;
+  background: var(--white, #fff);
+  overflow: hidden;
+}
+
+.role-wizard-dialog .modal-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--neutral-200, #e4e7ec);
+}
+
+.role-wizard-form {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.role-wizard-dialog .modal-body {
+  padding: 24px;
+}
+
+.role-wizard-details {
+  display: grid;
+  gap: 24px;
+}
+
+.role-wizard-dialog .form-label {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.role-wizard-dialog .form-control {
+  min-height: 44px;
+  padding: 10px 20px;
+  border: 1px solid var(--neutral-300, #d0d5dd);
+  border-radius: 8px;
+}
+
+.role-wizard-dialog textarea.form-control {
+  min-height: 116px;
+}
+
+.role-wizard-status legend {
+  float: none;
+  width: auto;
+}
+
+.role-wizard-choice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--neutral-600, #475467);
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.role-wizard-choice input {
+  -webkit-appearance: auto;
+  appearance: auto;
+  border: revert;
+  background: revert;
+  cursor: pointer;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--primary-600, #1769ff);
+}
+
+.role-status-active,
+.role-status-inactive {
+  width: 8px;
+  height: 8px;
+  margin-right: -4px;
+  border-radius: 50%;
+  background: #16a34a;
+}
+
+.role-status-inactive {
+  background: #dc2626;
+}
+
+.role-wizard-select-all {
+  margin-bottom: 28px;
+}
+
+.role-wizard-modules {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 32px 20px;
+}
+
+.role-wizard-modules .role-wizard-choice {
+  align-items: flex-start;
+  overflow-wrap: anywhere;
+}
+
+.role-wizard-modules input {
+  margin-top: 3px;
+}
+
+.role-wizard-dialog .modal-footer {
+  justify-content: center;
+  gap: 16px;
+  padding: 20px 24px 24px;
+  border: 0;
+}
+
+.role-wizard-dialog .modal-footer .btn {
+  min-width: 135px;
+  min-height: 50px;
+  margin: 0;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+.role-wizard-cancel {
+  border: 1px solid #ff2424;
+  color: #ff2424;
+}
+
+.role-wizard-cancel:hover {
+  background: #fff1f1;
+  color: #dc2626;
+}
+
+.role-wizard-back {
+  background: var(--neutral-50, #f8f9fa);
+  color: var(--neutral-900, #111827);
+}
+
+.role-wizard-submit,
+.role-wizard-submit:hover {
+  background: var(--primary-600, #1769ff);
+  color: #fff;
+}
+
+.role-wizard-update,
+.role-wizard-update:hover {
+  background: #1b898b;
+  color: #fff;
+}
+
+@media (max-width: 767px) {
+  .role-wizard-modules {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px 16px;
+  }
+}
+
+@media (max-width: 399px) {
+  .role-wizard-dialog .modal-body,
+  .role-wizard-dialog .modal-header {
+    padding: 20px 16px;
+  }
+
+  .role-wizard-dialog .modal-footer .btn {
+    min-width: 110px;
+  }
+}

@@ -1,20 +1,12 @@
-import MasterLayout from "../masterLayout/MasterLayout";
-import Breadcrumb from "../components/Breadcrumb";
-import AssignRoleLayer from "../components/AssignRoleLayer";
+import MasterLayout from '../masterLayout/MasterLayout';
+import ModulePageHeader from '../components/ModulePageHeader';
+import AssignRoleLayer from '../components/AssignRoleLayer';
 
-const AssignRolePage = () => {
+export default function AssignRolePage() {
   return (
-    <>
-      {/* MasterLayout */}
-      <MasterLayout>
-        {/* Breadcrumb */}
-        <Breadcrumb title='Assign Role' />
-
-        {/* AssignRoleLayer */}
-        <AssignRoleLayer />
-      </MasterLayout>
-    </>
+    <MasterLayout>
+      <ModulePageHeader title="Assign Role" />
+      <AssignRoleLayer />
+    </MasterLayout>
   );
-};
-
-export default AssignRolePage;
+}

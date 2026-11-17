@@ -1,1056 +1,236 @@
-import { Icon } from "@iconify/react/dist/iconify.js";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from 'react';
+import { api } from '../services/api';
+import { useAccessUser } from '../helper/AccessContext';
+import ModuleTable, {
+  ModuleTablePagination,
+  ModuleTableToolbar,
+} from './ModuleTable';
+import ModuleTableCell from './ModuleTableCell';
 
-const AssignRoleLayer = () => {
+const columns = [
+  { label: 'S.L', width: 64 },
+  { label: 'User', width: 190 },
+  { label: 'Email', width: 260 },
+  { label: 'Current Role', width: 170 },
+  { label: 'Assign Role', width: 220 },
+  { label: 'Action', width: 128, align: 'center' },
+];
+
+const roleLabel = (role) =>
+  role === 'super_admin'
+    ? 'Super Admin'
+    : role.charAt(0).toUpperCase() + role.slice(1);
+
+export default function AssignRoleLayer() {
+  const actor = useAccessUser();
+  const [roles, setRoles] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [choices, setChoices] = useState({});
+  const [search, setSearch] = useState('');
+  const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [range, setRange] = useState({ from: 0, to: 0, total: 0 });
+  const [attempt, setAttempt] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(null);
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  useEffect(() => {
+    if (search === query) return;
+    const timeout = setTimeout(() => {
+      setQuery(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [search, query]);
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    setError('');
+    Promise.all([
+      api('/roles', { signal: controller.signal }),
+      api(
+        `/role-users?search=${encodeURIComponent(query)}&page=${page}&per_page=${limit}`,
+        {
+          signal: controller.signal,
+        },
+      ),
+    ])
+      .then(([roleData, userData]) => {
+        if (controller.signal.aborted) return;
+        setRoles(roleData.roles);
+        setUsers(userData.data);
+        setChoices({});
+        setPages(userData.last_page);
+        setRange({
+          from:
+            userData.from ??
+            (userData.data.length ? (page - 1) * limit + 1 : 0),
+          to:
+            userData.to ??
+            (userData.data.length
+              ? (page - 1) * limit + userData.data.length
+              : 0),
+          total: userData.total ?? userData.data.length,
+        });
+      })
+      .catch((error) => {
+        if (error.name !== 'AbortError') setError(error.message);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
+  }, [query, page, limit, attempt]);
+  const assign = async (user) => {
+    setSaving(user.id);
+    setError('');
+    setNotice('');
+    try {
+      const role = choices[user.id];
+      await api(`/role-users/${user.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role }),
+      });
+      setUsers((current) =>
+        current.map((item) => (item.id === user.id ? { ...item, role } : item)),
+      );
+      setNotice(`Role assigned to ${user.name}.`);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setSaving(null);
+    }
+  };
   return (
-    <div className='card h-100 p-0 radius-12'>
-      <div className='card-header border-bottom bg-base py-16 px-24 d-flex align-items-center flex-wrap gap-3 justify-content-between'>
-        <div className='d-flex align-items-center flex-wrap gap-3'>
-          <span className='text-md fw-medium text-secondary-light mb-0'>
-            Show
-          </span>
-          <select
-            className='form-select form-select-sm w-auto ps-12 py-6 radius-12 h-40-px'
-            defaultValue='1'
+    <>
+      {error && (
+        <div className="alert alert-danger" role="alert">
+          {error}{' '}
+          <button
+            className="btn btn-sm btn-outline-danger"
+            onClick={() => setAttempt(attempt + 1)}
           >
-            <option value='1'>1</option>
-            <option value='2'>2</option>
-            <option value='3'>3</option>
-            <option value='4'>4</option>
-            <option value='5'>5</option>
-            <option value='6'>6</option>
-            <option value='7'>7</option>
-            <option value='8'>8</option>
-            <option value='9'>9</option>
-            <option value='10'>10</option>
-          </select>
-          <form className='navbar-search'>
-            <input
-              type='text'
-              className='bg-base h-40-px w-auto'
-              name='search'
-              placeholder='Search'
-            />
-            <Icon icon='ion:search-outline' className='icon' />
-          </form>
-          <select
-            className='form-select form-select-sm w-auto ps-12 py-6 radius-12 h-40-px'
-            defaultValue='Status'
-          >
-            <option value='Status' disabled>
-              Status
-            </option>
-            <option value='Active'>Active</option>
-            <option value='Inactive'>Inactive</option>
-          </select>
+            Refresh
+          </button>
+        </div>
+      )}
+      {notice && (
+        <div className="alert alert-success" role="status">
+          {notice}
+        </div>
+      )}
+      <div className="card h-100 p-0 radius-12">
+        <ModuleTableToolbar
+          id="assign-role-limit"
+          limit={limit}
+          onLimitChange={(value) => {
+            setLimit(value);
+            setPage(1);
+          }}
+          search={search}
+          searchLabel="Search users"
+          onSearchChange={setSearch}
+        />
+        <div className="card-body p-24">
+          <ModuleTable columns={columns}>
+            {loading ? (
+              <tr>
+                <td colSpan={6} role="status">
+                  Loading users...
+                </td>
+              </tr>
+            ) : users.length === 0 ? (
+              <tr>
+                <td colSpan={6}>No users found.</td>
+              </tr>
+            ) : (
+              users.map((user, index) => (
+                <tr key={user.id}>
+                  <td>{range.from + index}</td>
+                  <td>
+                    <ModuleTableCell id={`assign-user-${user.id}`}>
+                      {user.name}
+                    </ModuleTableCell>
+                  </td>
+                  <td>
+                    <ModuleTableCell id={`assign-email-${user.id}`}>
+                      {user.email}
+                    </ModuleTableCell>
+                  </td>
+                  <td>{roleLabel(user.role)}</td>
+                  <td>
+                    <select
+                      aria-label={`Role for ${user.email}`}
+                      className="form-select"
+                      disabled={
+                        saving !== null ||
+                        (user.role === 'super_admin' &&
+                          actor?.role !== 'super_admin')
+                      }
+                      value={choices[user.id] ?? user.role}
+                      onChange={(event) =>
+                        setChoices({
+                          ...choices,
+                          [user.id]: event.target.value,
+                        })
+                      }
+                    >
+                      {!roles.some(
+                        (role) => role.name === user.role && role.active,
+                      ) && (
+                        <option value={user.role} disabled>
+                          {user.role} (unavailable)
+                        </option>
+                      )}
+                      {roles
+                        .filter((role) => role.active)
+                        .map((role) => (
+                          <option
+                            key={role.id}
+                            value={role.name}
+                            disabled={
+                              role.name === 'super_admin' &&
+                              actor?.role !== 'super_admin'
+                            }
+                          >
+                            {roleLabel(role.name)}
+                          </option>
+                        ))}
+                    </select>
+                  </td>
+                  <td className="text-center">
+                    <button
+                      className="btn btn-primary btn-sm"
+                      disabled={
+                        saving !== null ||
+                        !choices[user.id] ||
+                        choices[user.id] === user.role
+                      }
+                      onClick={() => assign(user)}
+                    >
+                      {saving === user.id ? 'Saving...' : 'Save'}
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </ModuleTable>
+          <ModuleTablePagination
+            page={page}
+            pages={pages}
+            loading={loading}
+            from={range.from}
+            to={range.to}
+            total={range.total}
+            onPageChange={setPage}
+            label="User pages"
+          />
         </div>
       </div>
-      <div className='card-body p-24'>
-        <div className='table-responsive scroll-sm'>
-          <table className='table bordered-table sm-table mb-0'>
-            <thead>
-              <tr>
-                <th scope='col'>
-                  <div className='d-flex align-items-center gap-10'>
-                    <div className='form-check style-check d-flex align-items-center'>
-                      <input
-                        className='form-check-input radius-4 border input-form-dark'
-                        type='checkbox'
-                        name='checkbox'
-                        id='selectAll'
-                      />
-                    </div>
-                    S.L
-                  </div>
-                </th>
-                <th scope='col'>Username</th>
-                <th scope='col' className='text-center'>
-                  Role Permission
-                </th>
-                <th scope='col' className='text-center'>
-                  Action
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>
-                  <div className='d-flex align-items-center gap-10'>
-                    <div className='form-check style-check d-flex align-items-center'>
-                      <input
-                        className='form-check-input radius-4 border border-neutral-400'
-                        type='checkbox'
-                        name='checkbox'
-                      />
-                    </div>
-                    01
-                  </div>
-                </td>
-                <td>
-                  <div className='d-flex align-items-center'>
-                    <img
-                      src='assets/images/user-list/user-list1.png'
-                      alt=''
-                      className='w-40-px h-40-px rounded-circle flex-shrink-0 me-12 overflow-hidden'
-                    />
-                    <div className='flex-grow-1'>
-                      <span className='text-md mb-0 fw-normal text-secondary-light'>
-                        Kathryn Murphy
-                      </span>
-                    </div>
-                  </div>
-                </td>
-                <td className='text-center'>Waiter</td>
-                <td className='text-center'>
-                  <div className='dropdown'>
-                    <button
-                      className='btn btn-outline-primary-600 not-active px-18 py-11 dropdown-toggle toggle-icon'
-                      type='button'
-                      data-bs-toggle='dropdown'
-                      aria-expanded='false'
-                    >
-                      Assign Role
-                    </button>
-                    <ul className='dropdown-menu' style={{}}>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Waiter
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Manager
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Project Manager
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Game Developer
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Head
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Management
-                        </Link>
-                      </li>
-                    </ul>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <div className='d-flex align-items-center gap-10'>
-                    <div className='form-check style-check d-flex align-items-center'>
-                      <input
-                        className='form-check-input radius-4 border border-neutral-400'
-                        type='checkbox'
-                        name='checkbox'
-                      />
-                    </div>
-                    01
-                  </div>
-                </td>
-                <td>
-                  <div className='d-flex align-items-center'>
-                    <img
-                      src='assets/images/user-list/user-list2.png'
-                      alt=''
-                      className='w-40-px h-40-px rounded-circle flex-shrink-0 me-12 overflow-hidden'
-                    />
-                    <div className='flex-grow-1'>
-                      <span className='text-md mb-0 fw-normal text-secondary-light'>
-                        Annette Black
-                      </span>
-                    </div>
-                  </div>
-                </td>
-                <td className='text-center'>manager</td>
-                <td className='text-center'>
-                  <div className='dropdown'>
-                    <button
-                      className='btn btn-outline-primary-600 not-active px-18 py-11 dropdown-toggle toggle-icon'
-                      type='button'
-                      data-bs-toggle='dropdown'
-                      aria-expanded='false'
-                    >
-                      Assign Role
-                    </button>
-                    <ul className='dropdown-menu' style={{}}>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Waiter
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Manager
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Project Manager
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Game Developer
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Head
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Management
-                        </Link>
-                      </li>
-                    </ul>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <div className='d-flex align-items-center gap-10'>
-                    <div className='form-check style-check d-flex align-items-center'>
-                      <input
-                        className='form-check-input radius-4 border border-neutral-400'
-                        type='checkbox'
-                        name='checkbox'
-                      />
-                    </div>
-                    01
-                  </div>
-                </td>
-                <td>
-                  <div className='d-flex align-items-center'>
-                    <img
-                      src='assets/images/user-list/user-list3.png'
-                      alt=''
-                      className='w-40-px h-40-px rounded-circle flex-shrink-0 me-12 overflow-hidden'
-                    />
-                    <div className='flex-grow-1'>
-                      <span className='text-md mb-0 fw-normal text-secondary-light'>
-                        Ronald Richards
-                      </span>
-                    </div>
-                  </div>
-                </td>
-                <td className='text-center'>Project Manager</td>
-                <td className='text-center'>
-                  <div className='dropdown'>
-                    <button
-                      className='btn btn-outline-primary-600 not-active px-18 py-11 dropdown-toggle toggle-icon'
-                      type='button'
-                      data-bs-toggle='dropdown'
-                      aria-expanded='false'
-                    >
-                      Assign Role
-                    </button>
-                    <ul className='dropdown-menu' style={{}}>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Waiter
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Manager
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Project Manager
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Game Developer
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Head
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Management
-                        </Link>
-                      </li>
-                    </ul>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <div className='d-flex align-items-center gap-10'>
-                    <div className='form-check style-check d-flex align-items-center'>
-                      <input
-                        className='form-check-input radius-4 border border-neutral-400'
-                        type='checkbox'
-                        name='checkbox'
-                      />
-                    </div>
-                    01
-                  </div>
-                </td>
-                <td>
-                  <div className='d-flex align-items-center'>
-                    <img
-                      src='assets/images/user-list/user-list4.png'
-                      alt=''
-                      className='w-40-px h-40-px rounded-circle flex-shrink-0 me-12 overflow-hidden'
-                    />
-                    <div className='flex-grow-1'>
-                      <span className='text-md mb-0 fw-normal text-secondary-light'>
-                        Eleanor Pena
-                      </span>
-                    </div>
-                  </div>
-                </td>
-                <td className='text-center'>Game Developer</td>
-                <td className='text-center'>
-                  <div className='dropdown'>
-                    <button
-                      className='btn btn-outline-primary-600 not-active px-18 py-11 dropdown-toggle toggle-icon'
-                      type='button'
-                      data-bs-toggle='dropdown'
-                      aria-expanded='false'
-                    >
-                      Assign Role
-                    </button>
-                    <ul className='dropdown-menu' style={{}}>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Waiter
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Manager
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Project Manager
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Game Developer
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Head
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Management
-                        </Link>
-                      </li>
-                    </ul>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <div className='d-flex align-items-center gap-10'>
-                    <div className='form-check style-check d-flex align-items-center'>
-                      <input
-                        className='form-check-input radius-4 border border-neutral-400'
-                        type='checkbox'
-                        name='checkbox'
-                      />
-                    </div>
-                    01
-                  </div>
-                </td>
-                <td>
-                  <div className='d-flex align-items-center'>
-                    <img
-                      src='assets/images/user-list/user-list5.png'
-                      alt=''
-                      className='w-40-px h-40-px rounded-circle flex-shrink-0 me-12 overflow-hidden'
-                    />
-                    <div className='flex-grow-1'>
-                      <span className='text-md mb-0 fw-normal text-secondary-light'>
-                        Leslie Alexander
-                      </span>
-                    </div>
-                  </div>
-                </td>
-                <td className='text-center'>Head</td>
-                <td className='text-center'>
-                  <div className='dropdown'>
-                    <button
-                      className='btn btn-outline-primary-600 not-active px-18 py-11 dropdown-toggle toggle-icon'
-                      type='button'
-                      data-bs-toggle='dropdown'
-                      aria-expanded='false'
-                    >
-                      Assign Role
-                    </button>
-                    <ul className='dropdown-menu' style={{}}>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Waiter
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Manager
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Project Manager
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Game Developer
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Head
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Management
-                        </Link>
-                      </li>
-                    </ul>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <div className='d-flex align-items-center gap-10'>
-                    <div className='form-check style-check d-flex align-items-center'>
-                      <input
-                        className='form-check-input radius-4 border border-neutral-400'
-                        type='checkbox'
-                        name='checkbox'
-                      />
-                    </div>
-                    01
-                  </div>
-                </td>
-                <td>
-                  <div className='d-flex align-items-center'>
-                    <img
-                      src='assets/images/user-list/user-list6.png'
-                      alt=''
-                      className='w-40-px h-40-px rounded-circle flex-shrink-0 me-12 overflow-hidden'
-                    />
-                    <div className='flex-grow-1'>
-                      <span className='text-md mb-0 fw-normal text-secondary-light'>
-                        Albert Flores
-                      </span>
-                    </div>
-                  </div>
-                </td>
-                <td className='text-center'>Management</td>
-                <td className='text-center'>
-                  <div className='dropdown'>
-                    <button
-                      className='btn btn-outline-primary-600 not-active px-18 py-11 dropdown-toggle toggle-icon'
-                      type='button'
-                      data-bs-toggle='dropdown'
-                      aria-expanded='false'
-                    >
-                      Assign Role
-                    </button>
-                    <ul className='dropdown-menu' style={{}}>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Waiter
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Manager
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Project Manager
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Game Developer
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Head
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Management
-                        </Link>
-                      </li>
-                    </ul>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <div className='d-flex align-items-center gap-10'>
-                    <div className='form-check style-check d-flex align-items-center'>
-                      <input
-                        className='form-check-input radius-4 border border-neutral-400'
-                        type='checkbox'
-                        name='checkbox'
-                      />
-                    </div>
-                    01
-                  </div>
-                </td>
-                <td>
-                  <div className='d-flex align-items-center'>
-                    <img
-                      src='assets/images/user-list/user-list7.png'
-                      alt=''
-                      className='w-40-px h-40-px rounded-circle flex-shrink-0 me-12 overflow-hidden'
-                    />
-                    <div className='flex-grow-1'>
-                      <span className='text-md mb-0 fw-normal text-secondary-light'>
-                        Jacob Jones
-                      </span>
-                    </div>
-                  </div>
-                </td>
-                <td className='text-center'>Waiter</td>
-                <td className='text-center'>
-                  <div className='dropdown'>
-                    <button
-                      className='btn btn-outline-primary-600 not-active px-18 py-11 dropdown-toggle toggle-icon'
-                      type='button'
-                      data-bs-toggle='dropdown'
-                      aria-expanded='false'
-                    >
-                      Assign Role
-                    </button>
-                    <ul className='dropdown-menu' style={{}}>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Waiter
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Manager
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Project Manager
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Game Developer
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Head
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Management
-                        </Link>
-                      </li>
-                    </ul>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <div className='d-flex align-items-center gap-10'>
-                    <div className='form-check style-check d-flex align-items-center'>
-                      <input
-                        className='form-check-input radius-4 border border-neutral-400'
-                        type='checkbox'
-                        name='checkbox'
-                      />
-                    </div>
-                    01
-                  </div>
-                </td>
-                <td>
-                  <div className='d-flex align-items-center'>
-                    <img
-                      src='assets/images/user-list/user-list8.png'
-                      alt=''
-                      className='w-40-px h-40-px rounded-circle flex-shrink-0 me-12 overflow-hidden'
-                    />
-                    <div className='flex-grow-1'>
-                      <span className='text-md mb-0 fw-normal text-secondary-light'>
-                        Jerome Bell
-                      </span>
-                    </div>
-                  </div>
-                </td>
-                <td className='text-center'>Waiter</td>
-                <td className='text-center'>
-                  <div className='dropdown'>
-                    <button
-                      className='btn btn-outline-primary-600 not-active px-18 py-11 dropdown-toggle toggle-icon'
-                      type='button'
-                      data-bs-toggle='dropdown'
-                      aria-expanded='false'
-                    >
-                      Assign Role
-                    </button>
-                    <ul className='dropdown-menu' style={{}}>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Waiter
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Manager
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Project Manager
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Game Developer
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Head
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Management
-                        </Link>
-                      </li>
-                    </ul>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <div className='d-flex align-items-center gap-10'>
-                    <div className='form-check style-check d-flex align-items-center'>
-                      <input
-                        className='form-check-input radius-4 border border-neutral-400'
-                        type='checkbox'
-                        name='checkbox'
-                      />
-                    </div>
-                    01
-                  </div>
-                </td>
-                <td>
-                  <div className='d-flex align-items-center'>
-                    <img
-                      src='assets/images/user-list/user-list2.png'
-                      alt=''
-                      className='w-40-px h-40-px rounded-circle flex-shrink-0 me-12 overflow-hidden'
-                    />
-                    <div className='flex-grow-1'>
-                      <span className='text-md mb-0 fw-normal text-secondary-light'>
-                        Marvin McKinney
-                      </span>
-                    </div>
-                  </div>
-                </td>
-                <td className='text-center'>Waiter</td>
-                <td className='text-center'>
-                  <div className='dropdown'>
-                    <button
-                      className='btn btn-outline-primary-600 not-active px-18 py-11 dropdown-toggle toggle-icon'
-                      type='button'
-                      data-bs-toggle='dropdown'
-                      aria-expanded='false'
-                    >
-                      Assign Role
-                    </button>
-                    <ul className='dropdown-menu' style={{}}>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Waiter
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Manager
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Project Manager
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Game Developer
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Head
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Management
-                        </Link>
-                      </li>
-                    </ul>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <div className='d-flex align-items-center gap-10'>
-                    <div className='form-check style-check d-flex align-items-center'>
-                      <input
-                        className='form-check-input radius-4 border border-neutral-400'
-                        type='checkbox'
-                        name='checkbox'
-                      />
-                    </div>
-                    01
-                  </div>
-                </td>
-                <td>
-                  <div className='d-flex align-items-center'>
-                    <img
-                      src='assets/images/user-list/user-list10.png'
-                      alt=''
-                      className='w-40-px h-40-px rounded-circle flex-shrink-0 me-12 overflow-hidden'
-                    />
-                    <div className='flex-grow-1'>
-                      <span className='text-md mb-0 fw-normal text-secondary-light'>
-                        Cameron Williamson
-                      </span>
-                    </div>
-                  </div>
-                </td>
-                <td className='text-center'>Admin</td>
-                <td className='text-center'>
-                  <div className='dropdown'>
-                    <button
-                      className='btn btn-outline-primary-600 not-active px-18 py-11 dropdown-toggle toggle-icon'
-                      type='button'
-                      data-bs-toggle='dropdown'
-                      aria-expanded='false'
-                    >
-                      Assign Role
-                    </button>
-                    <ul className='dropdown-menu' style={{}}>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Waiter
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Manager
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Project Manager
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Game Developer
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Head
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          className='dropdown-item px-16 py-8 rounded text-secondary-light bg-hover-neutral-200 text-hover-neutral-900'
-                          to='#'
-                        >
-                          Management
-                        </Link>
-                      </li>
-                    </ul>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div className='d-flex align-items-center justify-content-between flex-wrap gap-2 mt-24'>
-          <span>Showing 1 to 10 of 12 entries</span>
-          <ul className='pagination d-flex flex-wrap align-items-center gap-2 justify-content-center'>
-            <li className='page-item'>
-              <Link
-                className='page-link bg-neutral-200 text-secondary-light fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px w-32-px text-md'
-                to='#'
-              >
-                <Icon icon='ep:d-arrow-left' className='' />
-              </Link>
-            </li>
-            <li className='page-item'>
-              <Link
-                className='page-link text-secondary-light fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px w-32-px text-md bg-primary-600 text-white'
-                to='#'
-              >
-                1
-              </Link>
-            </li>
-            <li className='page-item'>
-              <Link
-                className='page-link bg-neutral-200 text-secondary-light fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px w-32-px'
-                to='#'
-              >
-                2
-              </Link>
-            </li>
-            <li className='page-item'>
-              <Link
-                className='page-link bg-neutral-200 text-secondary-light fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px w-32-px text-md'
-                to='#'
-              >
-                3
-              </Link>
-            </li>
-            <li className='page-item'>
-              <Link
-                className='page-link bg-neutral-200 text-secondary-light fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px w-32-px text-md'
-                to='#'
-              >
-                4
-              </Link>
-            </li>
-            <li className='page-item'>
-              <Link
-                className='page-link bg-neutral-200 text-secondary-light fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px w-32-px text-md'
-                to='#'
-              >
-                5
-              </Link>
-            </li>
-            <li className='page-item'>
-              <Link
-                className='page-link bg-neutral-200 text-secondary-light fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px w-32-px text-md'
-                to='#'
-              >
-                {" "}
-                <Icon icon='ep:d-arrow-right' className='' />{" "}
-              </Link>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </div>
+    </>
   );
-};
-
-export default AssignRoleLayer;
+}

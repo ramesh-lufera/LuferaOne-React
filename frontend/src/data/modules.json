@@ -1,0 +1,485 @@
+[
+  {
+    "key": "dashboard",
+    "label": "Dashboard",
+    "paths": [
+      "/",
+      "/index-2",
+      "/index-3",
+      "/index-4",
+      "/index-5",
+      "/index-6",
+      "/index-7",
+      "/index-8",
+      "/index-9",
+      "/index-10",
+      "/index-11",
+      "/index-12",
+      "/index-13",
+      "/index-14",
+      "/index-15",
+      "/index-16",
+      "/index-17",
+      "/index-18",
+      "/index-19",
+      "/index-20"
+    ]
+  },
+  {
+    "key": "roles",
+    "label": "Roles & Permissions",
+    "paths": [
+      "/roles-permissions",
+      "/role-access",
+      "/assign-role"
+    ]
+  },
+  {
+    "key": "users",
+    "label": "Users",
+    "paths": [
+      "/users-list",
+      "/users-grid",
+      "/add-user",
+      "/view-profile"
+    ]
+  },
+  {
+    "key": "company",
+    "label": "Company",
+    "paths": [
+      "/company"
+    ]
+  },
+  {
+    "key": "activity-log",
+    "label": "Activity Log",
+    "paths": [
+      "/activity-log"
+    ]
+  },
+  {
+    "key": "invoices",
+    "label": "Invoices",
+    "paths": [
+      "/invoice-add",
+      "/invoice-edit",
+      "/invoice-list",
+      "/invoice-preview"
+    ]
+  },
+  {
+    "key": "calendar",
+    "label": "Calendar",
+    "paths": [
+      "/calendar",
+      "/calendar-main"
+    ]
+  },
+  {
+    "key": "chat",
+    "label": "Chat",
+    "paths": [
+      "/chat-message",
+      "/chat-profile"
+    ]
+  },
+  {
+    "key": "email",
+    "label": "Email",
+    "paths": [
+      "/email",
+      "/starred"
+    ]
+  },
+  {
+    "key": "blog",
+    "label": "Blog",
+    "paths": [
+      "/blog",
+      "/blog-details",
+      "/add-blog"
+    ]
+  },
+  {
+    "key": "gallery",
+    "label": "Gallery",
+    "paths": [
+      "/gallery",
+      "/gallery-grid",
+      "/gallery-masonry",
+      "/gallery-hover"
+    ]
+  },
+  {
+    "key": "alert",
+    "label": "Alert",
+    "paths": [
+      "/alert"
+    ]
+  },
+  {
+    "key": "avatar",
+    "label": "Avatar",
+    "paths": [
+      "/avatar"
+    ]
+  },
+  {
+    "key": "badges",
+    "label": "Badges",
+    "paths": [
+      "/badges"
+    ]
+  },
+  {
+    "key": "button",
+    "label": "Button",
+    "paths": [
+      "/button"
+    ]
+  },
+  {
+    "key": "card",
+    "label": "Card",
+    "paths": [
+      "/card"
+    ]
+  },
+  {
+    "key": "carousel",
+    "label": "Carousel",
+    "paths": [
+      "/carousel"
+    ]
+  },
+  {
+    "key": "code-generator",
+    "label": "Code Generator",
+    "paths": [
+      "/code-generator"
+    ]
+  },
+  {
+    "key": "code-generator-new",
+    "label": "Code Generator New",
+    "paths": [
+      "/code-generator-new"
+    ]
+  },
+  {
+    "key": "colors",
+    "label": "Colors",
+    "paths": [
+      "/colors"
+    ]
+  },
+  {
+    "key": "column-chart",
+    "label": "Column Chart",
+    "paths": [
+      "/column-chart"
+    ]
+  },
+  {
+    "key": "currencies",
+    "label": "Currencies",
+    "paths": [
+      "/currencies"
+    ]
+  },
+  {
+    "key": "dropdown",
+    "label": "Dropdown",
+    "paths": [
+      "/dropdown"
+    ]
+  },
+  {
+    "key": "faq",
+    "label": "Faq",
+    "paths": [
+      "/faq"
+    ]
+  },
+  {
+    "key": "form-layout",
+    "label": "Form Layout",
+    "paths": [
+      "/form-layout"
+    ]
+  },
+  {
+    "key": "form-validation",
+    "label": "Form Validation",
+    "paths": [
+      "/form-validation"
+    ]
+  },
+  {
+    "key": "form",
+    "label": "Form",
+    "paths": [
+      "/form"
+    ]
+  },
+  {
+    "key": "testimonials",
+    "label": "Testimonials",
+    "paths": [
+      "/testimonials"
+    ]
+  },
+  {
+    "key": "blank-page",
+    "label": "Blank Page",
+    "paths": [
+      "/blank-page"
+    ]
+  },
+  {
+    "key": "image-generator",
+    "label": "Image Generator",
+    "paths": [
+      "/image-generator"
+    ]
+  },
+  {
+    "key": "image-upload",
+    "label": "Image Upload",
+    "paths": [
+      "/image-upload"
+    ]
+  },
+  {
+    "key": "kanban",
+    "label": "Kanban",
+    "paths": [
+      "/kanban"
+    ]
+  },
+  {
+    "key": "language",
+    "label": "Language",
+    "paths": [
+      "/language"
+    ]
+  },
+  {
+    "key": "line-chart",
+    "label": "Line Chart",
+    "paths": [
+      "/line-chart"
+    ]
+  },
+  {
+    "key": "list",
+    "label": "List",
+    "paths": [
+      "/list"
+    ]
+  },
+  {
+    "key": "marketplace-details",
+    "label": "Marketplace Details",
+    "paths": [
+      "/marketplace-details"
+    ]
+  },
+  {
+    "key": "marketplace",
+    "label": "Marketplace",
+    "paths": [
+      "/marketplace"
+    ]
+  },
+  {
+    "key": "notification-alert",
+    "label": "Notification Alert",
+    "paths": [
+      "/notification-alert"
+    ]
+  },
+  {
+    "key": "notification",
+    "label": "Notification",
+    "paths": [
+      "/notification"
+    ]
+  },
+  {
+    "key": "pagination",
+    "label": "Pagination",
+    "paths": [
+      "/pagination"
+    ]
+  },
+  {
+    "key": "payment-gateway",
+    "label": "Payment Gateway",
+    "paths": [
+      "/payment-gateway"
+    ]
+  },
+  {
+    "key": "pie-chart",
+    "label": "Pie Chart",
+    "paths": [
+      "/pie-chart"
+    ]
+  },
+  {
+    "key": "portfolio",
+    "label": "Portfolio",
+    "paths": [
+      "/portfolio"
+    ]
+  },
+  {
+    "key": "pricing",
+    "label": "Pricing",
+    "paths": [
+      "/pricing"
+    ]
+  },
+  {
+    "key": "progress",
+    "label": "Progress",
+    "paths": [
+      "/progress"
+    ]
+  },
+  {
+    "key": "radio",
+    "label": "Radio",
+    "paths": [
+      "/radio"
+    ]
+  },
+  {
+    "key": "star-rating",
+    "label": "Star Rating",
+    "paths": [
+      "/star-rating"
+    ]
+  },
+  {
+    "key": "switch",
+    "label": "Switch",
+    "paths": [
+      "/switch"
+    ]
+  },
+  {
+    "key": "table-basic",
+    "label": "Table Basic",
+    "paths": [
+      "/table-basic"
+    ]
+  },
+  {
+    "key": "table-data",
+    "label": "Table Data",
+    "paths": [
+      "/table-data"
+    ]
+  },
+  {
+    "key": "tabs",
+    "label": "Tabs",
+    "paths": [
+      "/tabs"
+    ]
+  },
+  {
+    "key": "tags",
+    "label": "Tags",
+    "paths": [
+      "/tags"
+    ]
+  },
+  {
+    "key": "text-generator-new",
+    "label": "Text Generator New",
+    "paths": [
+      "/text-generator-new"
+    ]
+  },
+  {
+    "key": "text-generator",
+    "label": "Text Generator",
+    "paths": [
+      "/text-generator"
+    ]
+  },
+  {
+    "key": "theme",
+    "label": "Theme",
+    "paths": [
+      "/theme"
+    ]
+  },
+  {
+    "key": "tooltip",
+    "label": "Tooltip",
+    "paths": [
+      "/tooltip"
+    ]
+  },
+  {
+    "key": "typography",
+    "label": "Typography",
+    "paths": [
+      "/typography"
+    ]
+  },
+  {
+    "key": "view-details",
+    "label": "View Details",
+    "paths": [
+      "/view-details"
+    ]
+  },
+  {
+    "key": "video-generator",
+    "label": "Video Generator",
+    "paths": [
+      "/video-generator"
+    ]
+  },
+  {
+    "key": "videos",
+    "label": "Videos",
+    "paths": [
+      "/videos"
+    ]
+  },
+  {
+    "key": "voice-generator",
+    "label": "Voice Generator",
+    "paths": [
+      "/voice-generator"
+    ]
+  },
+  {
+    "key": "wallet",
+    "label": "Wallet",
+    "paths": [
+      "/wallet"
+    ]
+  },
+  {
+    "key": "widgets",
+    "label": "Widgets",
+    "paths": [
+      "/widgets"
+    ]
+  },
+  {
+    "key": "wizard",
+    "label": "Wizard",
+    "paths": [
+      "/wizard"
+    ]
+  }
+]

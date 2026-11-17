@@ -1,4 +1,3 @@
-
 <?php
 
 use App\Http\Controllers\ActivityLogController;
@@ -6,6 +5,10 @@ use App\Http\Controllers\Auth\FacebookAuthController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\RoleController;
+use App\Http\Controllers\UserController;
+use App\Http\Middleware\EnsureModuleAccess;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', function () {
@@ -49,3 +52,40 @@ Route::middleware(['auth:sanctum', 'can:view-activity-logs'])->group(function ()
     Route::get('/activity-logs/filters', [ActivityLogController::class, 'filters']);
     Route::get('/activity-logs', [ActivityLogController::class, 'index']);
 });
+
+Route::middleware(['auth:sanctum', EnsureModuleAccess::class.':company'])->group(function () {
+    Route::get('/company', [CompanyController::class, 'show']);
+    Route::post('/company', [CompanyController::class, 'store']);
+    Route::put('/company', [CompanyController::class, 'update']);
+});
+
+Route::get('/company/images/{image}', [CompanyController::class, 'image'])
+    ->whereIn('image', ['logo', 'sign_in_image', 'sign_up_image'])
+    ->middleware(['signed', 'throttle:120,1'])
+    ->name('company.image');
+
+Route::middleware(['auth:sanctum', EnsureModuleAccess::class.':roles'])->group(function () {
+    Route::get('/roles', [RoleController::class, 'index']);
+    Route::post('/roles', [RoleController::class, 'store']);
+    Route::put('/roles/{role}', [RoleController::class, 'update'])->whereNumber('role');
+    Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->whereNumber('role');
+    Route::get('/role-users', [RoleController::class, 'users']);
+    Route::put('/role-users/{user}', [RoleController::class, 'assign'])->whereNumber('user');
+});
+
+Route::get('/users', [UserController::class, 'index'])
+    ->middleware(['auth:sanctum', EnsureModuleAccess::class.':users']);
+
+Route::post('/users', [UserController::class, 'store'])
+    ->middleware(['auth:sanctum', EnsureModuleAccess::class.':users']);
+
+Route::middleware(['auth:sanctum', EnsureModuleAccess::class.':users'])->group(function () {
+    Route::get('/users/{user}', [UserController::class, 'show'])->whereNumber('user');
+    Route::put('/users/{user}', [UserController::class, 'update'])->whereNumber('user');
+    Route::delete('/users/{user}', [UserController::class, 'destroy'])->whereNumber('user');
+});
+
+Route::get('/users/{user}/image', [UserController::class, 'image'])
+    ->whereNumber('user')
+    ->middleware(['signed', 'throttle:120,1'])
+    ->name('users.image');

@@ -1,4 +1,5 @@
-import { api } from "../services/api";
+import AccessNavigation from '../components/AccessNavigation';
+import { useAccessUser } from '../helper/AccessContext';
 import { signOut } from "../helper/auth";
 /* eslint-disable react/prop-types */
 import { useEffect, useState } from "react";
@@ -10,12 +11,8 @@ const MasterLayout = ({ children }) => {
   let [sidebarActive, seSidebarActive] = useState(false);
   let [mobileMenu, setMobileMenu] = useState(false);
   const [logoutError, setLogoutError] = useState('');
-  const [canViewActivity, setCanViewActivity] = useState(false);
-  useEffect(() => {
-    const controller = new AbortController();
-    api('/user', { signal: controller.signal }).then(({ user }) => setCanViewActivity(Boolean(user))).catch(() => {});
-    return () => controller.abort();
-  }, []);
+  const accessUser = useAccessUser();
+  const canViewActivity = accessUser?.modules?.some((module) => ['*', 'activity-log'].includes(module));
   const location = useLocation(); // Hook to get the current route
 
   useEffect(() => {
@@ -134,7 +131,7 @@ const MasterLayout = ({ children }) => {
           </Link>
         </div>
         <div className='sidebar-menu-area'>
-          <ul className='sidebar-menu' id='sidebar-menu'>
+          <ul className='sidebar-menu' id='sidebar-menu'><AccessNavigation>
             <li className='dropdown'>
               <Link to='#'>
                 <Icon
@@ -1029,18 +1026,18 @@ const MasterLayout = ({ children }) => {
             <li className='dropdown'>
               <Link to='#'>
                 <i className='ri-user-settings-line' />
-                <span>Role &amp; Access</span>
+                <span>Roles &amp; Permissions</span>
               </Link>
               <ul className='sidebar-submenu'>
                 <li>
                   <NavLink
-                    to='/role-access'
+                    to='/roles-permissions'
                     className={(navData) =>
                       navData.isActive ? "active-page" : ""
                     }
                   >
                     <i className='ri-circle-fill circle-icon text-primary-600 w-auto' />{" "}
-                    Role &amp; Access
+                    Roles &amp; Permissions
                   </NavLink>
                 </li>
                 <li>
@@ -1388,7 +1385,7 @@ const MasterLayout = ({ children }) => {
                 </li>
               </ul>
             </li>
-          </ul>
+          </AccessNavigation></ul>
         </div>
       </aside>
 
@@ -2069,11 +2066,11 @@ const MasterLayout = ({ children }) => {
         <footer className='d-footer'>
           <div className='row align-items-center justify-content-between'>
             <div className='col-auto'>
-              <p className='mb-0'>© 2025 WowDash. All Rights Reserved.</p>
+              <p className='mb-0'>© 2025 LuferaTech. All Rights Reserved.</p>
             </div>
             <div className='col-auto'>
               <p className='mb-0'>
-                Made by <span className='text-primary-600'>wowtheme7</span>
+                Made by <span className='text-primary-600'>Lufera Infotech</span>
               </p>
             </div>
           </div>
