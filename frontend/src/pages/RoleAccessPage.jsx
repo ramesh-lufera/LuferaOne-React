@@ -1,20 +1,12 @@
-import MasterLayout from "../masterLayout/MasterLayout";
-import Breadcrumb from "../components/Breadcrumb";
-import RoleAccessLayer from "../components/RoleAccessLayer";
+import MasterLayout from '../masterLayout/MasterLayout';
+import ModulePageHeader from '../components/ModulePageHeader';
+import RoleAccessLayer from '../components/RoleAccessLayer';
 
-const RoleAccessPage = () => {
+export default function RoleAccessPage() {
   return (
-    <>
-      {/* MasterLayout */}
-      <MasterLayout>
-        {/* Breadcrumb */}
-        <Breadcrumb title='Role Access' />
-
-        {/* RoleAccessLayer */}
-        <RoleAccessLayer />
-      </MasterLayout>
-    </>
+    <MasterLayout>
+      <ModulePageHeader title="Roles & Permissions" />
+      <RoleAccessLayer />
+    </MasterLayout>
   );
-};
-
-export default RoleAccessPage;
+}

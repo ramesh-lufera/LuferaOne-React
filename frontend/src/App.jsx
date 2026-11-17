@@ -137,7 +137,7 @@ function App() {
         <Route exact path='/index-19' element={<HomePageNineteen />} />
         <Route exact path='/index-20' element={<HomePageTwenty />} />
 
-        </Route>
+
 
         {/* SL */}
         <Route exact path='/add-user' element={<AddUserPage />} />
@@ -166,7 +166,6 @@ function App() {
         <Route exact path='/dropdown' element={<DropdownPage />} />
         <Route exact path='/email' element={<EmailPage />} />
         <Route exact path='/faq' element={<FaqPage />} />
-        <Route exact path='/forgot-password' element={<ForgotPasswordPage />} />
         <Route exact path='/form-layout' element={<FormLayoutPage />} />
         <Route exact path='/form-validation' element={<FormValidationPage />} />
         <Route exact path='/form' element={<FormPage />} />
@@ -181,9 +180,6 @@ function App() {
         <Route exact path='/add-blog' element={<AddBlogPage />} />
 
         <Route exact path='/testimonials' element={<TestimonialsPage />} />
-        <Route exact path='/coming-soon' element={<ComingSoonPage />} />
-        <Route exact path='/access-denied' element={<AccessDeniedPage />} />
-        <Route exact path='/maintenance' element={<MaintenancePage />} />
         <Route exact path='/blank-page' element={<BlankPagePage />} />
 
         <Route exact path='/image-generator' element={<ImageGeneratorPage />} />
@@ -215,9 +211,8 @@ function App() {
         <Route exact path='/pricing' element={<PricingPage />} />
         <Route exact path='/progress' element={<ProgressPage />} />
         <Route exact path='/radio' element={<RadioPage />} />
+        <Route path='/roles-permissions' element={<RoleAccessPage />} />
         <Route exact path='/role-access' element={<RoleAccessPage />} />
-        <Route exact path='/sign-in' element={<SignInPage />} />
-        <Route exact path='/sign-up' element={<SignUpPage />} />
         <Route exact path='/star-rating' element={<StarRatingPage />} />
         <Route exact path='/starred' element={<StarredPage />} />
         <Route exact path='/switch' element={<SwitchPage />} />
@@ -225,7 +220,6 @@ function App() {
         <Route exact path='/table-data' element={<TableDataPage />} />
         <Route exact path='/tabs' element={<TabsPage />} />
         <Route exact path='/tags' element={<TagsPage />} />
-        <Route exact path='/terms-condition' element={<TermsConditionPage />} />
         <Route
           exact
           path='/text-generator-new'
@@ -246,6 +240,14 @@ function App() {
         <Route exact path='/widgets' element={<WidgetsPage />} />
         <Route exact path='/wizard' element={<WizardPage />} />
 
+        </Route>
+        <Route exact path='/sign-in' element={<SignInPage />} />
+        <Route exact path='/sign-up' element={<SignUpPage />} />
+        <Route exact path='/forgot-password' element={<ForgotPasswordPage />} />
+        <Route exact path='/terms-condition' element={<TermsConditionPage />} />
+        <Route exact path='/coming-soon' element={<ComingSoonPage />} />
+        <Route exact path='/maintenance' element={<MaintenancePage />} />
+        <Route exact path='/access-denied' element={<AccessDeniedPage />} />
         <Route exact path='*' element={<ErrorPage />} />
       </Routes>
     </BrowserRouter>

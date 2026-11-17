@@ -7,6 +7,7 @@ export async function api(path, options = {}) {
     if (response.status === 401) clearToken();
     const error = new Error(response.status >= 500 ? 'The server could not complete this request. Please try again.' : data.message || `Request failed (${response.status}).`);
     error.status = response.status;
+    error.errors = data.errors;
     throw error;
   }
   return data;

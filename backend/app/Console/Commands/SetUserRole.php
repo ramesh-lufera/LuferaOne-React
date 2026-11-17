@@ -11,11 +11,11 @@ class SetUserRole extends Command
 {
     protected $signature = 'users:set-role {email} {role}';
 
-    protected $description = 'Assign user, auditor, or admin from a trusted server console';
+    protected $description = 'Assign user, auditor, admin, or super_admin from a trusted server console';
 
     public function handle(ActivityLogger $logger): int
     {
-        if (! in_array($this->argument('role'), ['user', 'auditor', 'admin'], true)) {
+        if (! in_array($this->argument('role'), ['user', 'auditor', 'admin', 'super_admin'], true)) {
             $this->error('Invalid role.');
 
             return self::FAILURE;
@@ -27,6 +27,11 @@ class SetUserRole extends Command
             return self::FAILURE;
         }
         DB::transaction(function () use ($user, $logger) {
+            DB::table('roles')->orderBy('id')->lockForUpdate()->get();
+            $user->refresh();
+            if ($user->role === 'super_admin' && $this->argument('role') !== 'super_admin' && User::where('role', 'super_admin')->count() <= 1) {
+                throw new \RuntimeException('Keep at least one Super Admin.');
+            }
             $previous = $user->role;
             $user->role = $this->argument('role');
             $user->save();

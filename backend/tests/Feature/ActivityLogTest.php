@@ -67,17 +67,17 @@ class ActivityLogTest extends TestCase
         $this->assertDatabaseCount('activity_logs', 0);
     }
 
-    public function test_any_authenticated_user_can_read_all_logs_but_cannot_modify_them(): void
+    public function test_authorized_roles_can_read_logs_but_cannot_modify_them(): void
     {
         $this->getJson('/api/activity-logs')->assertUnauthorized();
         $this->getJson('/api/activity-logs/filters')->assertUnauthorized();
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => 'auditor']);
         $other = User::factory()->create();
         app(ActivityLogger::class)->record($other, 'Sign In', 'Authentication');
         $this->actingAs($user, 'sanctum')->getJson('/api/activity-logs')->assertOk()
             ->assertJsonPath('recordsFiltered', 1)->assertJsonPath('data.0.user_id', $other->id);
         $this->getJson('/api/activity-logs/filters')->assertOk();
-        foreach (['user' => true, 'admin' => true, 'auditor' => true] as $role => $allowed) {
+        foreach (['user' => false, 'admin' => true, 'auditor' => true] as $role => $allowed) {
             $user->role = $role;
             $this->assertSame($allowed, Gate::forUser($user)->allows('view-activity-logs'));
         }

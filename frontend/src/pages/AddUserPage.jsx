@@ -1,20 +1,12 @@
-import MasterLayout from "../masterLayout/MasterLayout";
-import Breadcrumb from "../components/Breadcrumb";
-import AddUserLayer from "../components/AddUserLayer";
+import MasterLayout from '../masterLayout/MasterLayout';
+import ModulePageHeader from '../components/ModulePageHeader';
+import AddUserLayer from '../components/AddUserLayer';
 
-const AddUserPage = () => {
+export default function AddUserPage() {
   return (
-    <>
-      {/* MasterLayout */}
-      <MasterLayout>
-        {/* Breadcrumb */}
-        <Breadcrumb title='Add User' />
-
-        {/* AddUserLayer */}
-        <AddUserLayer />
-      </MasterLayout>
-    </>
+    <MasterLayout>
+      <ModulePageHeader title="Add User" />
+      <AddUserLayer />
+    </MasterLayout>
   );
-};
-
-export default AddUserPage;
+}

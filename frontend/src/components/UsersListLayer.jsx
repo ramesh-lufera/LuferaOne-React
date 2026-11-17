@@ -1,853 +1,339 @@
-import { Icon } from "@iconify/react/dist/iconify.js";
-import { Link } from "react-router-dom";
+import { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Icon } from '@iconify/react/dist/iconify.js';
+import { api } from '../services/api';
+import { clearToken } from '../helper/auth';
+import { useAccessUser } from '../helper/AccessContext';
+import { Modal } from 'react-bootstrap';
+import AddUserLayer from './AddUserLayer';
+import UserDetailsLayer from './UserDetailsLayer';
+import ModuleTable, {
+  ModuleTablePagination,
+  ModuleTableToolbar,
+} from './ModuleTable';
+import ModuleTableCell from './ModuleTableCell';
 
-const UsersListLayer = () => {
+const columns = [
+  { label: 'S.L', width: 64 },
+  { label: 'Name', width: 200 },
+  { label: 'Email', width: 260 },
+  { label: 'Username', width: 170 },
+  { label: 'Phone', width: 170 },
+  { label: 'Role', width: 170 },
+  { label: 'Join Date', width: 150 },
+  { label: 'Actions', width: 176, align: 'center' },
+];
+const emptyResult = { data: [], total: 0, from: 0, to: 0, last_page: 1 };
+const roleLabel = (role) =>
+  role === 'super_admin'
+    ? 'Super Admin'
+    : role.charAt(0).toUpperCase() + role.slice(1);
+
+export default function UsersListLayer() {
+  const actor = useAccessUser();
+  const navigate = useNavigate();
+  const [action, setAction] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [actionError, setActionError] = useState('');
+  const [notice, setNotice] = useState('');
+  const deletingRef = useRef(false);
+  const [result, setResult] = useState(emptyResult);
+  const [search, setSearch] = useState('');
+  const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [attempt, setAttempt] = useState(0);
+
+  useEffect(() => {
+    if (search === query) return;
+    const timeout = setTimeout(() => {
+      setQuery(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [search, query]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    setError('');
+    api(
+      `/users?search=${encodeURIComponent(query)}&page=${page}&per_page=${limit}`,
+      { signal: controller.signal },
+    )
+      .then((data) => {
+        if (controller.signal.aborted) return;
+        if (page > data.last_page) {
+          setPage(data.last_page);
+          return;
+        }
+        setResult(data);
+      })
+      .catch((error) => {
+        if (controller.signal.aborted) return;
+        setError(error.message);
+        setResult(emptyResult);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
+  }, [query, page, limit, attempt]);
+
+  const canManage = (user) =>
+    user.role === 'super_admin'
+      ? actor?.role === 'super_admin'
+      : user.role === 'admin'
+        ? ['admin', 'super_admin'].includes(actor?.role)
+        : true;
+  const openAction = (type, user) => {
+    setActionError('');
+    setAction({ type, user });
+  };
+  const saved = (data) => {
+    if (data.requires_reauthentication) {
+      clearToken();
+      navigate('/sign-in', { replace: true });
+      return;
+    }
+    setAction(null);
+    setNotice(data.message);
+    setAttempt((value) => value + 1);
+  };
+  const deleted = (data = {}) => {
+    if (data.requires_reauthentication) {
+      clearToken();
+      navigate('/sign-in', { replace: true });
+      return;
+    }
+    setAction(null);
+    setNotice('User deleted successfully.');
+    if (result.data.length === 1 && page > 1) setPage(page - 1);
+    else setAttempt((value) => value + 1);
+  };
+  const remove = async () => {
+    if (deletingRef.current) return;
+    deletingRef.current = true;
+    setBusy(true);
+    setActionError('');
+    try {
+      const data = await api(`/users/${action.user.id}`, { method: 'DELETE' });
+      deleted(data);
+    } catch (error) {
+      if (error.status === 404) deleted();
+      else setActionError(error.message);
+    } finally {
+      deletingRef.current = false;
+      setBusy(false);
+    }
+  };
+
   return (
-    <div className='card h-100 p-0 radius-12'>
-      <div className='card-header border-bottom bg-base py-16 px-24 d-flex align-items-center flex-wrap gap-3 justify-content-between'>
-        <div className='d-flex align-items-center flex-wrap gap-3'>
-          <span className='text-md fw-medium text-secondary-light mb-0'>
-            Show
-          </span>
-          <select
-            className='form-select form-select-sm w-auto ps-12 py-6 radius-12 h-40-px'
-            defaultValue='Select Number'
-          >
-            <option value='Select Number' disabled>
-              Select Number
-            </option>
-            <option value='1'>1</option>
-            <option value='2'>2</option>
-            <option value='3'>3</option>
-            <option value='4'>4</option>
-            <option value='5'>5</option>
-            <option value='6'>6</option>
-            <option value='7'>7</option>
-            <option value='8'>8</option>
-            <option value='9'>9</option>
-            <option value='10'>10</option>
-          </select>
-          <form className='navbar-search'>
-            <input
-              type='text'
-              className='bg-base h-40-px w-auto'
-              name='search'
-              placeholder='Search'
-            />
-            <Icon icon='ion:search-outline' className='icon' />
-          </form>
-          <select
-            className='form-select form-select-sm w-auto ps-12 py-6 radius-12 h-40-px'
-            defaultValue='Select Status'
-          >
-            <option value='Select Status' disabled>
-              Select Status
-            </option>
-            <option value='Active'>Active</option>
-            <option value='Inactive'>Inactive</option>
-          </select>
+    <>
+      {notice && (
+        <div className="alert alert-success" role="status">
+          {notice}
         </div>
-        <Link
-          to='/add-user'
-          className='btn btn-primary text-sm btn-sm px-12 py-12 radius-8 d-flex align-items-center gap-2'
-        >
-          <Icon
-            icon='ic:baseline-plus'
-            className='icon text-xl line-height-1'
+      )}
+      {error && (
+        <div className="alert alert-danger" role="alert">
+          {error}{' '}
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-danger"
+            onClick={() => setAttempt(attempt + 1)}
+          >
+            Try again
+          </button>
+        </div>
+      )}
+      <div className="card h-100 p-0 radius-12">
+        <ModuleTableToolbar
+          id="users-limit"
+          limit={limit}
+          onLimitChange={(value) => {
+            setLimit(value);
+            setPage(1);
+          }}
+          search={search}
+          searchLabel="Search users"
+          onSearchChange={setSearch}
+          actions={
+            <Link
+              to="/add-user"
+              className="btn btn-primary radius-8 d-flex align-items-center gap-2"
+            >
+              <Icon icon="ic:baseline-plus" aria-hidden="true" />
+              Add New User
+            </Link>
+          }
+        />
+        <div className="card-body p-24">
+          <ModuleTable columns={columns}>
+            {loading ? (
+              <tr>
+                <td colSpan={columns.length} role="status">
+                  Loading users...
+                </td>
+              </tr>
+            ) : result.data.length === 0 ? (
+              <tr>
+                <td colSpan={columns.length}>No users found.</td>
+              </tr>
+            ) : (
+              result.data.map((user, index) => (
+                <tr key={user.id}>
+                  <td>{result.from + index}</td>
+                  <td className="fw-medium">
+                    <ModuleTableCell id={`user-name-${user.id}`}>
+                      {user.name}
+                    </ModuleTableCell>
+                  </td>
+                  <td>
+                    <ModuleTableCell id={`user-email-${user.id}`}>
+                      {user.email}
+                    </ModuleTableCell>
+                  </td>
+                  <td>
+                    <ModuleTableCell id={`user-username-${user.id}`}>
+                      {user.username || '—'}
+                    </ModuleTableCell>
+                  </td>
+                  <td>
+                    <ModuleTableCell id={`user-phone-${user.id}`}>
+                      {user.phone || '—'}
+                    </ModuleTableCell>
+                  </td>
+                  <td>
+                    <ModuleTableCell id={`user-role-${user.id}`}>
+                      {roleLabel(user.role)}
+                    </ModuleTableCell>
+                  </td>
+                  <td>
+                    {user.created_at
+                      ? new Date(user.created_at).toLocaleDateString()
+                      : '—'}
+                  </td>
+                  <td className="text-center">
+                    <div className="d-flex align-items-center justify-content-center flex-nowrap gap-10">
+                      <button
+                        type="button"
+                        className="module-table-action bg-primary-50 text-primary-600 w-40-px h-40-px rounded-circle"
+                        aria-label={`View ${user.name}`}
+                        title="View user"
+                        onClick={() => openAction('view', user)}
+                      >
+                        <Icon icon="iconamoon:eye-light" aria-hidden="true" />
+                      </button>
+                      <button
+                        type="button"
+                        className="module-table-action bg-success-focus text-success-600 w-40-px h-40-px rounded-circle"
+                        aria-label={`Edit ${user.name}`}
+                        title="Edit user"
+                        disabled={!canManage(user)}
+                        onClick={() => openAction('edit', user)}
+                      >
+                        <Icon icon="lucide:edit" aria-hidden="true" />
+                      </button>
+                      <button
+                        type="button"
+                        className="module-table-action bg-danger-focus text-danger-600 w-40-px h-40-px rounded-circle"
+                        aria-label={`Delete ${user.name}`}
+                        title="Delete user"
+                        disabled={!canManage(user)}
+                        onClick={() => openAction('delete', user)}
+                      >
+                        <Icon
+                          icon="fluent:delete-24-regular"
+                          aria-hidden="true"
+                        />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </ModuleTable>
+          <ModuleTablePagination
+            page={page}
+            pages={result.last_page}
+            loading={loading || Boolean(error)}
+            from={result.from ?? 0}
+            to={result.to ?? 0}
+            total={result.total}
+            onPageChange={setPage}
+            label="User pages"
           />
-          Add New User
-        </Link>
-      </div>
-      <div className='card-body p-24'>
-        <div className='table-responsive scroll-sm'>
-          <table className='table bordered-table sm-table mb-0'>
-            <thead>
-              <tr>
-                <th scope='col'>
-                  <div className='d-flex align-items-center gap-10'>
-                    <div className='form-check style-check d-flex align-items-center'>
-                      <input
-                        className='form-check-input radius-4 border input-form-dark'
-                        type='checkbox'
-                        name='checkbox'
-                        id='selectAll'
-                      />
-                    </div>
-                    S.L
-                  </div>
-                </th>
-                <th scope='col'>Join Date</th>
-                <th scope='col'>Name</th>
-                <th scope='col'>Email</th>
-                <th scope='col'>Department</th>
-                <th scope='col'>Designation</th>
-                <th scope='col' className='text-center'>
-                  Status
-                </th>
-                <th scope='col' className='text-center'>
-                  Action
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>
-                  <div className='d-flex align-items-center gap-10'>
-                    <div className='form-check style-check d-flex align-items-center'>
-                      <input
-                        className='form-check-input radius-4 border border-neutral-400'
-                        type='checkbox'
-                        name='checkbox'
-                      />
-                    </div>
-                    01
-                  </div>
-                </td>
-                <td>25 Jan 2024</td>
-                <td>
-                  <div className='d-flex align-items-center'>
-                    <img
-                      src='assets/images/user-list/user-list1.png'
-                      alt='Wowdash'
-                      className='w-40-px h-40-px rounded-circle flex-shrink-0 me-12 overflow-hidden'
-                    />
-                    <div className='flex-grow-1'>
-                      <span className='text-md mb-0 fw-normal text-secondary-light'>
-                        Kathryn Murphy
-                      </span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <span className='text-md mb-0 fw-normal text-secondary-light'>
-                    osgoodwy@gmail.com
-                  </span>
-                </td>
-                <td>HR</td>
-                <td>Manager</td>
-                <td className='text-center'>
-                  <span className='bg-success-focus text-success-600 border border-success-main px-24 py-4 radius-4 fw-medium text-sm'>
-                    Active
-                  </span>
-                </td>
-                <td className='text-center'>
-                  <div className='d-flex align-items-center gap-10 justify-content-center'>
-                    <button
-                      type='button'
-                      className='bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='majesticons:eye-line'
-                        className='icon text-xl'
-                      />
-                    </button>
-                    <button
-                      type='button'
-                      className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon icon='lucide:edit' className='menu-icon' />
-                    </button>
-                    <button
-                      type='button'
-                      className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='fluent:delete-24-regular'
-                        className='menu-icon'
-                      />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <div className='d-flex align-items-center gap-10'>
-                    <div className='form-check style-check d-flex align-items-center'>
-                      <input
-                        className='form-check-input radius-4 border border-neutral-400'
-                        type='checkbox'
-                        name='checkbox'
-                      />
-                    </div>
-                    02
-                  </div>
-                </td>
-                <td>25 Jan 2024</td>
-                <td>
-                  <div className='d-flex align-items-center'>
-                    <img
-                      src='assets/images/user-list/user-list2.png'
-                      alt='Wowdash'
-                      className='w-40-px h-40-px rounded-circle flex-shrink-0 me-12 overflow-hidden'
-                    />
-                    <div className='flex-grow-1'>
-                      <span className='text-md mb-0 fw-normal text-secondary-light'>
-                        Annette Black
-                      </span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <span className='text-md mb-0 fw-normal text-secondary-light'>
-                    redaniel@gmail.com
-                  </span>
-                </td>
-                <td>Design</td>
-                <td>UI UX Designer</td>
-                <td className='text-center'>
-                  <span className='bg-neutral-200 text-neutral-600 border border-neutral-400 px-24 py-4 radius-4 fw-medium text-sm'>
-                    Inactive
-                  </span>
-                </td>
-                <td className='text-center'>
-                  <div className='d-flex align-items-center gap-10 justify-content-center'>
-                    <button
-                      type='button'
-                      className='bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='majesticons:eye-line'
-                        className='icon text-xl'
-                      />
-                    </button>
-                    <button
-                      type='button'
-                      className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon icon='lucide:edit' className='menu-icon' />
-                    </button>
-                    <button
-                      type='button'
-                      className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='fluent:delete-24-regular'
-                        className='menu-icon'
-                      />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <div className='d-flex align-items-center gap-10'>
-                    <div className='form-check style-check d-flex align-items-center'>
-                      <input
-                        className='form-check-input radius-4 border border-neutral-400'
-                        type='checkbox'
-                        name='checkbox'
-                      />
-                    </div>
-                    03
-                  </div>
-                </td>
-                <td>10 Feb 2024</td>
-                <td>
-                  <div className='d-flex align-items-center'>
-                    <img
-                      src='assets/images/user-list/user-list3.png'
-                      alt='Wowdash'
-                      className='w-40-px h-40-px rounded-circle flex-shrink-0 me-12 overflow-hidden'
-                    />
-                    <div className='flex-grow-1'>
-                      <span className='text-md mb-0 fw-normal text-secondary-light'>
-                        Ronald Richards
-                      </span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <span className='text-md mb-0 fw-normal text-secondary-light'>
-                    seannand@mail.ru
-                  </span>
-                </td>
-                <td>Design</td>
-                <td>UI UX Designer</td>
-                <td className='text-center'>
-                  <span className='bg-success-focus text-success-600 border border-success-main px-24 py-4 radius-4 fw-medium text-sm'>
-                    Active
-                  </span>
-                </td>
-                <td className='text-center'>
-                  <div className='d-flex align-items-center gap-10 justify-content-center'>
-                    <button
-                      type='button'
-                      className='bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='majesticons:eye-line'
-                        className='icon text-xl'
-                      />
-                    </button>
-                    <button
-                      type='button'
-                      className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon icon='lucide:edit' className='menu-icon' />
-                    </button>
-                    <button
-                      type='button'
-                      className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='fluent:delete-24-regular'
-                        className='menu-icon'
-                      />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <div className='d-flex align-items-center gap-10'>
-                    <div className='form-check style-check d-flex align-items-center'>
-                      <input
-                        className='form-check-input radius-4 border border-neutral-400'
-                        type='checkbox'
-                        name='checkbox'
-                      />
-                    </div>
-                    04
-                  </div>
-                </td>
-                <td>10 Feb 2024</td>
-                <td>
-                  <div className='d-flex align-items-center'>
-                    <img
-                      src='assets/images/user-list/user-list4.png'
-                      alt='Wowdash'
-                      className='w-40-px h-40-px rounded-circle flex-shrink-0 me-12 overflow-hidden'
-                    />
-                    <div className='flex-grow-1'>
-                      <span className='text-md mb-0 fw-normal text-secondary-light'>
-                        Eleanor Pena
-                      </span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <span className='text-md mb-0 fw-normal text-secondary-light'>
-                    miyokoto@mail.ru
-                  </span>
-                </td>
-                <td>Design</td>
-                <td>UI UX Designer</td>
-                <td className='text-center'>
-                  <span className='bg-success-focus text-success-600 border border-success-main px-24 py-4 radius-4 fw-medium text-sm'>
-                    Active
-                  </span>
-                </td>
-                <td className='text-center'>
-                  <div className='d-flex align-items-center gap-10 justify-content-center'>
-                    <button
-                      type='button'
-                      className='bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='majesticons:eye-line'
-                        className='icon text-xl'
-                      />
-                    </button>
-                    <button
-                      type='button'
-                      className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon icon='lucide:edit' className='menu-icon' />
-                    </button>
-                    <button
-                      type='button'
-                      className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='fluent:delete-24-regular'
-                        className='menu-icon'
-                      />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <div className='d-flex align-items-center gap-10'>
-                    <div className='form-check style-check d-flex align-items-center'>
-                      <input
-                        className='form-check-input radius-4 border border-neutral-400'
-                        type='checkbox'
-                        name='checkbox'
-                      />
-                    </div>
-                    05
-                  </div>
-                </td>
-                <td>15 March 2024</td>
-                <td>
-                  <div className='d-flex align-items-center'>
-                    <img
-                      src='assets/images/user-list/user-list5.png'
-                      alt='Wowdash'
-                      className='w-40-px h-40-px rounded-circle flex-shrink-0 me-12 overflow-hidden'
-                    />
-                    <div className='flex-grow-1'>
-                      <span className='text-md mb-0 fw-normal text-secondary-light'>
-                        Leslie Alexander
-                      </span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <span className='text-md mb-0 fw-normal text-secondary-light'>
-                    icadahli@gmail.com
-                  </span>
-                </td>
-                <td>Design</td>
-                <td>UI UX Designer</td>
-                <td className='text-center'>
-                  <span className='bg-neutral-200 text-neutral-600 border border-neutral-400 px-24 py-4 radius-4 fw-medium text-sm'>
-                    Inactive
-                  </span>
-                </td>
-                <td className='text-center'>
-                  <div className='d-flex align-items-center gap-10 justify-content-center'>
-                    <button
-                      type='button'
-                      className='bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='majesticons:eye-line'
-                        className='icon text-xl'
-                      />
-                    </button>
-                    <button
-                      type='button'
-                      className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon icon='lucide:edit' className='menu-icon' />
-                    </button>
-                    <button
-                      type='button'
-                      className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='fluent:delete-24-regular'
-                        className='menu-icon'
-                      />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <div className='d-flex align-items-center gap-10'>
-                    <div className='form-check style-check d-flex align-items-center'>
-                      <input
-                        className='form-check-input radius-4 border border-neutral-400'
-                        type='checkbox'
-                        name='checkbox'
-                      />
-                    </div>
-                    06
-                  </div>
-                </td>
-                <td>15 March 2024</td>
-                <td>
-                  <div className='d-flex align-items-center'>
-                    <img
-                      src='assets/images/user-list/user-list6.png'
-                      alt='Wowdash'
-                      className='w-40-px h-40-px rounded-circle flex-shrink-0 me-12 overflow-hidden'
-                    />
-                    <div className='flex-grow-1'>
-                      <span className='text-md mb-0 fw-normal text-secondary-light'>
-                        Albert Flores
-                      </span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <span className='text-md mb-0 fw-normal text-secondary-light'>
-                    warn@mail.ru
-                  </span>
-                </td>
-                <td>Design</td>
-                <td>UI UX Designer</td>
-                <td className='text-center'>
-                  <span className='bg-success-focus text-success-600 border border-success-main px-24 py-4 radius-4 fw-medium text-sm'>
-                    Active
-                  </span>
-                </td>
-                <td className='text-center'>
-                  <div className='d-flex align-items-center gap-10 justify-content-center'>
-                    <button
-                      type='button'
-                      className='bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='majesticons:eye-line'
-                        className='icon text-xl'
-                      />
-                    </button>
-                    <button
-                      type='button'
-                      className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon icon='lucide:edit' className='menu-icon' />
-                    </button>
-                    <button
-                      type='button'
-                      className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='fluent:delete-24-regular'
-                        className='menu-icon'
-                      />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <div className='d-flex align-items-center gap-10'>
-                    <div className='form-check style-check d-flex align-items-center'>
-                      <input
-                        className='form-check-input radius-4 border border-neutral-400'
-                        type='checkbox'
-                        name='checkbox'
-                      />
-                    </div>
-                    07
-                  </div>
-                </td>
-                <td>27 April 2024</td>
-                <td>
-                  <div className='d-flex align-items-center'>
-                    <img
-                      src='assets/images/user-list/user-list7.png'
-                      alt='Wowdash'
-                      className='w-40-px h-40-px rounded-circle flex-shrink-0 me-12 overflow-hidden'
-                    />
-                    <div className='flex-grow-1'>
-                      <span className='text-md mb-0 fw-normal text-secondary-light'>
-                        Jacob Jones
-                      </span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <span className='text-md mb-0 fw-normal text-secondary-light'>
-                    zitka@mail.ru
-                  </span>
-                </td>
-                <td>Development</td>
-                <td>Frontend developer</td>
-                <td className='text-center'>
-                  <span className='bg-success-focus text-success-600 border border-success-main px-24 py-4 radius-4 fw-medium text-sm'>
-                    Active
-                  </span>
-                </td>
-                <td className='text-center'>
-                  <div className='d-flex align-items-center gap-10 justify-content-center'>
-                    <button
-                      type='button'
-                      className='bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='majesticons:eye-line'
-                        className='icon text-xl'
-                      />
-                    </button>
-                    <button
-                      type='button'
-                      className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon icon='lucide:edit' className='menu-icon' />
-                    </button>
-                    <button
-                      type='button'
-                      className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='fluent:delete-24-regular'
-                        className='menu-icon'
-                      />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <div className='d-flex align-items-center gap-10'>
-                    <div className='form-check style-check d-flex align-items-center'>
-                      <input
-                        className='form-check-input radius-4 border border-neutral-400'
-                        type='checkbox'
-                        name='checkbox'
-                      />
-                    </div>
-                    08
-                  </div>
-                </td>
-                <td>25 Jan 2024</td>
-                <td>
-                  <div className='d-flex align-items-center'>
-                    <img
-                      src='assets/images/user-list/user-list8.png'
-                      alt='Wowdash'
-                      className='w-40-px h-40-px rounded-circle flex-shrink-0 me-12 overflow-hidden'
-                    />
-                    <div className='flex-grow-1'>
-                      <span className='text-md mb-0 fw-normal text-secondary-light'>
-                        Jerome Bell
-                      </span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <span className='text-md mb-0 fw-normal text-secondary-light'>
-                    igerrin@gmail.com
-                  </span>
-                </td>
-                <td>Development</td>
-                <td>Frontend developer</td>
-                <td className='text-center'>
-                  <span className='bg-neutral-200 text-neutral-600 border border-neutral-400 px-24 py-4 radius-4 fw-medium text-sm'>
-                    Inactive
-                  </span>
-                </td>
-                <td className='text-center'>
-                  <div className='d-flex align-items-center gap-10 justify-content-center'>
-                    <button
-                      type='button'
-                      className='bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='majesticons:eye-line'
-                        className='icon text-xl'
-                      />
-                    </button>
-                    <button
-                      type='button'
-                      className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon icon='lucide:edit' className='menu-icon' />
-                    </button>
-                    <button
-                      type='button'
-                      className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='fluent:delete-24-regular'
-                        className='menu-icon'
-                      />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <div className='d-flex align-items-center gap-10'>
-                    <div className='form-check style-check d-flex align-items-center'>
-                      <input
-                        className='form-check-input radius-4 border border-neutral-400'
-                        type='checkbox'
-                        name='checkbox'
-                      />
-                    </div>
-                    09
-                  </div>
-                </td>
-                <td>30 April 2024</td>
-                <td>
-                  <div className='d-flex align-items-center'>
-                    <img
-                      src='assets/images/user-list/user-list2.png'
-                      alt='Wowdash'
-                      className='w-40-px h-40-px rounded-circle flex-shrink-0 me-12 overflow-hidden'
-                    />
-                    <div className='flex-grow-1'>
-                      <span className='text-md mb-0 fw-normal text-secondary-light'>
-                        Marvin McKinney
-                      </span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <span className='text-md mb-0 fw-normal text-secondary-light'>
-                    maka@yandex.ru
-                  </span>
-                </td>
-                <td>Development</td>
-                <td>Frontend developer</td>
-                <td className='text-center'>
-                  <span className='bg-success-focus text-success-600 border border-success-main px-24 py-4 radius-4 fw-medium text-sm'>
-                    Active
-                  </span>
-                </td>
-                <td className='text-center'>
-                  <div className='d-flex align-items-center gap-10 justify-content-center'>
-                    <button
-                      type='button'
-                      className='bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='majesticons:eye-line'
-                        className='icon text-xl'
-                      />
-                    </button>
-                    <button
-                      type='button'
-                      className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon icon='lucide:edit' className='menu-icon' />
-                    </button>
-                    <button
-                      type='button'
-                      className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='fluent:delete-24-regular'
-                        className='menu-icon'
-                      />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <div className='d-flex align-items-center gap-10'>
-                    <div className='form-check style-check d-flex align-items-center'>
-                      <input
-                        className='form-check-input radius-4 border border-neutral-400'
-                        type='checkbox'
-                        name='checkbox'
-                      />
-                    </div>
-                    10
-                  </div>
-                </td>
-                <td>30 April 2024</td>
-                <td>
-                  <div className='d-flex align-items-center'>
-                    <img
-                      src='assets/images/user-list/user-list10.png'
-                      alt='Wowdash'
-                      className='w-40-px h-40-px rounded-circle flex-shrink-0 me-12 overflow-hidden'
-                    />
-                    <div className='flex-grow-1'>
-                      <span className='text-md mb-0 fw-normal text-secondary-light'>
-                        Cameron Williamson
-                      </span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <span className='text-md mb-0 fw-normal text-secondary-light'>
-                    danten@mail.ru
-                  </span>
-                </td>
-                <td>Development</td>
-                <td>Frontend developer</td>
-                <td className='text-center'>
-                  <span className='bg-success-focus text-success-600 border border-success-main px-24 py-4 radius-4 fw-medium text-sm'>
-                    Active
-                  </span>
-                </td>
-                <td className='text-center'>
-                  <div className='d-flex align-items-center gap-10 justify-content-center'>
-                    <button
-                      type='button'
-                      className='bg-info-focus bg-hover-info-200 text-info-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='majesticons:eye-line'
-                        className='icon text-xl'
-                      />
-                    </button>
-                    <button
-                      type='button'
-                      className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon icon='lucide:edit' className='menu-icon' />
-                    </button>
-                    <button
-                      type='button'
-                      className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                    >
-                      <Icon
-                        icon='fluent:delete-24-regular'
-                        className='menu-icon'
-                      />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div className='d-flex align-items-center justify-content-between flex-wrap gap-2 mt-24'>
-          <span>Showing 1 to 10 of 12 entries</span>
-          <ul className='pagination d-flex flex-wrap align-items-center gap-2 justify-content-center'>
-            <li className='page-item'>
-              <Link
-                className='page-link bg-neutral-200 text-secondary-light fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px  text-md'
-                to='#'
-              >
-                <Icon icon='ep:d-arrow-left' className='' />
-              </Link>
-            </li>
-            <li className='page-item'>
-              <Link
-                className='page-link text-secondary-light fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px w-32-px text-md bg-primary-600 text-white'
-                to='#'
-              >
-                1
-              </Link>
-            </li>
-            <li className='page-item'>
-              <Link
-                className='page-link bg-neutral-200 text-secondary-light fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px w-32-px'
-                to='#'
-              >
-                2
-              </Link>
-            </li>
-            <li className='page-item'>
-              <Link
-                className='page-link bg-neutral-200 text-secondary-light fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px w-32-px text-md'
-                to='#'
-              >
-                3
-              </Link>
-            </li>
-            <li className='page-item'>
-              <Link
-                className='page-link bg-neutral-200 text-secondary-light fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px w-32-px text-md'
-                to='#'
-              >
-                4
-              </Link>
-            </li>
-            <li className='page-item'>
-              <Link
-                className='page-link bg-neutral-200 text-secondary-light fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px w-32-px text-md'
-                to='#'
-              >
-                5
-              </Link>
-            </li>
-            <li className='page-item'>
-              <Link
-                className='page-link bg-neutral-200 text-secondary-light fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px  text-md'
-                to='#'
-              >
-                {" "}
-                <Icon icon='ep:d-arrow-right' className='' />{" "}
-              </Link>
-            </li>
-          </ul>
         </div>
       </div>
-    </div>
+      <Modal
+        show={Boolean(action)}
+        onHide={() => !busy && setAction(null)}
+        size={action?.type === 'delete' ? undefined : 'lg'}
+        centered
+        scrollable
+        aria-labelledby="user-action-title"
+      >
+        <Modal.Header closeButton={!busy}>
+          <Modal.Title as="h1" className="fs-5" id="user-action-title">
+            {action?.type === 'edit'
+              ? 'Edit User'
+              : action?.type === 'delete'
+                ? 'Delete User'
+                : 'User Details'}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body className={action?.type === 'edit' ? 'p-0' : 'p-24'}>
+          {action?.type === 'view' && (
+            <UserDetailsLayer key={action.user.id} userId={action.user.id} />
+          )}
+          {action?.type === 'edit' && (
+            <AddUserLayer
+              key={action.user.id}
+              userId={action.user.id}
+              onSaved={saved}
+              onSavingChange={setBusy}
+            />
+          )}
+          {action?.type === 'delete' && (
+            <>
+              {actionError && (
+                <div className="alert alert-danger" role="alert">
+                  {actionError}
+                </div>
+              )}
+              <p>
+                Delete {action.user.name}? This removes their account and
+                profile details.
+              </p>
+            </>
+          )}
+        </Modal.Body>
+        {action?.type !== 'edit' && (
+          <Modal.Footer>
+            <button
+              type="button"
+              className="btn btn-outline-primary"
+              disabled={busy}
+              onClick={() => setAction(null)}
+            >
+              {action?.type === 'delete' ? 'Cancel' : 'Close'}
+            </button>
+            {action?.type === 'delete' && (
+              <button
+                type="button"
+                className="btn btn-danger"
+                disabled={busy}
+                onClick={remove}
+              >
+                {busy ? 'Deleting...' : 'Delete User'}
+              </button>
+            )}
+          </Modal.Footer>
+        )}
+      </Modal>
+    </>
   );
-};
-
-export default UsersListLayer;
+}

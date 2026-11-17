@@ -1,733 +1,497 @@
-import { Icon } from "@iconify/react/dist/iconify.js";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from 'react';
+import { Icon } from '@iconify/react/dist/iconify.js';
+import { Modal } from 'react-bootstrap';
+import { api } from '../services/api';
+import './RoleAccessLayer.css';
+import ModuleTable, {
+  ModuleTablePagination,
+  ModuleTableToolbar,
+} from './ModuleTable';
+import ModuleTableCell from './ModuleTableCell';
 
-const RoleAccessLayer = () => {
+const emptyRole = { name: '', description: '', active: true, modules: [] };
+
+const roleColumns = [
+  { label: 'S.L', width: 64 },
+  { label: 'Role', width: 150 },
+  { label: 'Description', width: 240 },
+  { label: 'Modules', width: 260 },
+  { label: 'Status', width: 150, align: 'center' },
+  { label: 'Action', width: 128, align: 'center' },
+];
+
+export default function RoleAccessLayer() {
+  const [roles, setRoles] = useState([]);
+  const [modules, setModules] = useState({});
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('');
+  const [limit, setLimit] = useState(10);
+  const [page, setPage] = useState(1);
+  const [draft, setDraft] = useState(null);
+  const [step, setStep] = useState(1);
+  const [deleting, setDeleting] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [formError, setFormError] = useState('');
+  const [notice, setNotice] = useState('');
+
+  const load = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await api('/roles');
+      setRoles(data.roles);
+      setModules(data.modules);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    load();
+  }, []);
+
+  const save = async (event) => {
+    event.preventDefault();
+    if (step === 1) {
+      if (!draft.name.trim()) {
+        setFormError('Role Name is required.');
+        return;
+      }
+      setFormError('');
+      setStep(2);
+      return;
+    }
+    setSaving(true);
+    setFormError('');
+    try {
+      await api(draft.id ? `/roles/${draft.id}` : '/roles', {
+        method: draft.id ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: draft.name,
+          description: draft.description,
+          active: draft.active,
+          modules: draft.modules,
+        }),
+      });
+      setDraft(null);
+      setNotice(draft.id ? 'Role updated.' : 'Role saved.');
+      await load();
+    } catch (error) {
+      if (
+        ['name', 'description', 'active'].some((field) => error.errors?.[field])
+      ) {
+        setStep(1);
+      }
+      setFormError(
+        Object.values(error.errors || {})
+          .flat()
+          .join(' ') || error.message,
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+  const remove = async () => {
+    setSaving(true);
+    setFormError('');
+    try {
+      await api(`/roles/${deleting.id}`, { method: 'DELETE' });
+      setDeleting(null);
+      setNotice('Role deleted.');
+      await load();
+    } catch (error) {
+      setFormError(error.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+  const filtered = roles.filter(
+    (role) =>
+      `${role.name} ${role.description || ''}`
+        .toLowerCase()
+        .includes(search.toLowerCase()) &&
+      (status === '' || String(role.active) === status),
+  );
+  const pages = Math.max(1, Math.ceil(filtered.length / limit));
+  const currentPage = Math.min(page, pages);
+  const start = (currentPage - 1) * limit;
+  const shown = filtered.slice(start, start + limit);
+  const edit = (role) => {
+    setStep(1);
+    setFormError('');
+    setDraft({ ...role, modules: [...role.modules] });
+  };
+
   return (
     <>
-      <div className='card h-100 p-0 radius-12'>
-        <div className='card-header border-bottom bg-base py-16 px-24 d-flex align-items-center flex-wrap gap-3 justify-content-between'>
-          <div className='d-flex align-items-center flex-wrap gap-3'>
-            <span className='text-md fw-medium text-secondary-light mb-0'>
-              Show
-            </span>
-            <select
-              className='form-select form-select-sm w-auto ps-12 py-6 radius-12 h-40-px'
-              defaultValue='Select Number'
-            >
-              <option value='Select Number' disabled>
-                Select Number
-              </option>
-              <option value='1'>1</option>
-              <option value='2'>2</option>
-              <option value='3'>3</option>
-              <option value='4'>4</option>
-              <option value='5'>5</option>
-              <option value='6'>6</option>
-              <option value='7'>7</option>
-              <option value='8'>8</option>
-              <option value='9'>9</option>
-              <option value='10'>10</option>
-            </select>
-            <form className='navbar-search'>
-              <input
-                type='text'
-                className='bg-base h-40-px w-auto'
-                name='search'
-                placeholder='Search'
-              />
-              <Icon icon='ion:search-outline' className='icon' />
-            </form>
-            <select
-              className='form-select form-select-sm w-auto ps-12 py-6 radius-12 h-40-px'
-              defaultValue='Select Status'
-            >
-              <option value='Select Status' disabled>
-                Select Status
-              </option>
-              <option value='Active'>Active</option>
-              <option value='Inactive'>Inactive</option>
-            </select>
-          </div>
-          <button
-            type='button'
-            className='btn btn-primary text-sm btn-sm px-12 py-12 radius-8 d-flex align-items-center gap-2'
-            data-bs-toggle='modal'
-            data-bs-target='#exampleModal'
-          >
-            <Icon
-              icon='ic:baseline-plus'
-              className='icon text-xl line-height-1'
-            />
-            Add New Role
+      {notice && (
+        <div className="alert alert-success" role="status">
+          {notice}
+        </div>
+      )}
+      {error && (
+        <div className="alert alert-danger" role="alert">
+          {error}{' '}
+          <button className="btn btn-sm btn-outline-danger" onClick={load}>
+            Try again
           </button>
         </div>
-        <div className='card-body p-24'>
-          <div className='table-responsive scroll-sm'>
-            <table className='table bordered-table sm-table mb-0'>
-              <thead>
-                <tr>
-                  <th scope='col'>
-                    <div className='d-flex align-items-center gap-10'>
-                      <div className='form-check style-check d-flex align-items-center'>
-                        <input
-                          className='form-check-input radius-4 border input-form-dark'
-                          type='checkbox'
-                          name='checkbox'
-                          id='selectAll'
-                        />
-                      </div>
-                      S.L
-                    </div>
-                  </th>
-                  <th scope='col'>Create Date</th>
-                  <th scope='col'>Role </th>
-                  <th scope='col'>Description</th>
-                  <th scope='col' className='text-center'>
-                    Status
-                  </th>
-                  <th scope='col' className='text-center'>
-                    Action
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>
-                    <div className='d-flex align-items-center gap-10'>
-                      <div className='form-check style-check d-flex align-items-center'>
-                        <input
-                          className='form-check-input radius-4 border border-neutral-400'
-                          type='checkbox'
-                          name='checkbox'
-                        />
-                      </div>
-                      01
-                    </div>
+      )}
+      <div className="card h-100 p-0 radius-12">
+        <ModuleTableToolbar
+          id="role-limit"
+          limit={limit}
+          onLimitChange={(value) => {
+            setLimit(value);
+            setPage(1);
+          }}
+          search={search}
+          searchLabel="Search roles"
+          onSearchChange={(value) => {
+            setSearch(value);
+            setPage(1);
+          }}
+          filters={
+            <select
+              className="form-select w-auto"
+              aria-label="Filter role status"
+              value={status}
+              onChange={(event) => {
+                setStatus(event.target.value);
+                setPage(1);
+              }}
+            >
+              <option value="">All statuses</option>
+              <option value="true">Active</option>
+              <option value="false">Inactive</option>
+            </select>
+          }
+          actions={
+            <button
+              className="btn btn-primary radius-8 d-flex align-items-center gap-2"
+              onClick={() => edit(emptyRole)}
+            >
+              <Icon icon="ic:baseline-plus" />
+              Add New Role
+            </button>
+          }
+        />
+        <div className="card-body p-24">
+          <ModuleTable columns={roleColumns}>
+            {loading ? (
+              <tr>
+                <td colSpan={6} role="status">
+                  Loading roles...
+                </td>
+              </tr>
+            ) : shown.length === 0 ? (
+              <tr>
+                <td colSpan={6}>No roles found.</td>
+              </tr>
+            ) : (
+              shown.map((role, index) => (
+                <tr key={role.id}>
+                  <td>{start + index + 1}</td>
+                  <td className="fw-medium">
+                    {role.name === 'super_admin'
+                      ? 'Super Admin'
+                      : role.name.charAt(0).toUpperCase() + role.name.slice(1)}
                   </td>
-                  <td>25 Jan 2024</td>
-                  <td>Test</td>
                   <td>
-                    <p className='max-w-500-px'>
-                      Lorem Ipsum is simply dummy text of the printing and
-                      typesetting
-                    </p>
+                    <ModuleTableCell id={`role-description-${role.id}`}>
+                      {role.description || '—'}
+                    </ModuleTableCell>
                   </td>
-                  <td className='text-center'>
-                    <span className='bg-success-focus text-success-600 border border-success-main px-24 py-4 radius-4 fw-medium text-sm'>
-                      Active
+                  <td>
+                    <ModuleTableCell id={`role-modules-${role.id}`}>
+                      {role.modules.includes('*')
+                        ? 'All modules'
+                        : role.modules
+                            .map((key) => modules[key]?.label || key)
+                            .join(', ') || 'No modules'}
+                    </ModuleTableCell>
+                  </td>
+                  <td className="text-center">
+                    <span
+                      className={`${role.active ? 'bg-success-focus text-success-600' : 'bg-danger-focus text-danger-600'} px-24 py-4 radius-4 fw-medium text-sm`}
+                    >
+                      {role.active ? 'Active' : 'Inactive'}
                     </span>
                   </td>
-                  <td className='text-center'>
-                    <div className='d-flex align-items-center gap-10 justify-content-center'>
+                  <td>
+                    <div className="d-flex align-items-center gap-10 justify-content-center flex-nowrap">
                       <button
-                        type='button'
-                        className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
+                        aria-label={`Edit ${role.name}`}
+                        disabled={['admin', 'super_admin'].includes(role.name)}
+                        onClick={() => edit(role)}
+                        className="module-table-action bg-success-focus text-success-600 w-40-px h-40-px rounded-circle"
                       >
-                        <Icon icon='lucide:edit' className='menu-icon' />
+                        <Icon icon="lucide:edit" />
                       </button>
                       <button
-                        type='button'
-                        className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
+                        aria-label={`Delete ${role.name}`}
+                        disabled={
+                          ['super_admin', 'admin', 'user', 'auditor'].includes(
+                            role.name,
+                          ) || role.users_count > 0
+                        }
+                        onClick={() => {
+                          setFormError('');
+                          setDeleting(role);
+                        }}
+                        className="module-table-action bg-danger-focus text-danger-600 w-40-px h-40-px rounded-circle"
                       >
-                        <Icon
-                          icon='fluent:delete-24-regular'
-                          className='menu-icon'
-                        />
+                        <Icon icon="fluent:delete-24-regular" />
                       </button>
                     </div>
                   </td>
                 </tr>
-                <tr>
-                  <td>
-                    <div className='d-flex align-items-center gap-10'>
-                      <div className='form-check style-check d-flex align-items-center'>
-                        <input
-                          className='form-check-input radius-4 border border-neutral-400'
-                          type='checkbox'
-                          name='checkbox'
-                        />
-                      </div>
-                      02
-                    </div>
-                  </td>
-                  <td>25 Jan 2024</td>
-                  <td>Waiter</td>
-                  <td>
-                    <p className='max-w-500-px'>
-                      Lorem Ipsum is simply dummy text of the printing and
-                      typesetting
-                    </p>
-                  </td>
-                  <td className='text-center'>
-                    <span className='bg-danger-focus text-danger-600 border border-danger-main px-24 py-4 radius-4 fw-medium text-sm'>
-                      Inactive
-                    </span>
-                  </td>
-                  <td className='text-center'>
-                    <div className='d-flex align-items-center gap-10 justify-content-center'>
-                      <button
-                        type='button'
-                        className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                      >
-                        <Icon icon='lucide:edit' className='menu-icon' />
-                      </button>
-                      <button
-                        type='button'
-                        className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                      >
-                        <Icon
-                          icon='fluent:delete-24-regular'
-                          className='menu-icon'
-                        />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td>
-                    <div className='d-flex align-items-center gap-10'>
-                      <div className='form-check style-check d-flex align-items-center'>
-                        <input
-                          className='form-check-input radius-4 border border-neutral-400'
-                          type='checkbox'
-                          name='checkbox'
-                        />
-                      </div>
-                      03
-                    </div>
-                  </td>
-                  <td>10 Feb 2024</td>
-                  <td>Manager</td>
-                  <td>
-                    <p className='max-w-500-px'>
-                      Lorem Ipsum is simply dummy text of the printing and
-                      typesetting
-                    </p>
-                  </td>
-                  <td className='text-center'>
-                    <span className='bg-success-focus text-success-600 border border-success-main px-24 py-4 radius-4 fw-medium text-sm'>
-                      Active
-                    </span>
-                  </td>
-                  <td className='text-center'>
-                    <div className='d-flex align-items-center gap-10 justify-content-center'>
-                      <button
-                        type='button'
-                        className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                      >
-                        <Icon icon='lucide:edit' className='menu-icon' />
-                      </button>
-                      <button
-                        type='button'
-                        className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                      >
-                        <Icon
-                          icon='fluent:delete-24-regular'
-                          className='menu-icon'
-                        />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td>
-                    <div className='d-flex align-items-center gap-10'>
-                      <div className='form-check style-check d-flex align-items-center'>
-                        <input
-                          className='form-check-input radius-4 border border-neutral-400'
-                          type='checkbox'
-                          name='checkbox'
-                        />
-                      </div>
-                      04
-                    </div>
-                  </td>
-                  <td>10 Feb 2024</td>
-                  <td>Project Manager</td>
-                  <td>
-                    <p className='max-w-500-px'>
-                      Lorem Ipsum is simply dummy text of the printing and
-                      typesetting
-                    </p>
-                  </td>
-                  <td className='text-center'>
-                    <span className='bg-success-focus text-success-600 border border-success-main px-24 py-4 radius-4 fw-medium text-sm'>
-                      Active
-                    </span>
-                  </td>
-                  <td className='text-center'>
-                    <div className='d-flex align-items-center gap-10 justify-content-center'>
-                      <button
-                        type='button'
-                        className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                      >
-                        <Icon icon='lucide:edit' className='menu-icon' />
-                      </button>
-                      <button
-                        type='button'
-                        className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                      >
-                        <Icon
-                          icon='fluent:delete-24-regular'
-                          className='menu-icon'
-                        />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td>
-                    <div className='d-flex align-items-center gap-10'>
-                      <div className='form-check style-check d-flex align-items-center'>
-                        <input
-                          className='form-check-input radius-4 border border-neutral-400'
-                          type='checkbox'
-                          name='checkbox'
-                        />
-                      </div>
-                      05
-                    </div>
-                  </td>
-                  <td>15 March 2024</td>
-                  <td>Game Developer</td>
-                  <td>
-                    <p className='max-w-500-px'>
-                      Lorem Ipsum is simply dummy text of the printing and
-                      typesetting
-                    </p>
-                  </td>
-                  <td className='text-center'>
-                    <span className='bg-danger-focus text-danger-600 border border-danger-main px-24 py-4 radius-4 fw-medium text-sm'>
-                      Inactive
-                    </span>
-                  </td>
-                  <td className='text-center'>
-                    <div className='d-flex align-items-center gap-10 justify-content-center'>
-                      <button
-                        type='button'
-                        className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                      >
-                        <Icon icon='lucide:edit' className='menu-icon' />
-                      </button>
-                      <button
-                        type='button'
-                        className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                      >
-                        <Icon
-                          icon='fluent:delete-24-regular'
-                          className='menu-icon'
-                        />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td>
-                    <div className='d-flex align-items-center gap-10'>
-                      <div className='form-check style-check d-flex align-items-center'>
-                        <input
-                          className='form-check-input radius-4 border border-neutral-400'
-                          type='checkbox'
-                          name='checkbox'
-                        />
-                      </div>
-                      06
-                    </div>
-                  </td>
-                  <td>15 March 2024</td>
-                  <td>Head</td>
-                  <td>
-                    <p className='max-w-500-px'>
-                      Lorem Ipsum is simply dummy text of the printing and
-                      typesetting
-                    </p>
-                  </td>
-                  <td className='text-center'>
-                    <span className='bg-success-focus text-success-600 border border-success-main px-24 py-4 radius-4 fw-medium text-sm'>
-                      Active
-                    </span>
-                  </td>
-                  <td className='text-center'>
-                    <div className='d-flex align-items-center gap-10 justify-content-center'>
-                      <button
-                        type='button'
-                        className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                      >
-                        <Icon icon='lucide:edit' className='menu-icon' />
-                      </button>
-                      <button
-                        type='button'
-                        className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                      >
-                        <Icon
-                          icon='fluent:delete-24-regular'
-                          className='menu-icon'
-                        />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td>
-                    <div className='d-flex align-items-center gap-10'>
-                      <div className='form-check style-check d-flex align-items-center'>
-                        <input
-                          className='form-check-input radius-4 border border-neutral-400'
-                          type='checkbox'
-                          name='checkbox'
-                        />
-                      </div>
-                      07
-                    </div>
-                  </td>
-                  <td>27 April 2024</td>
-                  <td>Management</td>
-                  <td>
-                    <p className='max-w-500-px'>
-                      Lorem Ipsum is simply dummy text of the printing and
-                      typesetting
-                    </p>
-                  </td>
-                  <td className='text-center'>
-                    <span className='bg-success-focus text-success-600 border border-success-main px-24 py-4 radius-4 fw-medium text-sm'>
-                      Active
-                    </span>
-                  </td>
-                  <td className='text-center'>
-                    <div className='d-flex align-items-center gap-10 justify-content-center'>
-                      <button
-                        type='button'
-                        className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                      >
-                        <Icon icon='lucide:edit' className='menu-icon' />
-                      </button>
-                      <button
-                        type='button'
-                        className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                      >
-                        <Icon
-                          icon='fluent:delete-24-regular'
-                          className='menu-icon'
-                        />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td>
-                    <div className='d-flex align-items-center gap-10'>
-                      <div className='form-check style-check d-flex align-items-center'>
-                        <input
-                          className='form-check-input radius-4 border border-neutral-400'
-                          type='checkbox'
-                          name='checkbox'
-                        />
-                      </div>
-                      08
-                    </div>
-                  </td>
-                  <td>27 April 2024</td>
-                  <td>Waiter</td>
-                  <td>
-                    <p className='max-w-500-px'>
-                      Lorem Ipsum is simply dummy text of the printing and
-                      typesetting
-                    </p>
-                  </td>
-                  <td className='text-center'>
-                    <span className='bg-danger-focus text-danger-600 border border-danger-main px-24 py-4 radius-4 fw-medium text-sm'>
-                      Inactive
-                    </span>
-                  </td>
-                  <td className='text-center'>
-                    <div className='d-flex align-items-center gap-10 justify-content-center'>
-                      <button
-                        type='button'
-                        className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                      >
-                        <Icon icon='lucide:edit' className='menu-icon' />
-                      </button>
-                      <button
-                        type='button'
-                        className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                      >
-                        <Icon
-                          icon='fluent:delete-24-regular'
-                          className='menu-icon'
-                        />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td>
-                    <div className='d-flex align-items-center gap-10'>
-                      <div className='form-check style-check d-flex align-items-center'>
-                        <input
-                          className='form-check-input radius-4 border border-neutral-400'
-                          type='checkbox'
-                          name='checkbox'
-                        />
-                      </div>
-                      09
-                    </div>
-                  </td>
-                  <td>30 April 2024</td>
-                  <td>Waiter</td>
-                  <td>
-                    <p className='max-w-500-px'>
-                      Lorem Ipsum is simply dummy text of the printing and
-                      typesetting
-                    </p>
-                  </td>
-                  <td className='text-center'>
-                    <span className='bg-success-focus text-success-600 border border-success-main px-24 py-4 radius-4 fw-medium text-sm'>
-                      Active
-                    </span>
-                  </td>
-                  <td className='text-center'>
-                    <div className='d-flex align-items-center gap-10 justify-content-center'>
-                      <button
-                        type='button'
-                        className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                      >
-                        <Icon icon='lucide:edit' className='menu-icon' />
-                      </button>
-                      <button
-                        type='button'
-                        className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                      >
-                        <Icon
-                          icon='fluent:delete-24-regular'
-                          className='menu-icon'
-                        />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td>
-                    <div className='d-flex align-items-center gap-10'>
-                      <div className='form-check style-check d-flex align-items-center'>
-                        <input
-                          className='form-check-input radius-4 border border-neutral-400'
-                          type='checkbox'
-                          name='checkbox'
-                        />
-                      </div>
-                      10
-                    </div>
-                  </td>
-                  <td>30 April 2024</td>
-                  <td>Waiter</td>
-                  <td>
-                    <p className='max-w-500-px'>
-                      Lorem Ipsum is simply dummy text of the printing and
-                      typesetting
-                    </p>
-                  </td>
-                  <td className='text-center'>
-                    <span className='bg-success-focus text-success-600 border border-success-main px-24 py-4 radius-4 fw-medium text-sm'>
-                      Active
-                    </span>
-                  </td>
-                  <td className='text-center'>
-                    <div className='d-flex align-items-center gap-10 justify-content-center'>
-                      <button
-                        type='button'
-                        className='bg-success-focus text-success-600 bg-hover-success-200 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                      >
-                        <Icon icon='lucide:edit' className='menu-icon' />
-                      </button>
-                      <button
-                        type='button'
-                        className='remove-item-btn bg-danger-focus bg-hover-danger-200 text-danger-600 fw-medium w-40-px h-40-px d-flex justify-content-center align-items-center rounded-circle'
-                      >
-                        <Icon
-                          icon='fluent:delete-24-regular'
-                          className='menu-icon'
-                        />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div className='d-flex align-items-center justify-content-between flex-wrap gap-2 mt-24'>
-            <span>Showing 1 to 10 of 12 entries</span>
-            <ul className='pagination d-flex flex-wrap align-items-center gap-2 justify-content-center'>
-              <li className='page-item'>
-                <Link
-                  className='page-link bg-neutral-200 text-secondary-light fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px w-32-px text-md'
-                  to='#'
-                >
-                  <Icon icon='ep:d-arrow-left' className='' />
-                </Link>
-              </li>
-              <li className='page-item'>
-                <Link
-                  className='page-link text-secondary-light fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px w-32-px text-md bg-primary-600 text-white'
-                  to='#'
-                >
-                  1
-                </Link>
-              </li>
-              <li className='page-item'>
-                <Link
-                  className='page-link bg-neutral-200 text-secondary-light fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px w-32-px'
-                  to='#'
-                >
-                  2
-                </Link>
-              </li>
-              <li className='page-item'>
-                <Link
-                  className='page-link bg-neutral-200 text-secondary-light fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px w-32-px text-md'
-                  to='#'
-                >
-                  3
-                </Link>
-              </li>
-              <li className='page-item'>
-                <Link
-                  className='page-link bg-neutral-200 text-secondary-light fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px w-32-px text-md'
-                  to='#'
-                >
-                  4
-                </Link>
-              </li>
-              <li className='page-item'>
-                <Link
-                  className='page-link bg-neutral-200 text-secondary-light fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px w-32-px text-md'
-                  to='#'
-                >
-                  5
-                </Link>
-              </li>
-              <li className='page-item'>
-                <Link
-                  className='page-link bg-neutral-200 text-secondary-light fw-semibold radius-8 border-0 d-flex align-items-center justify-content-center h-32-px w-32-px text-md'
-                  to='#'
-                >
-                  {" "}
-                  <Icon icon='ep:d-arrow-right' className='' />{" "}
-                </Link>
-              </li>
-            </ul>
-          </div>
+              ))
+            )}
+          </ModuleTable>
+          <ModuleTablePagination
+            page={currentPage}
+            pages={pages}
+            loading={loading}
+            from={filtered.length ? start + 1 : 0}
+            to={Math.min(start + limit, filtered.length)}
+            total={filtered.length}
+            onPageChange={setPage}
+            label="Role pages"
+          />
         </div>
       </div>
-      {/* Modal Start */}
-      <div
-        className='modal fade'
-        id='exampleModal'
-        tabIndex={-1}
-        aria-labelledby='exampleModalLabel'
-        aria-hidden='true'
+      <Modal
+        show={Boolean(draft)}
+        onHide={() => !saving && setDraft(null)}
+        dialogClassName="role-wizard-dialog"
+        centered
+        scrollable
+        aria-labelledby="role-modal-title"
       >
-        <div className='modal-dialog modal-lg modal-dialog modal-dialog-centered'>
-          <div className='modal-content radius-16 bg-base'>
-            <div className='modal-header py-16 px-24 border border-top-0 border-start-0 border-end-0'>
-              <h1 className='modal-title fs-5' id='exampleModalLabel'>
-                Add New Role
-              </h1>
-              <button
-                type='button'
-                className='btn-close'
-                data-bs-dismiss='modal'
-                aria-label='Close'
-              />
-            </div>
-            <div className='modal-body p-24'>
-              <form action='#'>
-                <div className='row'>
-                  <div className='col-12 mb-20'>
-                    <label className='form-label fw-semibold text-primary-light text-sm mb-8'>
-                      Role Name
-                    </label>
-                    <input
-                      type='text'
-                      className='form-control radius-8'
-                      placeholder='Enter Role  Name'
-                    />
-                  </div>
-                  <div className='col-12 mb-20'>
-                    <label
-                      htmlFor='desc'
-                      className='form-label fw-semibold text-primary-light text-sm mb-8'
-                    >
-                      Description
-                    </label>
-                    <textarea
-                      className='form-control'
-                      id='desc'
-                      rows={4}
-                      cols={50}
-                      placeholder='Write some text'
-                      defaultValue={""}
-                    />
-                  </div>
-                  <div className='col-12 mb-20'>
-                    <label className='form-label fw-semibold text-primary-light text-sm mb-8'>
-                      Status{" "}
-                    </label>
-                    <div className='d-flex align-items-center flex-wrap gap-28'>
-                      <div className='form-check checked-success d-flex align-items-center gap-2'>
-                        <input
-                          className='form-check-input'
-                          type='radio'
-                          name='label'
-                          id='Personal'
-                        />
-                        <label
-                          className='form-check-label line-height-1 fw-medium text-secondary-light text-sm d-flex align-items-center gap-1'
-                          htmlFor='Personal'
-                        >
-                          <span className='w-8-px h-8-px bg-success-600 rounded-circle' />
-                          Active
-                        </label>
-                      </div>
-                      <div className='form-check checked-danger d-flex align-items-center gap-2'>
-                        <input
-                          className='form-check-input'
-                          type='radio'
-                          name='label'
-                          id='Holiday'
-                        />
-                        <label
-                          className='form-check-label line-height-1 fw-medium text-secondary-light text-sm d-flex align-items-center gap-1'
-                          htmlFor='Holiday'
-                        >
-                          <span className='w-8-px h-8-px bg-danger-600 rounded-circle' />
-                          Inactive
-                        </label>
-                      </div>
+        <Modal.Header closeButton={!saving}>
+          <Modal.Title as="h1" className="fs-5" id="role-modal-title">
+            {draft?.id ? 'Edit Role' : 'Add New Role'}
+          </Modal.Title>
+        </Modal.Header>
+        <form onSubmit={save} className="role-wizard-form">
+          <Modal.Body>
+            <div className="form-wizard-header overflow-x-auto scroll-sm pb-8 my-32">
+              <ul
+                className="list-unstyled form-wizard-list"
+                aria-label="Role setup progress"
+              >
+                {['Role Details', 'Permissions'].map((label, index) => (
+                  <li
+                    key={label}
+                    className={`form-wizard-list__item flex-fill text-center ${step > index + 1 ? 'activated' : ''} ${step === index + 1 ? 'active' : ''}`}
+                    aria-current={step === index + 1 ? 'step' : undefined}
+                  >
+                    <div className="form-wizard-list__line">
+                      <span className="count">{index + 1}</span>
                     </div>
-                  </div>
-                  <div className='d-flex align-items-center justify-content-center gap-3 mt-24'>
-                    <button
-                      type='reset'
-                      className='border border-danger-600 bg-hover-danger-200 text-danger-600 text-md px-40 py-11 radius-8'
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type='submit'
-                      className='btn btn-primary border border-primary-600 text-md px-48 py-12 radius-8'
-                    >
-                      Save
-                    </button>
-                  </div>
-                </div>
-              </form>
+                    <span className="text text-sm">{label}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
-          </div>
-        </div>
-      </div>
-      {/* Modal End */}
+            {formError && (
+              <div className="alert alert-danger" role="alert">
+                {formError}
+              </div>
+            )}
+            {draft && (
+              <fieldset disabled={saving}>
+                {step === 1 ? (
+                  <div className="role-wizard-details">
+                    <div>
+                      <label htmlFor="role-name" className="form-label">
+                        Role Name
+                      </label>
+                      <input
+                        id="role-name"
+                        autoFocus
+                        required
+                        maxLength={30}
+                        disabled={['user', 'auditor'].includes(
+                          roles.find((role) => role.id === draft.id)?.name,
+                        )}
+                        className="form-control"
+                        placeholder="Enter Role Name"
+                        value={draft.name}
+                        onChange={(event) =>
+                          setDraft({ ...draft, name: event.target.value })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="role-description" className="form-label">
+                        Description
+                      </label>
+                      <textarea
+                        id="role-description"
+                        maxLength={1000}
+                        className="form-control"
+                        placeholder="Write some text"
+                        rows={4}
+                        value={draft.description || ''}
+                        onChange={(event) =>
+                          setDraft({
+                            ...draft,
+                            description: event.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <fieldset className="role-wizard-status">
+                      <legend className="form-label">Status</legend>
+                      <div className="d-flex align-items-center gap-28">
+                        {[true, false].map((active) => (
+                          <label
+                            key={String(active)}
+                            className="role-wizard-choice"
+                          >
+                            <input
+                              type="radio"
+                              name="role-status"
+                              checked={draft.active === active}
+                              onChange={() => setDraft({ ...draft, active })}
+                            />
+                            <span
+                              className={
+                                active
+                                  ? 'role-status-active'
+                                  : 'role-status-inactive'
+                              }
+                            />
+                            {active ? 'Active' : 'Inactive'}
+                          </label>
+                        ))}
+                      </div>
+                    </fieldset>
+                  </div>
+                ) : (
+                  <fieldset>
+                    <legend className="visually-hidden">
+                      Assigned Modules
+                    </legend>
+                    <label className="role-wizard-choice role-wizard-select-all">
+                      <input
+                        type="checkbox"
+                        checked={
+                          Object.keys(modules).length > 0 &&
+                          Object.keys(modules).every((key) =>
+                            draft.modules.includes(key),
+                          )
+                        }
+                        onChange={(event) =>
+                          setDraft({
+                            ...draft,
+                            modules: event.target.checked
+                              ? Object.keys(modules)
+                              : [],
+                          })
+                        }
+                      />
+                      Select all modules
+                    </label>
+                    <div className="role-wizard-modules">
+                      {Object.entries(modules).map(([key, module]) => (
+                        <label key={key} className="role-wizard-choice">
+                          <input
+                            type="checkbox"
+                            checked={draft.modules.includes(key)}
+                            onChange={(event) =>
+                              setDraft({
+                                ...draft,
+                                modules: event.target.checked
+                                  ? [...draft.modules, key]
+                                  : draft.modules.filter(
+                                      (value) => value !== key,
+                                    ),
+                              })
+                            }
+                          />
+                          {module.label}
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
+                )}
+              </fieldset>
+            )}
+          </Modal.Body>
+          <Modal.Footer>
+            {step === 1 ? (
+              <button
+                type="button"
+                className="btn role-wizard-cancel"
+                disabled={saving}
+                onClick={() => setDraft(null)}
+              >
+                Cancel
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="btn role-wizard-back"
+                disabled={saving}
+                onClick={() => setStep(1)}
+              >
+                Back
+              </button>
+            )}
+            <button
+              key={step}
+              type="submit"
+              className={`btn role-wizard-submit ${draft?.id && step === 2 ? 'role-wizard-update' : ''}`}
+              disabled={saving}
+            >
+              {saving
+                ? 'Saving...'
+                : step === 1
+                  ? 'Next'
+                  : draft?.id
+                    ? 'Update'
+                    : 'Save'}
+            </button>
+          </Modal.Footer>
+        </form>
+      </Modal>
+      <Modal
+        show={Boolean(deleting)}
+        onHide={() => !saving && setDeleting(null)}
+        centered
+        aria-labelledby="delete-role-title"
+      >
+        <Modal.Header closeButton={!saving}>
+          <Modal.Title id="delete-role-title">Delete Role</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {formError && (
+            <div role="alert" className="alert alert-danger">
+              {formError}
+            </div>
+          )}
+          Delete the role “{deleting?.name}”?
+        </Modal.Body>
+        <Modal.Footer>
+          <button
+            className="btn btn-outline-primary"
+            disabled={saving}
+            onClick={() => setDeleting(null)}
+          >
+            Cancel
+          </button>
+          <button className="btn btn-danger" disabled={saving} onClick={remove}>
+            {saving ? 'Deleting...' : 'Delete'}
+          </button>
+        </Modal.Footer>
+      </Modal>
     </>
   );
-};
-
-export default RoleAccessLayer;
+}
