@@ -502,5 +502,19 @@
     "paths": [
       "/wizard"
     ]
+  },
+  {
+    "key": "privacy-policy",
+    "label": "Privacy Policy",
+    "paths": [
+      "/settings/privacy-policy"
+    ]
+  },
+  {
+    "key": "terms-conditions",
+    "label": "Terms and Conditions",
+    "paths": [
+      "/settings/terms-conditions"
+    ]
   }
 ]

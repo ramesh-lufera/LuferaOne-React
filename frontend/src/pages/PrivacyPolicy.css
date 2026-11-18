@@ -1,0 +1,7 @@
+.privacy-policy-editor .ql-editor { min-height: 320px; }
+.privacy-policy-public .ql-editor { padding: 16px 0; overflow-wrap: anywhere; font-size: 1rem; line-height: 1.7; }
+.privacy-policy-public .ql-editor a { text-decoration: underline; }
+.privacy-policy-editor .ql-toolbar { white-space: normal; }
+@media (max-width: 576px) {
+  .privacy-policy-public { padding: 12px !important; }
+}

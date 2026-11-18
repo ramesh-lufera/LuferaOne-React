@@ -1,5 +1,9 @@
+import TermsConditionSettingsPage from './pages/TermsConditionSettingsPage';
+import PrivacyPolicySettingsPage from './pages/PrivacyPolicySettingsPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import InvoiceSettingsPage from './pages/InvoiceSettingsPage';
 import RequireAuth from "./components/RequireAuth";
+import SavedModuleTheme from "./helper/SavedModuleTheme";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import HomePageOne from "./pages/HomePageOne";
 import HomePageTwo from "./pages/HomePageTwo";
@@ -114,6 +118,7 @@ import ActivityLogPage from "./pages/ActivityLogPage";
 function App() {
   return (
     <BrowserRouter>
+      <SavedModuleTheme />
       <RouteScrollToTop />
       <Routes>
 
@@ -164,6 +169,8 @@ function App() {
         />
         <Route exact path='/colors' element={<ColorsPage />} />
         <Route exact path='/column-chart' element={<ColumnChartPage />} />
+        <Route path='/settings/terms-conditions' element={<TermsConditionSettingsPage />} />
+        <Route path='/settings/privacy-policy' element={<PrivacyPolicySettingsPage />} />
         <Route path='/invoice-settings' element={<InvoiceSettingsPage />} />
         <Route exact path='/company' element={<CompanyPage />} />
         <Route path='/credentials' element={<CredentialsPage />} />
@@ -247,10 +254,13 @@ function App() {
         <Route exact path='/wizard' element={<WizardPage />} />
 
         </Route>
+        <Route element={<RequireAuth allowGuest />} >
+          <Route path='/privacy-policy' element={<PrivacyPolicyPage />} />
+          <Route path='/terms-condition' element={<TermsConditionPage />} />
+        </Route>
         <Route exact path='/sign-in' element={<SignInPage />} />
         <Route exact path='/sign-up' element={<SignUpPage />} />
         <Route exact path='/forgot-password' element={<ForgotPasswordPage />} />
-        <Route exact path='/terms-condition' element={<TermsConditionPage />} />
         <Route exact path='/coming-soon' element={<ComingSoonPage />} />
         <Route exact path='/maintenance' element={<MaintenancePage />} />
         <Route exact path='/access-denied' element={<AccessDeniedPage />} />

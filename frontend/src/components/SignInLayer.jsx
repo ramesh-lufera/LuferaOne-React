@@ -1,3 +1,5 @@
+import useCompanyBranding from '../helper/useCompanyBranding';
+import AuthBrandingImage from './AuthBrandingImage';
 import FacebookSignIn from "./FacebookSignIn";
 import GoogleSignIn from "./GoogleSignIn";
 import { Icon } from "@iconify/react/dist/iconify.js";
@@ -8,6 +10,7 @@ import { Link, useNavigate } from "react-router-dom";
 import "./SignInLayer.css";
 
 const SignInLayer = () => {
+  const images = useCompanyBranding();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -71,17 +74,19 @@ const SignInLayer = () => {
   };
   return (
     <section className='auth bg-base d-flex flex-wrap'>
-      <div className='auth-left d-lg-block d-none'>
+      <div className='auth-left auth-image-panel d-lg-block d-none'>
         <div className='d-flex align-items-center flex-column h-100 justify-content-center'>
-          <img src='assets/images/auth/auth-img.png' alt='' />
+          <AuthBrandingImage src={images.sign_in_image_url} fallbackSrc='/assets/images/auth/auth-img.png' alt='' className='auth-company-art' width={917} height={917} />
         </div>
       </div>
       <div className='auth-right sign-in-panel py-32 px-24 d-flex flex-column justify-content-center'>
         <div className='max-w-464-px mx-auto w-100'>
           <div>
             <Link to='/' className='sign-in-brand mb-40' aria-label='Lufera Infotech home'>
-              <Icon icon='solar:cloud-outline' aria-hidden='true' />
-              <span>Lufera<span className='sign-in-brand-accent'>Infotech</span></span>
+              <AuthBrandingImage src={images.logo_url} alt='Company logo' className='auth-company-logo'>
+                <Icon icon='solar:cloud-outline' aria-hidden='true' />
+                <span>Lufera<span className='sign-in-brand-accent'>Infotech</span></span>
+              </AuthBrandingImage>
             </Link>
             <h4 className='mb-12'>Sign In</h4>
             <p className='mb-32 text-secondary-light text-lg'>

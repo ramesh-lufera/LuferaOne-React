@@ -1252,15 +1252,6 @@ const MasterLayout = ({ children }) => {
             </li>
             <li>
               <NavLink
-                to='/terms-condition'
-                className={(navData) => (navData.isActive ? "active-page" : "")}
-              >
-                <Icon icon='octicon:info-24' className='menu-icon' />
-                <span>Terms &amp; Conditions</span>
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
                 to='/coming-soon'
                 className={(navData) => (navData.isActive ? "active-page" : "")}
               >
@@ -1315,6 +1306,18 @@ const MasterLayout = ({ children }) => {
                   >
                     <i className='ri-circle-fill circle-icon text-primary-600 w-auto' />{" "}
                     Company
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink to='/settings/terms-conditions' className={(navData) => navData.isActive ? 'active-page' : ''}>
+                    <i className='ri-circle-fill circle-icon text-primary-600 w-auto' />{' '}
+                    Terms and Conditions
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink to='/settings/privacy-policy' className={(navData) => navData.isActive ? 'active-page' : ''}>
+                    <i className='ri-circle-fill circle-icon text-primary-600 w-auto' />{' '}
+                    Privacy Policy
                   </NavLink>
                 </li>
                 <li>
@@ -2096,6 +2099,8 @@ const MasterLayout = ({ children }) => {
             </div>
             <div className='col-auto'>
               <p className='mb-0'>
+                <Link to='/terms-condition' className='me-16'>Terms and Conditions</Link>
+                <Link to='/privacy-policy' className='me-16'>Privacy Policy</Link>
                 Made by <span className='text-primary-600'>Lufera Infotech</span>
               </p>
             </div>
