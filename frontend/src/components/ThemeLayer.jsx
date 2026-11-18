@@ -1,6 +1,7 @@
 import { useState } from "react";
 
-const ThemeLayer = () => {
+// eslint-disable-next-line react/prop-types
+const ThemeLayer = ({ showLogos = true }) => {
   const [previewImage1, setPreviewImage1] = useState("");
   const [previewImage2, setPreviewImage2] = useState("");
 
@@ -17,64 +18,66 @@ const ThemeLayer = () => {
     <div className='card h-100 p-0 radius-12'>
       <div className='card-body p-24'>
         <form action='#'>
-          <div className='row gy-4'>
-            <div className='col-md-6'>
-              <label
-                htmlFor='imageUpload'
-                className='form-label fw-semibold text-secondary-light text-md mb-8'
-              >
-                Logo{" "}
-                <span className='text-secondary-light fw-normal'>
-                  (140px X 140px)
-                </span>
-              </label>
-              <input
-                type='file'
-                className='form-control radius-8'
-                id='imageUpload'
-                onChange={(e) => readURL(e, setPreviewImage1)}
-              />
-              <div className='avatar-upload mt-16'>
-                <div className='avatar-preview style-two'>
-                  <div
-                    id='previewImage1'
-                    style={{
-                      backgroundImage: `url(${previewImage1})`,
-                    }}
-                  ></div>
+          {showLogos && (
+            <div className='row gy-4'>
+              <div className='col-md-6'>
+                <label
+                  htmlFor='imageUpload'
+                  className='form-label fw-semibold text-secondary-light text-md mb-8'
+                >
+                  Logo{" "}
+                  <span className='text-secondary-light fw-normal'>
+                    (140px X 140px)
+                  </span>
+                </label>
+                <input
+                  type='file'
+                  className='form-control radius-8'
+                  id='imageUpload'
+                  onChange={(e) => readURL(e, setPreviewImage1)}
+                />
+                <div className='avatar-upload mt-16'>
+                  <div className='avatar-preview style-two'>
+                    <div
+                      id='previewImage1'
+                      style={{
+                        backgroundImage: `url(${previewImage1})`,
+                      }}
+                    ></div>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className='col-md-6'>
-              <label
-                htmlFor='imageUploadTwo'
-                className='form-label fw-semibold text-secondary-light text-md mb-8'
-              >
-                Logo{" "}
-                <span className='text-secondary-light fw-normal'>
-                  (140px X 140px)
-                </span>
-              </label>
-              <input
-                type='file'
-                className='form-control radius-8'
-                id='imageUploadTwo'
-                onChange={(e) => readURL(e, setPreviewImage2)}
-              />
-              <div className='avatar-upload mt-16'>
-                <div className='avatar-preview style-two'>
-                  <div
-                    id='previewImage2'
-                    style={{
-                      backgroundImage: `url(${previewImage2})`,
-                    }}
-                  ></div>
+              <div className='col-md-6'>
+                <label
+                  htmlFor='imageUploadTwo'
+                  className='form-label fw-semibold text-secondary-light text-md mb-8'
+                >
+                  Logo{" "}
+                  <span className='text-secondary-light fw-normal'>
+                    (140px X 140px)
+                  </span>
+                </label>
+                <input
+                  type='file'
+                  className='form-control radius-8'
+                  id='imageUploadTwo'
+                  onChange={(e) => readURL(e, setPreviewImage2)}
+                />
+                <div className='avatar-upload mt-16'>
+                  <div className='avatar-preview style-two'>
+                    <div
+                      id='previewImage2'
+                      style={{
+                        backgroundImage: `url(${previewImage2})`,
+                      }}
+                    ></div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-          <div className='mt-32'>
+          )}
+          <div className={showLogos ? 'mt-32' : ''}>
             <h6 className='text-xl mb-16'>Theme Colors</h6>
             <div className='row gy-4'>
               <div className='col-xxl-2 col-md-4 col-sm-6'>

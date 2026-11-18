@@ -45,6 +45,13 @@
     ]
   },
   {
+    "key": "credentials",
+    "label": "Credentials",
+    "paths": [
+      "/credentials"
+    ]
+  },
+  {
     "key": "company",
     "label": "Company",
     "paths": [
@@ -424,6 +431,13 @@
     "label": "Theme",
     "paths": [
       "/theme"
+    ]
+  },
+  {
+    "key": "theme-colors",
+    "label": "Theme Colors",
+    "paths": [
+      "/theme-colors"
     ]
   },
   {
