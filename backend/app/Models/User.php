@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 
 #[Fillable(['name', 'email', 'phone', 'username', 'password', 'terms_accepted_at'])]
@@ -48,6 +49,22 @@ class User extends Authenticatable
         }
 
         throw new \RuntimeException('Unable to generate a unique User ID.');
+    }
+
+    public function setUsernameFromEmailIfMissing(): void
+    {
+        if (filled($this->username)) {
+            return;
+        }
+
+        $prefix = Str::before(strtolower($this->email), '@');
+        $candidate = mb_substr($prefix, 0, 50);
+        for ($number = 2; static::where('username', $candidate)->lockForUpdate()->first(['id']); $number++) {
+            $suffix = '-'.$number;
+            $candidate = mb_substr($prefix, 0, 50 - strlen($suffix)).$suffix;
+        }
+
+        $this->username = $candidate;
     }
 
     /** @return list<string> */

@@ -82,6 +82,7 @@ const ThemeColorsPage = () => {
         body: JSON.stringify({ palette_id: selectedPalette, ...colors }),
       });
       setAppliedColors(result.settings);
+      window.dispatchEvent(new CustomEvent('saved-theme-colors', { detail: result.settings }));
       setMessage('Colors saved and applied.');
     } catch (error) {
       setSettingsError(`Unable to save page colors. ${error.message}`);
@@ -106,7 +107,9 @@ const ThemeColorsPage = () => {
   const closeAddColor = () => {
     if (saving) return;
     setShowAddColor(false);
-    recordActivity(editingPalette ? 'Cancel Edit Color' : 'Cancel Add Color');
+    recordActivity(editingPalette ? 'Cancel Edit Color' : 'Cancel Add Color', editingPalette
+      ? { palette_id: editingPalette.id, palette_name: editingPalette.label }
+      : {});
   };
 
   const openColorEditor = (palette = null) => {
@@ -116,6 +119,18 @@ const ThemeColorsPage = () => {
     setSaveError("");
     setShowAddColor(true);
     recordActivity(palette ? 'Open Edit Color' : 'Open Add Color', palette ? { palette_id: palette.id, palette_name: palette.label } : {});
+  };
+
+  const openDeleteColor = (palette) => {
+    setDeleteError("");
+    setDeletePalette(palette);
+    recordActivity('Open Delete Color', { palette_id: palette.id, palette_name: palette.label });
+  };
+
+  const closeDeleteColor = () => {
+    if (deleting || !deletePalette) return;
+    recordActivity('Cancel Delete Color', { palette_id: deletePalette.id, palette_name: deletePalette.label });
+    setDeletePalette(null);
   };
 
   const confirmDelete = async () => {
@@ -286,7 +301,7 @@ const ThemeColorsPage = () => {
                       {savedColors.palettes.some((item) => item.id === palette.id) && (
                         <div className='d-flex justify-content-end gap-2 mt-8'>
                           <button type='button' className='btn btn-sm btn-primary radius-8' disabled={loading || busy} aria-label={`Edit ${palette.label}`} onClick={() => openColorEditor(palette)}>Edit</button>
-                          <button type='button' className='btn btn-sm btn-outline-danger radius-8' disabled={loading || busy} aria-label={`Delete ${palette.label}`} onClick={() => { setDeleteError(""); setDeletePalette(palette); }}>Delete</button>
+                          <button type='button' className='btn btn-sm btn-outline-danger radius-8' disabled={loading || busy} aria-label={`Delete ${palette.label}`} onClick={() => openDeleteColor(palette)}>Delete</button>
                         </div>
                       )}
                     </div>
@@ -305,7 +320,7 @@ const ThemeColorsPage = () => {
                       onBlur={(event) => {
                         const input = event.target;
                         if (input.value !== input.dataset.previousColor) {
-                          recordActivity('Edit Custom Color', { field: input.name.replace('custom-', ''), color: input.value });
+                          recordActivity('Edit Custom Color', { palette_id: 'custom', field: input.name.replace('custom-', ''), color: input.value });
                         }
                       }}
                     >
@@ -387,7 +402,7 @@ const ThemeColorsPage = () => {
           </Modal.Footer>
         </form>
       </Modal>
-      <Modal className={`theme-colors-page${appliedColors ? ' theme-colors-applied' : ''}`} style={pageStyle} show={Boolean(deletePalette)} onHide={() => { if (!deleting) setDeletePalette(null); }} centered aria-labelledby='delete-color-title'>
+      <Modal className={`theme-colors-page${appliedColors ? ' theme-colors-applied' : ''}`} style={pageStyle} show={Boolean(deletePalette)} onHide={closeDeleteColor} centered aria-labelledby='delete-color-title'>
         <Modal.Header closeButton>
           <Modal.Title as='h1' className='fs-5' id='delete-color-title'>Delete Color</Modal.Title>
         </Modal.Header>
@@ -396,7 +411,7 @@ const ThemeColorsPage = () => {
           <p className='mb-0'>Delete the “{deletePalette?.label}” color palette?</p>
         </Modal.Body>
         <Modal.Footer>
-          <button type='button' className='btn btn-outline-secondary radius-8' disabled={deleting} onClick={() => setDeletePalette(null)}>Cancel</button>
+            <button type='button' className='btn btn-outline-secondary radius-8' disabled={deleting} onClick={closeDeleteColor}>Cancel</button>
           <button type='button' className='btn btn-danger radius-8' disabled={deleting} onClick={confirmDelete}>{deleting ? 'Deleting...' : 'Delete'}</button>
         </Modal.Footer>
       </Modal>

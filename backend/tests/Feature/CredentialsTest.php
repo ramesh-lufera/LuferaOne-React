@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\ActivityLog;
 use App\Models\User;
 use Dotenv\Dotenv;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
@@ -56,9 +57,11 @@ class CredentialsTest extends TestCase
         $before = file_get_contents($this->environmentPath);
         $this->getJson('/api/credentials')->assertUnauthorized();
         $this->putJson('/api/credentials', $this->payload())->assertUnauthorized();
+        $this->postJson('/api/credentials/activity', ['action' => 'Reset'])->assertUnauthorized();
         $this->actingAs(User::factory()->create(), 'sanctum');
         $this->getJson('/api/credentials')->assertForbidden();
         $this->putJson('/api/credentials', $this->payload())->assertForbidden();
+        $this->postJson('/api/credentials/activity', ['action' => 'Reset'])->assertForbidden();
         $this->assertSame($before, file_get_contents($this->environmentPath));
     }
 
@@ -87,6 +90,26 @@ class CredentialsTest extends TestCase
         $response = $this->getJson('/api/auth/settings')->assertOk();
         $this->assertEqualsCanonicalizing(['googleClientId', 'facebookAppId', 'facebookGraphVersion'], array_keys($response->json()));
         $response->assertHeader('Cache-Control', 'no-store, private');
+    }
+
+    public function test_credential_activity_is_filterable_without_recording_submitted_values(): void
+    {
+        $user = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($user, 'sanctum');
+        Artisan::partialMock()->shouldReceive('call')->once()->with('config:clear')->andReturn(0);
+
+        $this->getJson('/api/credentials')->assertOk();
+        $this->putJson('/api/credentials', $this->payload())->assertOk();
+        $this->postJson('/api/credentials/activity', ['action' => 'Reset', ...$this->payload()])->assertOk();
+        $this->postJson('/api/credentials/activity', ['action' => 'Update'])->assertUnprocessable();
+
+        $logs = ActivityLog::where('module', 'Credentials')->orderBy('id')->get();
+        $this->assertSame(['View', 'Update', 'Reset'], $logs->pluck('action')->all());
+        $this->assertSame([$user->id], $logs->pluck('user_id')->unique()->values()->all());
+        foreach ($logs as $log) {
+            $this->assertSame(['method', 'route'], array_keys($log->metadata));
+        }
+        $this->getJson('/api/activity-logs?module=Credentials')->assertOk()->assertJsonPath('recordsFiltered', 3);
     }
 
     public function test_invalid_or_missing_values_do_not_change_configuration(): void

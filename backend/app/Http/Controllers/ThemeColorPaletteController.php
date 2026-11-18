@@ -9,6 +9,13 @@ use Illuminate\Validation\Rule;
 
 class ThemeColorPaletteController extends Controller
 {
+    public function publicSettings(): JsonResponse
+    {
+        $settings = DB::table('theme_color_settings')->where('id', 1)->first(['color', 'focus', 'text']);
+
+        return response()->json(['settings' => $settings])->header('Cache-Control', 'no-store');
+    }
+
     public function index(Request $request): JsonResponse
     {
         $request->attributes->set('activity_page', 'Theme Colors');
@@ -107,7 +114,11 @@ class ThemeColorPaletteController extends Controller
     public function activity(Request $request): JsonResponse
     {
         $values = $request->validate([
-            'action' => ['required', 'in:Select Color,Edit Custom Color,Reset,Save Changes,Open Add Color,Cancel Add Color,Open Edit Color,Cancel Edit Color'],
+            'action' => ['required', Rule::in([
+                'Select Color', 'Edit Custom Color', 'Reset',
+                'Open Add Color', 'Cancel Add Color', 'Open Edit Color', 'Cancel Edit Color',
+                'Open Delete Color', 'Cancel Delete Color',
+            ])],
             'palette_id' => ['nullable', 'string', 'max:100'],
             'palette_name' => ['nullable', 'string', 'max:100'],
             'field' => ['nullable', 'in:main,focus,text'],

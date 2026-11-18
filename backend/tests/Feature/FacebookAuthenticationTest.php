@@ -39,8 +39,9 @@ class FacebookAuthenticationTest extends TestCase
     {
         foreach (['signin', 'signup'] as $index => $mode) {
             $this->debug['user_id'] = $this->profile['id'] = (string) (987654321 + $index);
-            $this->profile['email'] = 'facebook-user-'.$index.'@example.com';
+            $this->profile['email'] = 'facebook-user@example'.$index.'.com';
             $response = $this->postJson('/api/auth/facebook', $this->payload($mode))->assertOk()
+                ->assertJsonPath('user.username', $index === 0 ? 'facebook-user' : 'facebook-user-2')
                 ->assertJsonPath('user.facebook_photo_url', $this->profile['picture']['data']['url'])->assertJsonMissingPath('user.password');
             $this->withToken($response->json('token'))->getJson('/api/user')->assertOk();
         }
@@ -65,7 +66,7 @@ class FacebookAuthenticationTest extends TestCase
 
     public function test_repeat_login_keeps_unchanged_rows_and_refreshes_changed_photo_only(): void
     {
-        $user = User::factory()->create(['email' => $this->profile['email'], 'facebook_id' => $this->profile['id'], 'facebook_photo_url' => $this->profile['picture']['data']['url'], 'updated_at' => now()->subDay()]);
+        $user = User::factory()->create(['email' => $this->profile['email'], 'username' => 'facebook-user', 'facebook_id' => $this->profile['id'], 'facebook_photo_url' => $this->profile['picture']['data']['url'], 'updated_at' => now()->subDay()]);
         $original = $user->fresh()->getRawOriginal();
         $this->postJson('/api/auth/facebook', $this->payload('signup'))->assertOk()->assertJsonPath('user.id', $user->id);
         $this->assertSame($original, $user->fresh()->getRawOriginal());
