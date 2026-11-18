@@ -28,6 +28,7 @@ class RegisterRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'user_code' => ['prohibited'],
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')],
             'phone' => ['bail', 'required', 'string', 'max:30', 'regex:/^\+?[0-9 ()-]{7,30}$/', function (string $attribute, mixed $value, \Closure $fail): void {

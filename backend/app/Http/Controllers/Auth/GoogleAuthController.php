@@ -120,6 +120,6 @@ class GoogleAuthController extends Controller
         $expiresAt = ! empty($data['remember']) ? now()->addDays(30) : now()->addHours(8);
         $token = $user->createToken('google-sign-in', ['*'], $expiresAt)->plainTextToken;
 
-        return response()->json(['token' => $token, 'user' => $user->only(['id', 'name', 'email', 'google_photo_url'])])->header('Cache-Control', 'no-store');
+        return response()->json(['token' => $token, 'user' => $user->only(['id', 'user_code', 'name', 'email', 'google_photo_url'])])->header('Cache-Control', 'no-store');
     }
 }

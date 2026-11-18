@@ -22,6 +22,7 @@ afterEach(() => {
 
 const people = Array.from({ length: 11 }, (_, index) => ({
   id: index + 1,
+  user_code: `UID${String(index + 1).padStart(3, '0')}`,
   name: `Person ${index + 1}`,
   email: `person${index + 1}@example.test`,
   username: `person${index + 1}`,
@@ -51,6 +52,10 @@ test('shows database users and supports search, page size and pagination', async
   api.mockImplementation(async (path) => responseFor(path));
   render(<UsersListLayer />, { wrapper: MemoryRouter });
   await screen.findByText('Person 1');
+  expect(
+    screen.getByRole('columnheader', { name: 'User ID' }),
+  ).toBeInTheDocument();
+  expect(screen.getByText('UID001')).toBeInTheDocument();
   expect(screen.getByText('Super Admin')).toBeInTheDocument();
   expect(screen.getByText('person1@example.test')).toBeInTheDocument();
   expect(screen.getByText('person1')).toBeInTheDocument();
@@ -260,4 +265,15 @@ test('deleting the final row on a page returns to the preceding page', async () 
   );
   expect(await screen.findByText('Person 1')).toBeInTheDocument();
   expect(screen.getByText('Showing 1 to 10 of 10 entries')).toBeInTheDocument();
+});
+
+test('grid shows database users and identifiers and opens their details', async () => {
+  api.mockImplementation(async (path) =>
+    path.startsWith('/users?') ? responseFor(path) : { user: people[0] },
+  );
+  render(<UsersListLayer view="grid" />, { wrapper: MemoryRouter });
+  expect(await screen.findByText('User ID: UID001')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'View Person 1' }));
+  expect(await screen.findByRole('dialog')).toBeInTheDocument();
+  expect(await screen.findByText('UID001')).toBeInTheDocument();
 });

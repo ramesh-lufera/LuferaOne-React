@@ -3,7 +3,10 @@ import { Link, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { apiUrl, getToken, clearToken } from '../helper/auth';
 import { canAccessPath } from '../helper/moduleAccess';
 
-import { AccessContext } from '../helper/AccessContext';
+import {
+  AccessContext,
+  UpdateAccessUserContext,
+} from '../helper/AccessContext';
 
 export default function RequireAuth() {
   const [status, setStatus] = useState('loading');
@@ -64,7 +67,9 @@ export default function RequireAuth() {
     );
   return (
     <AccessContext.Provider value={user}>
-      <Outlet />
+      <UpdateAccessUserContext.Provider value={setUser}>
+        <Outlet />
+      </UpdateAccessUserContext.Provider>
     </AccessContext.Provider>
   );
 }

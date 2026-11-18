@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Icon } from '@iconify/react/dist/iconify.js';
@@ -15,6 +16,7 @@ import ModuleTableCell from './ModuleTableCell';
 
 const columns = [
   { label: 'S.L', width: 64 },
+  { label: 'User ID', width: 110 },
   { label: 'Name', width: 200 },
   { label: 'Email', width: 260 },
   { label: 'Username', width: 170 },
@@ -29,7 +31,7 @@ const roleLabel = (role) =>
     ? 'Super Admin'
     : role.charAt(0).toUpperCase() + role.slice(1);
 
-export default function UsersListLayer() {
+export default function UsersListLayer({ view = 'list' }) {
   const actor = useAccessUser();
   const navigate = useNavigate();
   const [action, setAction] = useState(null);
@@ -171,91 +173,145 @@ export default function UsersListLayer() {
           }
         />
         <div className="card-body p-24">
-          <ModuleTable columns={columns}>
-            {loading ? (
-              <tr>
-                <td colSpan={columns.length} role="status">
-                  Loading users...
-                </td>
-              </tr>
-            ) : result.data.length === 0 ? (
-              <tr>
-                <td colSpan={columns.length}>No users found.</td>
-              </tr>
-            ) : (
-              result.data.map((user, index) => (
-                <tr key={user.id}>
-                  <td>{result.from + index}</td>
-                  <td className="fw-medium">
-                    <ModuleTableCell id={`user-name-${user.id}`}>
-                      {user.name}
-                    </ModuleTableCell>
-                  </td>
-                  <td>
-                    <ModuleTableCell id={`user-email-${user.id}`}>
-                      {user.email}
-                    </ModuleTableCell>
-                  </td>
-                  <td>
-                    <ModuleTableCell id={`user-username-${user.id}`}>
-                      {user.username || '—'}
-                    </ModuleTableCell>
-                  </td>
-                  <td>
-                    <ModuleTableCell id={`user-phone-${user.id}`}>
-                      {user.phone || '—'}
-                    </ModuleTableCell>
-                  </td>
-                  <td>
-                    <ModuleTableCell id={`user-role-${user.id}`}>
-                      {roleLabel(user.role)}
-                    </ModuleTableCell>
-                  </td>
-                  <td>
-                    {user.created_at
-                      ? new Date(user.created_at).toLocaleDateString()
-                      : '—'}
-                  </td>
-                  <td className="text-center">
-                    <div className="d-flex align-items-center justify-content-center flex-nowrap gap-10">
-                      <button
-                        type="button"
-                        className="module-table-action bg-primary-50 text-primary-600 w-40-px h-40-px rounded-circle"
-                        aria-label={`View ${user.name}`}
-                        title="View user"
-                        onClick={() => openAction('view', user)}
-                      >
-                        <Icon icon="iconamoon:eye-light" aria-hidden="true" />
-                      </button>
-                      <button
-                        type="button"
-                        className="module-table-action bg-success-focus text-success-600 w-40-px h-40-px rounded-circle"
-                        aria-label={`Edit ${user.name}`}
-                        title="Edit user"
-                        disabled={!canManage(user)}
-                        onClick={() => openAction('edit', user)}
-                      >
-                        <Icon icon="lucide:edit" aria-hidden="true" />
-                      </button>
-                      <button
-                        type="button"
-                        className="module-table-action bg-danger-focus text-danger-600 w-40-px h-40-px rounded-circle"
-                        aria-label={`Delete ${user.name}`}
-                        title="Delete user"
-                        disabled={!canManage(user)}
-                        onClick={() => openAction('delete', user)}
-                      >
-                        <Icon
-                          icon="fluent:delete-24-regular"
-                          aria-hidden="true"
-                        />
-                      </button>
+          {view === 'grid' ? (
+            <div className="row gy-4">
+              {loading ? (
+                <p role="status">Loading users...</p>
+              ) : result.data.length === 0 ? (
+                <p>No users found.</p>
+              ) : (
+                result.data.map((user) => (
+                  <div key={user.id} className="col-sm-6 col-xl-4">
+                    <div className="card h-100">
+                      <div className="card-body p-24">
+                        <h6 className="text-break">{user.name}</h6>
+                        <p className="fw-semibold">User ID: {user.user_code}</p>
+                        <p className="text-break">{user.email}</p>
+                        <p className="text-break">{user.username || '—'}</p>
+                        <p>{user.phone || '—'}</p>
+                        <p>{roleLabel(user.role)}</p>
+                        <div className="d-flex gap-2">
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-primary"
+                            onClick={() => openAction('view', user)}
+                            aria-label={`View ${user.name}`}
+                          >
+                            View
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-primary"
+                            disabled={!canManage(user)}
+                            onClick={() => openAction('edit', user)}
+                            aria-label={`Edit ${user.name}`}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-danger"
+                            disabled={!canManage(user)}
+                            onClick={() => openAction('delete', user)}
+                            aria-label={`Delete ${user.name}`}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
                     </div>
+                  </div>
+                ))
+              )}
+            </div>
+          ) : (
+            <ModuleTable columns={columns}>
+              {loading ? (
+                <tr>
+                  <td colSpan={columns.length} role="status">
+                    Loading users...
                   </td>
                 </tr>
-              ))
-            )}
-          </ModuleTable>
+              ) : result.data.length === 0 ? (
+                <tr>
+                  <td colSpan={columns.length}>No users found.</td>
+                </tr>
+              ) : (
+                result.data.map((user, index) => (
+                  <tr key={user.id}>
+                    <td>{result.from + index}</td>
+                    <td>{user.user_code || '—'}</td>
+                    <td className="fw-medium">
+                      <ModuleTableCell id={`user-name-${user.id}`}>
+                        {user.name}
+                      </ModuleTableCell>
+                    </td>
+                    <td>
+                      <ModuleTableCell id={`user-email-${user.id}`}>
+                        {user.email}
+                      </ModuleTableCell>
+                    </td>
+                    <td>
+                      <ModuleTableCell id={`user-username-${user.id}`}>
+                        {user.username || '—'}
+                      </ModuleTableCell>
+                    </td>
+                    <td>
+                      <ModuleTableCell id={`user-phone-${user.id}`}>
+                        {user.phone || '—'}
+                      </ModuleTableCell>
+                    </td>
+                    <td>
+                      <ModuleTableCell id={`user-role-${user.id}`}>
+                        {roleLabel(user.role)}
+                      </ModuleTableCell>
+                    </td>
+                    <td>
+                      {user.created_at
+                        ? new Date(user.created_at).toLocaleDateString()
+                        : '—'}
+                    </td>
+                    <td className="text-center">
+                      <div className="d-flex align-items-center justify-content-center flex-nowrap gap-10">
+                        <button
+                          type="button"
+                          className="module-table-action bg-primary-50 text-primary-600 w-40-px h-40-px rounded-circle"
+                          aria-label={`View ${user.name}`}
+                          title="View user"
+                          onClick={() => openAction('view', user)}
+                        >
+                          <Icon icon="iconamoon:eye-light" aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          className="module-table-action bg-success-focus text-success-600 w-40-px h-40-px rounded-circle"
+                          aria-label={`Edit ${user.name}`}
+                          title="Edit user"
+                          disabled={!canManage(user)}
+                          onClick={() => openAction('edit', user)}
+                        >
+                          <Icon icon="lucide:edit" aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          className="module-table-action bg-danger-focus text-danger-600 w-40-px h-40-px rounded-circle"
+                          aria-label={`Delete ${user.name}`}
+                          title="Delete user"
+                          disabled={!canManage(user)}
+                          onClick={() => openAction('delete', user)}
+                        >
+                          <Icon
+                            icon="fluent:delete-24-regular"
+                            aria-hidden="true"
+                          />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </ModuleTable>
+          )}
           <ModuleTablePagination
             page={page}
             pages={result.last_page}

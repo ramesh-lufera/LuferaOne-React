@@ -36,6 +36,7 @@ class StoreUserRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'user_code' => ['prohibited'],
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
             'username' => ['required', 'string', 'min:3', 'max:50', 'regex:/^[a-z0-9_.-]+$/', Rule::unique('users', 'username')],

@@ -88,7 +88,7 @@ test('creates an account with profile details through the company-style wizard',
   expect(screen.getByLabelText(/Password/)).toHaveValue('Example-Password-123');
   fireEvent.click(screen.getByRole('button', { name: 'Save User' }));
   expect(
-    await screen.findByText('User New User created successfully.'),
+    await screen.findByText(/User New User created successfully/),
   ).toBeInTheDocument();
   const [path, options] = api.mock.calls[0];
   expect(path).toBe('/users');
@@ -198,7 +198,7 @@ test('autofills username from email, preserves edits and generates a strong pass
   expect(password).toHaveAttribute('type', 'password');
   fireEvent.click(screen.getByRole('button', { name: 'Save User' }));
   expect(
-    await screen.findByText('User New User created successfully.'),
+    await screen.findByText(/User New User created successfully/),
   ).toBeInTheDocument();
   expect(api.mock.calls[0][1].body.get('password')).toBe(generated);
   expect(api.mock.calls[0][1].body.get('username')).toBe('custom.username');

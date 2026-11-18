@@ -36,7 +36,7 @@ class RegisterController extends Controller
 
         return response()->json([
             'message' => 'Account created successfully. Please sign in.',
-            'user' => $user->only(['id', 'name', 'email', 'phone', 'username']),
+            'user' => $user->only(['id', 'user_code', 'name', 'email', 'phone', 'username']),
         ], 201);
     }
 }

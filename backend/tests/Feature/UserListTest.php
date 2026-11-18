@@ -29,7 +29,7 @@ class UserListTest extends TestCase
         $response = $this->actingAs($actor, 'sanctum')->getJson('/api/users?search=listed-user')->assertOk()
             ->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $user->id)
             ->assertJsonPath('data.0.phone', '+919876543210')->assertJsonPath('data.0.role', 'user');
-        $this->assertEqualsCanonicalizing(['id', 'name', 'email', 'username', 'phone', 'role', 'created_at'], array_keys($response->json('data.0')));
+        $this->assertEqualsCanonicalizing(['id', 'user_code', 'name', 'email', 'username', 'phone', 'role', 'created_at'], array_keys($response->json('data.0')));
         $this->getJson('/api/users?search=9876543210')->assertOk()->assertJsonCount(1, 'data');
         $this->getJson('/api/users?search=listed%40example.test')->assertOk()->assertJsonCount(1, 'data');
     }
