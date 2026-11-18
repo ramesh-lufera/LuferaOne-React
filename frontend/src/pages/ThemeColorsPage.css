@@ -1,17 +1,17 @@
-.theme-colors-applied button.btn-primary {
+.theme-colors-applied button.btn-primary:not([data-theme-exempt]) {
   background-color: var(--theme-page-main) !important;
   color: var(--theme-page-text) !important;
 }
 
-.theme-colors-applied button.btn-primary:hover {
+.theme-colors-applied button.btn-primary:not([data-theme-exempt]):hover {
   background-color: var(--theme-page-focus) !important;
 }
 
-.theme-colors-applied button:not([type='reset']):not(.btn-outline-secondary):not(.btn-danger):not(.btn-outline-danger) {
+.theme-colors-applied button:not([data-theme-exempt]):not([type='reset']):not(.btn-outline-secondary):not(.btn-danger):not(.btn-outline-danger) {
   border-color: var(--theme-page-main) !important;
 }
 
-.theme-colors-applied button:not([type='reset']):not(.btn-outline-secondary):not(.btn-danger):not(.btn-outline-danger):is(:hover, :focus, :active) {
+.theme-colors-applied button:not([data-theme-exempt]):not([type='reset']):not(.btn-outline-secondary):not(.btn-danger):not(.btn-outline-danger):is(:hover, :focus, :active) {
   border-color: var(--theme-page-focus) !important;
 }
 
