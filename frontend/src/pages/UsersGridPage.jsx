@@ -1,6 +1,6 @@
-import MasterLayout from "../masterLayout/MasterLayout";
-import Breadcrumb from "../components/Breadcrumb";
-import UsersGridLayer from "../components/UsersGridLayer";
+import MasterLayout from '../masterLayout/MasterLayout';
+import ModulePageHeader from '../components/ModulePageHeader';
+import UsersGridLayer from '../components/UsersGridLayer';
 
 const UsersGridPage = () => {
   return (
@@ -8,7 +8,7 @@ const UsersGridPage = () => {
       {/* MasterLayout */}
       <MasterLayout>
         {/* Breadcrumb */}
-        <Breadcrumb title='Users Grid' />
+        <ModulePageHeader title="Users Grid" />
 
         {/* UsersGridLayer */}
         <UsersGridLayer />

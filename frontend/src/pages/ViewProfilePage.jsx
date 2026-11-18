@@ -1,6 +1,6 @@
-import MasterLayout from "../masterLayout/MasterLayout";
-import Breadcrumb from "../components/Breadcrumb";
-import ViewProfileLayer from "../components/ViewProfileLayer";
+import MasterLayout from '../masterLayout/MasterLayout';
+import ModulePageHeader from '../components/ModulePageHeader';
+import ViewProfileLayer from '../components/ViewProfileLayer';
 
 const ViewProfilePage = () => {
   return (
@@ -8,7 +8,7 @@ const ViewProfilePage = () => {
       {/* MasterLayout */}
       <MasterLayout>
         {/* Breadcrumb */}
-        <Breadcrumb title='View Profile' />
+        <ModulePageHeader title="View Profile" />
 
         {/* ViewProfileLayer */}
         <ViewProfileLayer />

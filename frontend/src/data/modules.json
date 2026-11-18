@@ -52,6 +52,13 @@
     ]
   },
   {
+    "key": "invoice-settings",
+    "label": "Invoice Settings",
+    "paths": [
+      "/invoice-settings"
+    ]
+  },
+  {
     "key": "activity-log",
     "label": "Activity Log",
     "paths": [

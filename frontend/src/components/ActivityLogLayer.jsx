@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import $ from 'jquery';
 import useDataTable from '../hook/useDataTable';
 import { api } from '../services/api';
+import './ActivityLogLayer.css';
 
 const capitalizeName = (name) => name ? name.charAt(0).toLocaleUpperCase() + name.slice(1) : '';
 
@@ -78,7 +79,7 @@ export default function ActivityLogLayer() {
       </form>
       {error && <div className='alert alert-danger' role='alert'>{error} <button type='button' className='btn btn-sm btn-outline-danger' onClick={() => { setReload((n) => n + 1); instance.current?.ajax.reload(null, false); }}>Retry</button></div>}
       {loading && <p role='status'>Loading activities…</p>}
-      <div className='table-responsive'><table ref={tableRef} className='table bordered-table mb-0' aria-label='Activity log'>
+      <div className='table-responsive'><table ref={tableRef} className='table bordered-table mb-0 activity-log-table' aria-label='Activity log'>
         <thead><tr>{['S.No', 'Action', 'Module', 'Description', 'Performed By', 'Date & Time'].map((column) => <th scope='col' key={column}>{column}</th>)}</tr></thead><tbody />
       </table></div>
     </div>

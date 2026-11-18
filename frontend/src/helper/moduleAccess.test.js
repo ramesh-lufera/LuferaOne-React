@@ -17,3 +17,8 @@ test('module access handles direct URLs and route matching variants', () => {
   expect(moduleForPath('/role-access')).toBe('roles');
   expect(moduleForPath('/assign-role')).toBe('roles');
 });
+
+test('self profile is available to every authenticated user', () => {
+  expect(canAccessPath({ modules: [] }, '/view-profile')).toBe(true);
+  expect(canAccessPath(null, '/view-profile')).toBe(false);
+});

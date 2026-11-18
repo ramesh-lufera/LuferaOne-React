@@ -1,3 +1,4 @@
+import { isStrongPassword } from '../helper/password';
 /* eslint-disable react/prop-types */
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -53,12 +54,6 @@ const autoComplete = {
 
 const passwordError =
   'Password must contain at least 12 characters, uppercase and lowercase letters, a number, and a symbol.';
-const isStrongPassword = (password) =>
-  [...password].length >= 12 &&
-  /\p{Lu}/u.test(password) &&
-  /\p{Ll}/u.test(password) &&
-  /\p{N}/u.test(password) &&
-  /[^\p{L}\p{N}\s]/u.test(password);
 
 function generatePassword() {
   const alphabet =
@@ -91,6 +86,7 @@ export default function AddUserLayer({ userId, onSaved, onSavingChange } = {}) {
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [createdUser, setCreatedUser] = useState(null);
+  const [userCode, setUserCode] = useState('');
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState('');
   const savingRef = useRef(false);
@@ -124,6 +120,7 @@ export default function AddUserLayer({ userId, onSaved, onSavingChange } = {}) {
           phone: phoneInput,
           phone_country_code: countryCode,
         });
+        setUserCode(user.user_code || '');
         usernameEdited.current = true;
         setExistingImage(user.profile_image_url);
       })
@@ -454,7 +451,8 @@ export default function AddUserLayer({ userId, onSaved, onSavingChange } = {}) {
       <div className="card">
         <div className="card-body p-24">
           <div className="alert alert-success" role="status">
-            User {createdUser.name} created successfully.
+            User {createdUser.name} created successfully. User ID:{' '}
+            {createdUser.user_code}
           </div>
           <Link className="btn btn-primary" to="/users-list">
             View Users
@@ -472,6 +470,22 @@ export default function AddUserLayer({ userId, onSaved, onSavingChange } = {}) {
           </div>
         )}
         <div className="form-wizard">
+          {isEditing && (
+            <div className="mb-20">
+              <label
+                htmlFor="edit-user-code"
+                className="form-label fw-semibold"
+              >
+                User ID
+              </label>
+              <input
+                id="edit-user-code"
+                className="form-control"
+                value={userCode}
+                readOnly
+              />
+            </div>
+          )}
           <form
             noValidate
             onSubmit={submit}

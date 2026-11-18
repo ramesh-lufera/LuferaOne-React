@@ -1,20 +1,12 @@
-import MasterLayout from "../masterLayout/MasterLayout";
-import Breadcrumb from "../components/Breadcrumb";
-import InvoicePreviewLayer from "../components/InvoicePreviewLayer";
+import MasterLayout from '../masterLayout/MasterLayout';
+import ModulePageHeader from '../components/ModulePageHeader';
+import InvoicePreviewLayer from '../components/InvoicePreviewLayer';
 
-const InvoicePreviewPage = () => {
+export default function InvoicePreviewPage() {
   return (
-    <>
-      {/* MasterLayout */}
-      <MasterLayout>
-        {/* Breadcrumb */}
-        <Breadcrumb title='Invoice - Preview' />
-
-        {/* InvoicePreviewLayer */}
-        <InvoicePreviewLayer />
-      </MasterLayout>
-    </>
+    <MasterLayout>
+      <ModulePageHeader title="Invoice Details" />
+      <InvoicePreviewLayer />
+    </MasterLayout>
   );
-};
-
-export default InvoicePreviewPage;
+}

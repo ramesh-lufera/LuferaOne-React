@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../services/api';
 
 const fields = [
+  ['user_code', 'User ID'],
   ['name', 'Full Name'],
   ['email', 'Email'],
   ['username', 'Username'],

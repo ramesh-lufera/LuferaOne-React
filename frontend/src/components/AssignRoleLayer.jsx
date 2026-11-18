@@ -9,6 +9,7 @@ import ModuleTableCell from './ModuleTableCell';
 
 const columns = [
   { label: 'S.L', width: 64 },
+  { label: 'User ID', width: 110 },
   { label: 'User', width: 190 },
   { label: 'Email', width: 260 },
   { label: 'Current Role', width: 170 },
@@ -139,18 +140,19 @@ export default function AssignRoleLayer() {
           <ModuleTable columns={columns}>
             {loading ? (
               <tr>
-                <td colSpan={6} role="status">
+                <td colSpan={columns.length} role="status">
                   Loading users...
                 </td>
               </tr>
             ) : users.length === 0 ? (
               <tr>
-                <td colSpan={6}>No users found.</td>
+                <td colSpan={columns.length}>No users found.</td>
               </tr>
             ) : (
               users.map((user, index) => (
                 <tr key={user.id}>
                   <td>{range.from + index}</td>
+                  <td>{user.user_code || '—'}</td>
                   <td>
                     <ModuleTableCell id={`assign-user-${user.id}`}>
                       {user.name}

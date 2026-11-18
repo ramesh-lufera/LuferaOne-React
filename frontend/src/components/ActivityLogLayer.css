@@ -1,0 +1,50 @@
+/* Match the DataTables 2.3 header layout within the existing template styles. */
+table.activity-log-table.dataTable thead > tr > th .dt-column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+table.activity-log-table.dataTable thead > tr > th .dt-column-title {
+  flex: 1 1 auto;
+  white-space: nowrap;
+}
+
+table.activity-log-table.dataTable
+  thead
+  > tr
+  > th:is(
+    .dt-orderable-asc,
+    .dt-orderable-desc,
+    .dt-ordering-asc,
+    .dt-ordering-desc
+  )
+  span.dt-column-order {
+  position: relative;
+  inset: auto;
+  display: block;
+  flex: 0 0 12px;
+  width: 12px;
+  height: 20px;
+  color: var(--text-secondary-light);
+}
+
+table.activity-log-table.dataTable thead > tr > th span.dt-column-order::before,
+table.activity-log-table.dataTable thead > tr > th span.dt-column-order::after {
+  opacity: 0.35;
+}
+
+table.activity-log-table.dataTable
+  thead
+  > tr
+  > th.dt-ordering-asc
+  span.dt-column-order::before,
+table.activity-log-table.dataTable
+  thead
+  > tr
+  > th.dt-ordering-desc
+  span.dt-column-order::after {
+  color: var(--primary-600);
+  opacity: 1;
+}

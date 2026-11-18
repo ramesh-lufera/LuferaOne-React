@@ -67,9 +67,9 @@ class RoleController extends Controller
             'per_page' => ['sometimes', 'integer', Rule::in([10, 20, 50])],
         ]);
         $search = $data['search'] ?? '';
-        $users = User::query()->select('id', 'name', 'email', 'role')
+        $users = User::query()->select('id', 'user_code', 'name', 'email', 'role')
             ->where(function ($query) use ($search): void {
-                $query->where('name', 'like', '%'.$search.'%')->orWhere('email', 'like', '%'.$search.'%');
+                $query->where('name', 'like', '%'.$search.'%')->orWhere('email', 'like', '%'.$search.'%')->orWhere('user_code', 'like', '%'.$search.'%');
             })->orderBy('name')->orderBy('id')->paginate($data['per_page'] ?? 20);
 
         return response()->json($users);

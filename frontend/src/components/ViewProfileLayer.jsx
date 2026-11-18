@@ -1,546 +1,595 @@
-import { Icon } from "@iconify/react/dist/iconify.js";
-import { useState } from "react";
+import { isStrongPassword, passwordHelp } from '../helper/password';
+import { useUpdateAccessUser } from '../helper/AccessContext';
+import { useEffect, useState } from 'react';
+import { api } from '../services/api';
+import PhoneCountryCodeSelect from './PhoneCountryCodeSelect';
+import phoneCountryCodes from '../data/phoneCountryCodes';
 
-const ViewProfileLayer = () => {
-  const [imagePreview, setImagePreview] = useState(
-    "assets/images/user-grid/user-grid-img13.png"
+const fields = [
+  ['name', 'Full Name', 'text', 255, true],
+  ['email', 'Email', 'email', 255, true],
+  ['username', 'Username', 'text', 50],
+  ['date_of_birth', 'Date of Birth', 'date'],
+  ['business_name', 'Business Name', 'text', 255],
+  ['gstin', 'GSTIN', 'text', 15],
+  ['address', 'Address', 'textarea', 2000],
+  ['city', 'City', 'text', 100],
+  ['state', 'State', 'text', 100],
+  ['country', 'Country', 'text', 100],
+  ['pincode', 'Pincode', 'text', 20],
+];
+
+function useImagePreview(file, saved) {
+  const [preview, setPreview] = useState(null);
+  useEffect(() => {
+    if (!file) {
+      setPreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+  return file ? preview || saved : saved;
+}
+
+export default function ViewProfileLayer() {
+  const updateAccessUser = useUpdateAccessUser();
+  const [user, setUser] = useState(null);
+  const [form, setForm] = useState({});
+  const [tab, setTab] = useState('profile');
+  const [files, setFiles] = useState({});
+  const [removed, setRemoved] = useState({});
+  const [errors, setErrors] = useState({});
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [attempt, setAttempt] = useState(0);
+  const [passwords, setPasswords] = useState({
+    current_password: '',
+    password: '',
+    password_confirmation: '',
+  });
+  const [visible, setVisible] = useState({});
+  const [code, setCode] = useState('+91');
+  const [phone, setPhone] = useState('');
+  const [phoneChanged, setPhoneChanged] = useState(false);
+  const profilePreview = useImagePreview(
+    files.profile_image,
+    removed.profile_image ? null : user?.profile_image_url,
   );
-  const [passwordVisible, setPasswordVisible] = useState(false);
-  const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
+  const coverPreview = useImagePreview(
+    files.cover_image,
+    removed.cover_image ? null : user?.cover_image_url,
+  );
 
-  // Toggle function for password field
-  const togglePasswordVisibility = () => {
-    setPasswordVisible(!passwordVisible);
+  const populate = (next) => {
+    setUser(next);
+    setForm(Object.fromEntries(fields.map(([key]) => [key, next[key] || ''])));
+    const country = [...phoneCountryCodes]
+      .sort((a, b) => b.code.length - a.code.length)
+      .find(({ code }) => next.phone?.startsWith(code));
+    setCode(country?.code || '+91');
+    setPhone(
+      country ? next.phone.slice(country.code.length).trim() : next.phone || '',
+    );
+    setPhoneChanged(false);
+    setFiles({});
+    setRemoved({});
   };
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    setError('');
+    api('/profile', { signal: controller.signal })
+      .then(({ user }) => populate(user))
+      .catch((error) => {
+        if (error.name !== 'AbortError')
+          setError(error.message || 'Unable to load your profile.');
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
+  }, [attempt]);
 
-  // Toggle function for confirm password field
-  const toggleConfirmPasswordVisibility = () => {
-    setConfirmPasswordVisible(!confirmPasswordVisible);
+  const failure = (error) => {
+    setErrors(error.errors || {});
+    setError(error.message || 'Unable to save changes.');
   };
-
-  const readURL = (input) => {
-    if (input.target.files && input.target.files[0]) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImagePreview(e.target.result);
-      };
-      reader.readAsDataURL(input.target.files[0]);
+  const changeTab = (next) => {
+    setTab(next);
+    setErrors({});
+    setMessage('');
+    setError('');
+    setPasswords({
+      current_password: '',
+      password: '',
+      password_confirmation: '',
+    });
+  };
+  const upload = (key, file) => {
+    setMessage('');
+    if (!file) return;
+    if (
+      !['image/jpeg', 'image/png', 'image/webp'].includes(file.type) ||
+      file.size > 2 * 1024 * 1024
+    ) {
+      setErrors((old) => ({
+        ...old,
+        [key]: ['Choose a JPG, PNG, or WebP image up to 2 MB.'],
+      }));
+      return;
+    }
+    setErrors((old) => ({ ...old, [key]: null }));
+    setFiles((old) => ({ ...old, [key]: file }));
+    setRemoved((old) => ({ ...old, [key]: false }));
+  };
+  const saveProfile = async (event) => {
+    event.preventDefault();
+    setErrors({});
+    setMessage('');
+    setError('');
+    const data = new FormData();
+    Object.entries(form).forEach(([key, value]) => data.append(key, value));
+    data.append(
+      'phone',
+      phoneChanged
+        ? phone.trim()
+          ? `${code} ${phone.trim()}`
+          : ''
+        : user.phone || '',
+    );
+    ['profile_image', 'cover_image'].forEach((key) => {
+      if (files[key]) data.append(key, files[key]);
+      if (removed[key]) data.append(`remove_${key}`, '1');
+    });
+    data.append('_method', 'PUT');
+    setSaving(true);
+    try {
+      const result = await api('/profile', { method: 'POST', body: data });
+      populate(result.user);
+      updateAccessUser((previous) => ({ ...previous, ...result.user }));
+      setMessage('Profile updated successfully.');
+    } catch (error) {
+      failure(error);
+    } finally {
+      setSaving(false);
     }
   };
+  const changePassword = async (event) => {
+    event.preventDefault();
+    setErrors({});
+    setMessage('');
+    setError('');
+    const invalid = {};
+    if (!isStrongPassword(passwords.password))
+      invalid.password = [passwordHelp];
+    if (passwords.password !== passwords.password_confirmation)
+      invalid.password_confirmation = ['The new passwords do not match.'];
+    if (passwords.current_password === passwords.password)
+      invalid.password = [
+        'The new password must be different from your current password.',
+      ];
+    if (Object.keys(invalid).length) {
+      setErrors(invalid);
+      return;
+    }
+    setSaving(true);
+    try {
+      const result = await api('/profile/password', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(passwords),
+      });
+      setMessage(result.message);
+      setPasswords({
+        current_password: '',
+        password: '',
+        password_confirmation: '',
+      });
+    } catch (error) {
+      failure(error);
+    } finally {
+      setSaving(false);
+    }
+  };
+  const fieldError = (key) =>
+    errors[key]?.[0] ? (
+      <div
+        id={`error-${key}`}
+        className="text-danger-600 text-sm mt-4"
+        role="alert"
+      >
+        {errors[key][0]}
+      </div>
+    ) : null;
+  const imageInput = (key, label) => (
+    <div className="mb-20" key={key}>
+      <label className="form-label fw-semibold" htmlFor={key}>
+        {label}
+      </label>
+      <input
+        id={key}
+        type="file"
+        className="form-control"
+        accept="image/jpeg,image/png,image/webp"
+        disabled={saving}
+        aria-invalid={Boolean(errors[key])}
+        aria-describedby={`error-${key}`}
+        onChange={(event) => {
+          upload(key, event.target.files?.[0]);
+          event.target.value = '';
+        }}
+      />
+      <small className="text-secondary-light">
+        JPG, PNG, or WebP. Maximum 2 MB. Changes are saved with your profile.
+      </small>
+      {(files[key] || (!removed[key] && user[`${key}_url`])) && (
+        <button
+          type="button"
+          className="btn btn-sm btn-outline-danger d-block mt-8"
+          onClick={() => {
+            setFiles((old) => ({ ...old, [key]: null }));
+            setRemoved((old) => ({ ...old, [key]: true }));
+          }}
+          disabled={saving}
+        >
+          Remove {label.toLowerCase()}
+        </button>
+      )}
+      {fieldError(key)}
+    </div>
+  );
+  if (loading) return <p role="status">Loading your profile...</p>;
+  if (!user)
+    return (
+      <div role="alert">
+        {error}
+        <button
+          className="btn btn-primary ms-12"
+          onClick={() => setAttempt((old) => old + 1)}
+        >
+          Try again
+        </button>
+      </div>
+    );
   return (
-    <div className='row gy-4'>
-      <div className='col-lg-4'>
-        <div className='user-grid-card position-relative border radius-16 overflow-hidden bg-base h-100'>
-          <img
-            src='assets/images/user-grid/user-grid-bg1.png'
-            alt=''
-            className='w-100 object-fit-cover'
-          />
-          <div className='pb-24 ms-16 mb-24 me-16  mt--100'>
-            <div className='text-center border border-top-0 border-start-0 border-end-0'>
-              <img
-                src='assets/images/user-grid/user-grid-img14.png'
-                alt=''
-                className='border br-white border-width-2-px w-200-px h-200-px rounded-circle object-fit-cover'
-              />
-              <h6 className='mb-0 mt-16'>Jacob Jones</h6>
-              <span className='text-secondary-light mb-16'>
-                ifrandom@gmail.com
+    <div className="row gy-4">
+      <div className="col-lg-4">
+        <div className="user-grid-card border radius-16 overflow-hidden bg-base">
+          {coverPreview ? (
+            <img
+              src={coverPreview}
+              alt="Cover preview"
+              style={{ width: '100%', height: 190, objectFit: 'cover' }}
+            />
+          ) : (
+            <div
+              aria-label="No cover picture"
+              className="bg-primary-100"
+              style={{ height: 190 }}
+            />
+          )}
+          <div className="p-24">
+            <div className="text-center border-bottom pb-20">
+              {profilePreview ? (
+                <img
+                  src={profilePreview}
+                  alt={`${user.name}'s profile`}
+                  className="rounded-circle object-fit-cover border border-2"
+                  style={{
+                    width: 128,
+                    height: 128,
+                    marginTop: -80,
+                    position: 'relative',
+                  }}
+                />
+              ) : (
+                <div
+                  className="rounded-circle bg-primary-50 text-primary-600 d-flex align-items-center justify-content-center mx-auto fw-bold"
+                  style={{
+                    width: 128,
+                    height: 128,
+                    marginTop: -80,
+                    position: 'relative',
+                    fontSize: 40,
+                  }}
+                  aria-label="Profile initials"
+                >
+                  {user.name?.trim().slice(0, 1).toUpperCase()}
+                </div>
+              )}
+              <h6 className="mt-16 mb-4 text-break">{user.name}</h6>
+              <p className="text-secondary-light text-break mb-8">
+                {user.email}
+              </p>
+              <span className="badge bg-primary-50 text-primary-600 text-capitalize">
+                {user.role?.replaceAll('_', ' ')}
               </span>
             </div>
-            <div className='mt-24'>
-              <h6 className='text-xl mb-16'>Personal Info</h6>
-              <ul>
-                <li className='d-flex align-items-center gap-1 mb-12'>
-                  <span className='w-30 text-md fw-semibold text-primary-light'>
-                    Full Name
-                  </span>
-                  <span className='w-70 text-secondary-light fw-medium'>
-                    : Will Jonto
-                  </span>
-                </li>
-                <li className='d-flex align-items-center gap-1 mb-12'>
-                  <span className='w-30 text-md fw-semibold text-primary-light'>
-                    {" "}
-                    Email
-                  </span>
-                  <span className='w-70 text-secondary-light fw-medium'>
-                    : willjontoax@gmail.com
-                  </span>
-                </li>
-                <li className='d-flex align-items-center gap-1 mb-12'>
-                  <span className='w-30 text-md fw-semibold text-primary-light'>
-                    {" "}
-                    Phone Number
-                  </span>
-                  <span className='w-70 text-secondary-light fw-medium'>
-                    : (1) 2536 2561 2365
-                  </span>
-                </li>
-                <li className='d-flex align-items-center gap-1 mb-12'>
-                  <span className='w-30 text-md fw-semibold text-primary-light'>
-                    {" "}
-                    Department
-                  </span>
-                  <span className='w-70 text-secondary-light fw-medium'>
-                    : Design
-                  </span>
-                </li>
-                <li className='d-flex align-items-center gap-1 mb-12'>
-                  <span className='w-30 text-md fw-semibold text-primary-light'>
-                    {" "}
-                    Designation
-                  </span>
-                  <span className='w-70 text-secondary-light fw-medium'>
-                    : UI UX Designer
-                  </span>
-                </li>
-                <li className='d-flex align-items-center gap-1 mb-12'>
-                  <span className='w-30 text-md fw-semibold text-primary-light'>
-                    {" "}
-                    Languages
-                  </span>
-                  <span className='w-70 text-secondary-light fw-medium'>
-                    : English
-                  </span>
-                </li>
-                <li className='d-flex align-items-center gap-1'>
-                  <span className='w-30 text-md fw-semibold text-primary-light'>
-                    {" "}
-                    Bio
-                  </span>
-                  <span className='w-70 text-secondary-light fw-medium'>
-                    : Lorem Ipsum&nbsp;is simply dummy text of the printing and
-                    typesetting industry.
-                  </span>
-                </li>
-              </ul>
-            </div>
+            <h6 className="text-lg mt-24 mb-20">Personal Info</h6>
+            <dl className="mb-0">
+              {[
+                ['Full Name', user.name],
+                ['Business Name', user.business_name],
+                ['GSTIN', user.gstin],
+                ['Email', user.email],
+                ['Phone Number', user.phone],
+                [
+                  'Date of Birth',
+                  user.date_of_birth?.replace(
+                    /^(\d{4})-(\d{2})-(\d{2})$/,
+                    '$3/$2/$1',
+                  ),
+                ],
+                ['Address', user.address],
+                ['City', user.city],
+                ['State', user.state],
+                ['Country', user.country],
+                ['Pin', user.pincode],
+                [
+                  'Role',
+                  user.role
+                    ?.replaceAll('_', ' ')
+                    .replace(/\b\w/g, (letter) => letter.toUpperCase()),
+                ],
+                ['User ID', user.user_code],
+              ].map(([label, value]) => (
+                <div
+                  className="d-grid mb-16 align-items-start gap-2"
+                  style={{
+                    gridTemplateColumns: 'minmax(112px, 30%) minmax(0, 1fr)',
+                  }}
+                  key={label}
+                >
+                  <dt className="text-md fw-semibold">{label}</dt>
+                  <dd
+                    className="d-flex text-secondary-light fw-medium mb-0"
+                    style={{ minWidth: 0 }}
+                  >
+                    <span className="me-4" aria-hidden="true">
+                      :
+                    </span>
+                    <span
+                      style={{
+                        overflowWrap: 'anywhere',
+                        whiteSpace: 'pre-line',
+                      }}
+                    >
+                      {value || '—'}
+                    </span>
+                  </dd>
+                </div>
+              ))}
+            </dl>
           </div>
         </div>
       </div>
-      <div className='col-lg-8'>
-        <div className='card h-100'>
-          <div className='card-body p-24'>
-            <ul
-              className='nav border-gradient-tab nav-pills mb-20 d-inline-flex'
-              id='pills-tab'
-              role='tablist'
+      <div className="col-lg-8">
+        <div className="card">
+          <div className="card-body p-24">
+            <div
+              className="nav border-gradient-tab nav-pills mb-24"
+              role="tablist"
+              aria-label="Profile settings"
             >
-              <li className='nav-item' role='presentation'>
+              {[
+                ['profile', 'Edit Profile'],
+                ['password', 'Change Password'],
+              ].map(([key, label]) => (
                 <button
-                  className='nav-link d-flex align-items-center px-24 active'
-                  id='pills-edit-profile-tab'
-                  data-bs-toggle='pill'
-                  data-bs-target='#pills-edit-profile'
-                  type='button'
-                  role='tab'
-                  aria-controls='pills-edit-profile'
-                  aria-selected='true'
+                  key={key}
+                  id={`tab-${key}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === key}
+                  aria-controls={`panel-${key}`}
+                  disabled={saving}
+                  className={`nav-link px-24 ${tab === key ? 'active' : ''}`}
+                  onClick={() => changeTab(key)}
                 >
-                  Edit Profile
+                  {label}
                 </button>
-              </li>
-              <li className='nav-item' role='presentation'>
-                <button
-                  className='nav-link d-flex align-items-center px-24'
-                  id='pills-change-passwork-tab'
-                  data-bs-toggle='pill'
-                  data-bs-target='#pills-change-passwork'
-                  type='button'
-                  role='tab'
-                  aria-controls='pills-change-passwork'
-                  aria-selected='false'
-                  tabIndex={-1}
-                >
-                  Change Password
-                </button>
-              </li>
-              <li className='nav-item' role='presentation'>
-                <button
-                  className='nav-link d-flex align-items-center px-24'
-                  id='pills-notification-tab'
-                  data-bs-toggle='pill'
-                  data-bs-target='#pills-notification'
-                  type='button'
-                  role='tab'
-                  aria-controls='pills-notification'
-                  aria-selected='false'
-                  tabIndex={-1}
-                >
-                  Notification Settings
-                </button>
-              </li>
-            </ul>
-            <div className='tab-content' id='pills-tabContent'>
-              <div
-                className='tab-pane fade show active'
-                id='pills-edit-profile'
-                role='tabpanel'
-                aria-labelledby='pills-edit-profile-tab'
-                tabIndex={0}
-              >
-                <h6 className='text-md text-primary-light mb-16'>
-                  Profile Image
-                </h6>
-                {/* Upload Image Start */}
-                <div className='mb-24 mt-16'>
-                  <div className='avatar-upload'>
-                    <div className='avatar-edit position-absolute bottom-0 end-0 me-24 mt-16 z-1 cursor-pointer'>
-                      <input
-                        type='file'
-                        id='imageUpload'
-                        accept='.png, .jpg, .jpeg'
-                        hidden
-                        onChange={readURL}
-                      />
-                      <label
-                        htmlFor='imageUpload'
-                        className='w-32-px h-32-px d-flex justify-content-center align-items-center bg-primary-50 text-primary-600 border border-primary-600 bg-hover-primary-100 text-lg rounded-circle'
-                      >
-                        <Icon
-                          icon='solar:camera-outline'
-                          className='icon'
-                        ></Icon>
-                      </label>
-                    </div>
-                    <div className='avatar-preview'>
-                      <div
-                        id='imagePreview'
-                        style={{
-                          backgroundImage: `url(${imagePreview})`,
-                          backgroundSize: "cover",
-                          backgroundPosition: "center",
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-                {/* Upload Image End */}
-                <form action='#'>
-                  <div className='row'>
-                    <div className='col-sm-6'>
-                      <div className='mb-20'>
-                        <label
-                          htmlFor='name'
-                          className='form-label fw-semibold text-primary-light text-sm mb-8'
-                        >
-                          Full Name
-                          <span className='text-danger-600'>*</span>
-                        </label>
-                        <input
-                          type='text'
-                          className='form-control radius-8'
-                          id='name'
-                          placeholder='Enter Full Name'
-                        />
-                      </div>
-                    </div>
-                    <div className='col-sm-6'>
-                      <div className='mb-20'>
-                        <label
-                          htmlFor='email'
-                          className='form-label fw-semibold text-primary-light text-sm mb-8'
-                        >
-                          Email <span className='text-danger-600'>*</span>
-                        </label>
-                        <input
-                          type='email'
-                          className='form-control radius-8'
-                          id='email'
-                          placeholder='Enter email address'
-                        />
-                      </div>
-                    </div>
-                    <div className='col-sm-6'>
-                      <div className='mb-20'>
-                        <label
-                          htmlFor='number'
-                          className='form-label fw-semibold text-primary-light text-sm mb-8'
-                        >
-                          Phone
-                        </label>
-                        <input
-                          type='email'
-                          className='form-control radius-8'
-                          id='number'
-                          placeholder='Enter phone number'
-                        />
-                      </div>
-                    </div>
-                    <div className='col-sm-6'>
-                      <div className='mb-20'>
-                        <label
-                          htmlFor='depart'
-                          className='form-label fw-semibold text-primary-light text-sm mb-8'
-                        >
-                          Department
-                          <span className='text-danger-600'>*</span>{" "}
-                        </label>
-                        <select
-                          className='form-control radius-8 form-select'
-                          id='depart'
-                          defaultValue='Select Event Title'
-                        >
-                          <option value='Select Event Title' disabled>
-                            Select Event Title
-                          </option>
-                          <option value='Enter Event Title'>
-                            Enter Event Title
-                          </option>
-                          <option value='Enter Event Title One'>
-                            Enter Event Title One
-                          </option>
-                          <option value='Enter Event Title Two'>
-                            Enter Event Title Two
-                          </option>
-                        </select>
-                      </div>
-                    </div>
-                    <div className='col-sm-6'>
-                      <div className='mb-20'>
-                        <label
-                          htmlFor='desig'
-                          className='form-label fw-semibold text-primary-light text-sm mb-8'
-                        >
-                          Designation
-                          <span className='text-danger-600'>*</span>{" "}
-                        </label>
-                        <select
-                          className='form-control radius-8 form-select'
-                          id='desig'
-                          defaultValue='Select Designation Title'
-                        >
-                          <option value='Select Designation Title' disabled>
-                            Select Designation Title
-                          </option>
-                          <option value='Enter Designation Title'>
-                            Enter Designation Title
-                          </option>
-                          <option value='Enter Designation Title One'>
-                            Enter Designation Title One
-                          </option>
-                          <option value='Enter Designation Title Two'>
-                            Enter Designation Title Two
-                          </option>
-                        </select>
-                      </div>
-                    </div>
-                    <div className='col-sm-6'>
-                      <div className='mb-20'>
-                        <label
-                          htmlFor='Language'
-                          className='form-label fw-semibold text-primary-light text-sm mb-8'
-                        >
-                          Language
-                          <span className='text-danger-600'>*</span>{" "}
-                        </label>
-                        <select
-                          className='form-control radius-8 form-select'
-                          id='Language'
-                          defaultValue='Select Language'
-                        >
-                          <option value='Select Language' disabled>
-                            Select Language
-                          </option>
-                          <option value='English'>English</option>
-                          <option value='Bangla'>Bangla</option>
-                          <option value='Hindi'>Hindi</option>
-                          <option value='Arabic'>Arabic</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div className='col-sm-12'>
-                      <div className='mb-20'>
-                        <label
-                          htmlFor='desc'
-                          className='form-label fw-semibold text-primary-light text-sm mb-8'
-                        >
-                          Description
-                        </label>
-                        <textarea
-                          name='#0'
-                          className='form-control radius-8'
-                          id='desc'
-                          placeholder='Write description...'
-                          defaultValue={""}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <div className='d-flex align-items-center justify-content-center gap-3'>
-                    <button
-                      type='button'
-                      className='border border-danger-600 bg-hover-danger-200 text-danger-600 text-md px-56 py-11 radius-8'
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type='button'
-                      className='btn btn-primary border border-primary-600 text-md px-56 py-12 radius-8'
-                    >
-                      Save
-                    </button>
-                  </div>
-                </form>
-              </div>
-              <div
-                className='tab-pane fade'
-                id='pills-change-passwork'
-                role='tabpanel'
-                aria-labelledby='pills-change-passwork-tab'
-                tabIndex='0'
-              >
-                <div className='mb-20'>
-                  <label
-                    htmlFor='your-password'
-                    className='form-label fw-semibold text-primary-light text-sm mb-8'
-                  >
-                    New Password <span className='text-danger-600'>*</span>
-                  </label>
-                  <div className='position-relative'>
-                    <input
-                      type={passwordVisible ? "text" : "password"}
-                      className='form-control radius-8'
-                      id='your-password'
-                      placeholder='Enter New Password*'
-                    />
-                    <span
-                      className={`toggle-password ${
-                        passwordVisible ? "ri-eye-off-line" : "ri-eye-line"
-                      } cursor-pointer position-absolute end-0 top-50 translate-middle-y me-16 text-secondary-light`}
-                      onClick={togglePasswordVisibility}
-                    ></span>
-                  </div>
-                </div>
-
-                <div className='mb-20'>
-                  <label
-                    htmlFor='confirm-password'
-                    className='form-label fw-semibold text-primary-light text-sm mb-8'
-                  >
-                    Confirm Password <span className='text-danger-600'>*</span>
-                  </label>
-                  <div className='position-relative'>
-                    <input
-                      type={confirmPasswordVisible ? "text" : "password"}
-                      className='form-control radius-8'
-                      id='confirm-password'
-                      placeholder='Confirm Password*'
-                    />
-                    <span
-                      className={`toggle-password ${
-                        confirmPasswordVisible
-                          ? "ri-eye-off-line"
-                          : "ri-eye-line"
-                      } cursor-pointer position-absolute end-0 top-50 translate-middle-y me-16 text-secondary-light`}
-                      onClick={toggleConfirmPasswordVisibility}
-                    ></span>
-                  </div>
-                </div>
-              </div>
-              <div
-                className='tab-pane fade'
-                id='pills-notification'
-                role='tabpanel'
-                aria-labelledby='pills-notification-tab'
-                tabIndex={0}
-              >
-                <div className='form-switch switch-primary py-12 px-16 border radius-8 position-relative mb-16'>
-                  <label
-                    htmlFor='companzNew'
-                    className='position-absolute w-100 h-100 start-0 top-0'
-                  />
-                  <div className='d-flex align-items-center gap-3 justify-content-between'>
-                    <span className='form-check-label line-height-1 fw-medium text-secondary-light'>
-                      Company News
-                    </span>
-                    <input
-                      className='form-check-input'
-                      type='checkbox'
-                      role='switch'
-                      id='companzNew'
-                    />
-                  </div>
-                </div>
-                <div className='form-switch switch-primary py-12 px-16 border radius-8 position-relative mb-16'>
-                  <label
-                    htmlFor='pushNotifcation'
-                    className='position-absolute w-100 h-100 start-0 top-0'
-                  />
-                  <div className='d-flex align-items-center gap-3 justify-content-between'>
-                    <span className='form-check-label line-height-1 fw-medium text-secondary-light'>
-                      Push Notification
-                    </span>
-                    <input
-                      className='form-check-input'
-                      type='checkbox'
-                      role='switch'
-                      id='pushNotifcation'
-                      defaultChecked=''
-                    />
-                  </div>
-                </div>
-                <div className='form-switch switch-primary py-12 px-16 border radius-8 position-relative mb-16'>
-                  <label
-                    htmlFor='weeklyLetters'
-                    className='position-absolute w-100 h-100 start-0 top-0'
-                  />
-                  <div className='d-flex align-items-center gap-3 justify-content-between'>
-                    <span className='form-check-label line-height-1 fw-medium text-secondary-light'>
-                      Weekly News Letters
-                    </span>
-                    <input
-                      className='form-check-input'
-                      type='checkbox'
-                      role='switch'
-                      id='weeklyLetters'
-                      defaultChecked=''
-                    />
-                  </div>
-                </div>
-                <div className='form-switch switch-primary py-12 px-16 border radius-8 position-relative mb-16'>
-                  <label
-                    htmlFor='meetUp'
-                    className='position-absolute w-100 h-100 start-0 top-0'
-                  />
-                  <div className='d-flex align-items-center gap-3 justify-content-between'>
-                    <span className='form-check-label line-height-1 fw-medium text-secondary-light'>
-                      Meetups Near you
-                    </span>
-                    <input
-                      className='form-check-input'
-                      type='checkbox'
-                      role='switch'
-                      id='meetUp'
-                    />
-                  </div>
-                </div>
-                <div className='form-switch switch-primary py-12 px-16 border radius-8 position-relative mb-16'>
-                  <label
-                    htmlFor='orderNotification'
-                    className='position-absolute w-100 h-100 start-0 top-0'
-                  />
-                  <div className='d-flex align-items-center gap-3 justify-content-between'>
-                    <span className='form-check-label line-height-1 fw-medium text-secondary-light'>
-                      Orders Notifications
-                    </span>
-                    <input
-                      className='form-check-input'
-                      type='checkbox'
-                      role='switch'
-                      id='orderNotification'
-                      defaultChecked=''
-                    />
-                  </div>
-                </div>
-              </div>
+              ))}
             </div>
+            {message && (
+              <div className="alert alert-success" role="status">
+                {message}
+              </div>
+            )}
+            {error && (
+              <div className="alert alert-danger" role="alert">
+                {error}
+              </div>
+            )}
+            {tab === 'profile' ? (
+              <form
+                id="panel-profile"
+                role="tabpanel"
+                aria-labelledby="tab-profile"
+                onSubmit={saveProfile}
+              >
+                <fieldset disabled={saving}>
+                  <div className="row">
+                    <div className="col-sm-6">
+                      {imageInput('profile_image', 'Profile Picture')}
+                    </div>
+                    <div className="col-sm-6">
+                      {imageInput('cover_image', 'Cover Picture')}
+                    </div>
+                  </div>
+                  <div className="row">
+                    {[
+                      fields[0],
+                      ['user_code', 'User ID', 'text'],
+                      fields[1],
+                      ['phone', 'Phone Number', 'tel'],
+                      ...fields.slice(2),
+                    ].map(([key, label, type, max, required]) => (
+                      <div
+                        className={
+                          key === 'address' ? 'col-12 mb-20' : 'col-sm-6 mb-20'
+                        }
+                        key={key}
+                      >
+                        <label
+                          htmlFor={`profile-${key}`}
+                          className="form-label fw-semibold"
+                        >
+                          {label}
+                          {required && (
+                            <span className="text-danger-600"> *</span>
+                          )}
+                        </label>
+                        {key === 'user_code' ? (
+                          <input
+                            id="profile-user_code"
+                            className="form-control"
+                            value={user.user_code || ''}
+                            readOnly
+                          />
+                        ) : key === 'phone' ? (
+                          <div className="d-flex gap-2">
+                            <PhoneCountryCodeSelect
+                              id="profile-phone-code"
+                              value={code}
+                              onChange={(value) => {
+                                setCode(value);
+                                setPhoneChanged(true);
+                              }}
+                              invalid={Boolean(errors.phone)}
+                            />
+                            <input
+                              id="profile-phone"
+                              type="tel"
+                              maxLength={30}
+                              value={phone}
+                              onChange={(e) => {
+                                setPhone(e.target.value);
+                                setPhoneChanged(true);
+                              }}
+                              className="form-control"
+                              aria-invalid={Boolean(errors.phone)}
+                              aria-describedby="error-phone"
+                            />
+                          </div>
+                        ) : type === 'textarea' ? (
+                          <textarea
+                            id={`profile-${key}`}
+                            className={`form-control ${errors[key] ? 'is-invalid' : ''}`}
+                            rows={3}
+                            maxLength={max}
+                            value={form[key]}
+                            onChange={(e) =>
+                              setForm({ ...form, [key]: e.target.value })
+                            }
+                            aria-invalid={Boolean(errors[key])}
+                            aria-describedby={`error-${key}`}
+                          />
+                        ) : (
+                          <input
+                            id={`profile-${key}`}
+                            className={`form-control ${errors[key] ? 'is-invalid' : ''}`}
+                            type={type}
+                            maxLength={max}
+                            required={required}
+                            max={
+                              type === 'date'
+                                ? new Date().toLocaleDateString('en-CA')
+                                : undefined
+                            }
+                            autoComplete={
+                              key === 'email'
+                                ? 'email'
+                                : key === 'username'
+                                  ? 'username'
+                                  : undefined
+                            }
+                            value={form[key]}
+                            onChange={(e) =>
+                              setForm({ ...form, [key]: e.target.value })
+                            }
+                            aria-invalid={Boolean(errors[key])}
+                            aria-describedby={`error-${key}`}
+                          />
+                        )}
+                        {fieldError(key)}
+                      </div>
+                    ))}
+                  </div>
+                  <button className="btn btn-primary" type="submit">
+                    {saving ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </fieldset>
+              </form>
+            ) : (
+              <form
+                id="panel-password"
+                role="tabpanel"
+                aria-labelledby="tab-password"
+                onSubmit={changePassword}
+              >
+                <p className="text-secondary-light">
+                  {passwordHelp} After changing your password, your other
+                  sessions will be signed out.
+                </p>
+                <fieldset disabled={saving}>
+                  {[
+                    ['current_password', 'Current Password'],
+                    ['password', 'New Password'],
+                    ['password_confirmation', 'Confirm New Password'],
+                  ].map(([key, label]) => (
+                    <div className="mb-20" key={key}>
+                      <label htmlFor={key} className="form-label fw-semibold">
+                        {label} <span className="text-danger-600">*</span>
+                      </label>
+                      <div className="input-group">
+                        <input
+                          id={key}
+                          type={visible[key] ? 'text' : 'password'}
+                          required
+                          maxLength={128}
+                          value={passwords[key]}
+                          onChange={(e) =>
+                            setPasswords({
+                              ...passwords,
+                              [key]: e.target.value,
+                            })
+                          }
+                          autoComplete={
+                            key === 'current_password'
+                              ? 'current-password'
+                              : 'new-password'
+                          }
+                          className={`form-control ${errors[key] ? 'is-invalid' : ''}`}
+                          aria-invalid={Boolean(errors[key])}
+                          aria-describedby={`error-${key}`}
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-outline-secondary"
+                          aria-label={`${visible[key] ? 'Hide' : 'Show'} ${label.toLowerCase()}`}
+                          onClick={() =>
+                            setVisible({ ...visible, [key]: !visible[key] })
+                          }
+                        >
+                          {visible[key] ? 'Hide' : 'Show'}
+                        </button>
+                      </div>
+                      {fieldError(key)}
+                    </div>
+                  ))}
+                  <button type="submit" className="btn btn-primary">
+                    {saving ? 'Updating...' : 'Update Password'}
+                  </button>
+                </fieldset>
+              </form>
+            )}
           </div>
         </div>
       </div>
     </div>
   );
-};
-
-export default ViewProfileLayer;
+}

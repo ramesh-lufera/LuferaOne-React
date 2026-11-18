@@ -6,7 +6,11 @@ use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\CredentialsController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\InvoiceSettingsController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\ThemeColorPaletteController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\EnsureModuleAccess;
 use Illuminate\Support\Facades\Route;
@@ -32,6 +36,22 @@ Route::get('/user', [AuthController::class, 'user'])
 
 Route::post('/logout', [AuthController::class, 'logout'])
     ->middleware('auth:sanctum');
+
+Route::get('/auth/settings', [CredentialsController::class, 'publicSettings']);
+ 
+Route::middleware(['auth:sanctum', EnsureModuleAccess::class.':theme-colors'])->group(function () {
+    Route::get('/theme-color-palettes', [ThemeColorPaletteController::class, 'index']);
+    Route::post('/theme-color-palettes', [ThemeColorPaletteController::class, 'store']);
+    Route::post('/theme-color-palettes/activity', [ThemeColorPaletteController::class, 'activity']);
+    Route::put('/theme-color-palettes/settings', [ThemeColorPaletteController::class, 'updateSettings']);
+    Route::put('/theme-color-palettes/{paletteId}', [ThemeColorPaletteController::class, 'update'])->whereUuid('paletteId');
+    Route::delete('/theme-color-palettes/{paletteId}', [ThemeColorPaletteController::class, 'destroy'])->whereUuid('paletteId');
+});
+ 
+Route::middleware(['auth:sanctum', EnsureModuleAccess::class.':credentials'])->group(function () {
+    Route::get('/credentials', [CredentialsController::class, 'show']);
+    Route::put('/credentials', [CredentialsController::class, 'update']);
+});
 
 // Google Authentication
 Route::get('/auth/google/nonce', [GoogleAuthController::class, 'nonce'])
@@ -89,3 +109,28 @@ Route::get('/users/{user}/image', [UserController::class, 'image'])
     ->whereNumber('user')
     ->middleware(['signed', 'throttle:120,1'])
     ->name('users.image');
+
+Route::middleware(['auth:sanctum', EnsureModuleAccess::class.':invoice-settings'])->group(function () {
+    Route::get('/invoice-settings', [InvoiceSettingsController::class, 'show']);
+    Route::put('/invoice-settings', [InvoiceSettingsController::class, 'update']);
+});
+Route::get('/invoice-settings/logo', [InvoiceSettingsController::class, 'logo'])
+    ->middleware(['signed', 'throttle:120,1'])->name('invoice-settings.logo');
+
+Route::middleware(['auth:sanctum', EnsureModuleAccess::class.':invoices'])->group(function () {
+    Route::get('/invoices', [InvoiceController::class, 'index']);
+    Route::get('/invoices/next-number', [InvoiceController::class, 'nextNumber']);
+    Route::post('/invoices', [InvoiceController::class, 'store']);
+    Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->whereNumber('invoice');
+    Route::put('/invoices/{invoice}', [InvoiceController::class, 'update'])->whereNumber('invoice');
+});
+Route::get('/invoices/{invoice}/logo', [InvoiceController::class, 'logo'])
+    ->whereNumber('invoice')->middleware(['signed', 'throttle:120,1'])->name('invoices.logo');
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/profile', [UserController::class, 'profile']);
+    Route::put('/profile', [UserController::class, 'updateProfile']);
+    Route::put('/profile/password', [UserController::class, 'changePassword'])->middleware('throttle:profile-password');
+});
+Route::get('/users/{user}/cover', [UserController::class, 'cover'])
+    ->whereNumber('user')->middleware(['signed', 'throttle:120,1'])->name('users.cover');
