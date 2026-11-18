@@ -1,3 +1,4 @@
+import InvoiceSettingsPage from './pages/InvoiceSettingsPage';
 import RequireAuth from "./components/RequireAuth";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import HomePageOne from "./pages/HomePageOne";
@@ -24,6 +25,7 @@ import CodeGeneratorPage from "./pages/CodeGeneratorPage";
 import ColorsPage from "./pages/ColorsPage";
 import ColumnChartPage from "./pages/ColumnChartPage";
 import CompanyPage from "./pages/CompanyPage";
+import CredentialsPage from "./pages/CredentialsPage";
 import CurrenciesPage from "./pages/CurrenciesPage";
 import DropdownPage from "./pages/DropdownPage";
 import ErrorPage from "./pages/ErrorPage";
@@ -67,6 +69,7 @@ import TagsPage from "./pages/TagsPage";
 import TermsConditionPage from "./pages/TermsConditionPage";
 import TextGeneratorPage from "./pages/TextGeneratorPage";
 import ThemePage from "./pages/ThemePage";
+import ThemeColorsPage from "./pages/ThemeColorsPage";
 import TooltipPage from "./pages/TooltipPage";
 import TypographyPage from "./pages/TypographyPage";
 import UsersGridPage from "./pages/UsersGridPage";
@@ -161,7 +164,9 @@ function App() {
         />
         <Route exact path='/colors' element={<ColorsPage />} />
         <Route exact path='/column-chart' element={<ColumnChartPage />} />
+        <Route path='/invoice-settings' element={<InvoiceSettingsPage />} />
         <Route exact path='/company' element={<CompanyPage />} />
+        <Route path='/credentials' element={<CredentialsPage />} />
         <Route exact path='/currencies' element={<CurrenciesPage />} />
         <Route exact path='/dropdown' element={<DropdownPage />} />
         <Route exact path='/email' element={<EmailPage />} />
@@ -227,6 +232,7 @@ function App() {
         />
         <Route exact path='/text-generator' element={<TextGeneratorPage />} />
         <Route exact path='/theme' element={<ThemePage />} />
+        <Route path='/theme-colors' element={<ThemeColorsPage />} />
         <Route exact path='/tooltip' element={<TooltipPage />} />
         <Route exact path='/typography' element={<TypographyPage />} />
         <Route exact path='/users-grid' element={<UsersGridPage />} />

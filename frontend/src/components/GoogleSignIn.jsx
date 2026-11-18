@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Icon } from '@iconify/react/dist/iconify.js';
 import { useNavigate } from 'react-router-dom';
 import { apiUrl, saveToken, markTokenVerified } from '../helper/auth';
+import useSignInSettings from '../helper/useSignInSettings';
 
 let googleLibrary;
 function loadGoogleLibrary() {
@@ -31,7 +32,8 @@ export default function GoogleSignIn({ mode = 'signin', remember = false, terms 
   const [ready, setReady] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const inFlight = useRef(false);
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const { settings, error: settingsError } = useSignInSettings(attempt);
+  const clientId = settings?.googleClientId;
 
   useEffect(() => {
     if (!clientId) return;
@@ -100,7 +102,11 @@ export default function GoogleSignIn({ mode = 'signin', remember = false, terms 
 
   const signIn = () => {
     if (disabled || inFlight.current) return;
-    if (!clientId) { setError('Google sign-in is not configured.'); return; }
+    if (!clientId) {
+      setError(settings ? 'Google sign-in is not configured.' : 'Loading Google sign-in settings. Please try again.');
+      setAttempt((value) => value + 1);
+      return;
+    }
     if (!ready || !client.current) { setAttempt((value) => value + 1); return; }
     setError('');
     inFlight.current = true;
@@ -120,7 +126,7 @@ export default function GoogleSignIn({ mode = 'signin', remember = false, terms 
         <Icon icon='logos:google-icon' className='text-primary-600 text-xl line-height-1' />
         Google
       </button>
-      {error && <div className='text-danger text-sm mt-8' role='alert'>{error}</div>}
+      {(error || settingsError) && <div className='text-danger text-sm mt-8' role='alert'>{error || settingsError}</div>}
     </div>
   );
 }

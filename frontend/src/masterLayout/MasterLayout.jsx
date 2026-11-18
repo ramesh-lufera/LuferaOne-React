@@ -1318,6 +1318,21 @@ const MasterLayout = ({ children }) => {
                   </NavLink>
                 </li>
                 <li>
+                  <NavLink to='/invoice-settings' className={(navData) => navData.isActive ? 'active-page' : ''}>
+                    <i className='ri-circle-fill circle-icon text-primary-600 w-auto' />{' '}
+                    Invoice Settings
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink
+                    to='/credentials'
+                    className={(navData) => navData.isActive ? "active-page" : ""}
+                  >
+                    <i className='ri-circle-fill circle-icon text-primary-600 w-auto' />{" "}
+                    Credentials
+                  </NavLink>
+                </li>
+                <li>
                   <NavLink
                     to='/notification'
                     className={(navData) =>
@@ -1348,6 +1363,17 @@ const MasterLayout = ({ children }) => {
                   >
                     <i className='ri-circle-fill circle-icon text-danger-main w-auto' />{" "}
                     Theme
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink
+                    to='/theme-colors'
+                    className={(navData) =>
+                      navData.isActive ? "active-page" : ""
+                    }
+                  >
+                    <i className='ri-circle-fill circle-icon text-danger-main w-auto' />{" "}
+                    Theme Colors
                   </NavLink>
                 </li>
                 <li>

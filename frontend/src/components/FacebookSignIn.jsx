@@ -3,9 +3,15 @@ import { useEffect, useRef, useState } from 'react';
 import { Icon } from '@iconify/react/dist/iconify.js';
 import { useNavigate } from 'react-router-dom';
 import { apiUrl, saveToken, markTokenVerified } from '../helper/auth';
+import useSignInSettings from '../helper/useSignInSettings';
 
 let facebookLibrary;
+let facebookAppId;
 function loadFacebookLibrary(appId, version) {
+  if (facebookAppId !== appId) {
+    facebookLibrary = null;
+    facebookAppId = appId;
+  }
   if (!facebookLibrary) {
     facebookLibrary = new Promise((resolve, reject) => {
       let initialized = false;
@@ -50,8 +56,9 @@ export default function FacebookSignIn({ mode = 'signin', remember = false, term
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [attempt, setAttempt] = useState(0);
-  const appId = import.meta.env.VITE_FACEBOOK_APP_ID;
-  const version = import.meta.env.VITE_FACEBOOK_GRAPH_VERSION || 'v27.0';
+  const { settings, error: settingsError } = useSignInSettings(attempt);
+  const appId = settings?.facebookAppId;
+  const version = settings?.facebookGraphVersion || 'v27.0';
 
   useEffect(() => {
     active.current = true;
@@ -100,7 +107,11 @@ export default function FacebookSignIn({ mode = 'signin', remember = false, term
   const signIn = () => {
     if (disabled || inFlight.current) return;
     setError('');
-    if (!appId) { setError('Facebook sign-in is not configured.'); return; }
+    if (!appId) {
+      setError(settings ? 'Facebook sign-in is not configured.' : 'Loading Facebook sign-in settings. Please try again.');
+      setAttempt((value) => value + 1);
+      return;
+    }
     if (!sdk.current) { setError('Facebook sign-in is loading. Please try again in a moment.'); setAttempt((value) => value + 1); return; }
     inFlight.current = true;
     setBusy(true);
@@ -123,7 +134,7 @@ export default function FacebookSignIn({ mode = 'signin', remember = false, term
         <Icon icon='ic:baseline-facebook' className='text-primary-600 text-xl line-height-1' />
         Facebook
       </button>
-      {error && <div role='alert' className='text-danger text-sm mt-8'>{error}</div>}
+      {(error || settingsError) && <div role='alert' className='text-danger text-sm mt-8'>{error || settingsError}</div>}
     </div>
   );
 }
