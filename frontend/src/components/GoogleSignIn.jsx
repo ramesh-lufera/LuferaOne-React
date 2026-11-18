@@ -122,8 +122,8 @@ export default function GoogleSignIn({ mode = 'signin', remember = false, terms 
 
   return (
     <div className='w-50' aria-busy={busy}>
-      <button type='button' className={buttonClass} disabled={disabled || busy} onClick={signIn}>
-        <Icon icon='logos:google-icon' className='text-primary-600 text-xl line-height-1' />
+      <button type='button' className={`social-provider-button ${buttonClass}`} data-theme-exempt disabled={disabled || busy} onClick={signIn}>
+        <Icon icon='logos:google-icon' className='social-provider-icon text-primary-600 text-xl line-height-1' />
         Google
       </button>
       {(error || settingsError) && <div className='text-danger text-sm mt-8' role='alert'>{error || settingsError}</div>}

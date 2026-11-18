@@ -372,6 +372,7 @@ export default function UsersListLayer({ view = 'list' }) {
             <button
               type="button"
               className="btn btn-outline-primary"
+              data-theme-exempt
               disabled={busy}
               onClick={() => setAction(null)}
             >

@@ -27,10 +27,10 @@ class ActivityLog extends Model
         });
     }
 
-    /** Display legacy authentication events by page without changing audit history. */
+    /** Group legacy events under their current page names. */
     public static function pageModuleExpression(): string
     {
-        return "CASE WHEN module = 'Authentication' THEN CASE
+        return "CASE WHEN module = 'Theme Color Palettes' THEN 'Theme Colors' WHEN module = 'Authentication' THEN CASE
             WHEN action IN ('Sign In', 'Failed Sign In', 'Login') THEN 'Sign In'
             WHEN action IN ('Sign Up', 'Create') THEN 'Sign Up'
             WHEN action IN ('Sign Out', 'Logout') THEN 'Sign Out'
@@ -39,7 +39,7 @@ class ActivityLog extends Model
 
     public static function pageDescriptionExpression(): string
     {
-        $description = "CASE WHEN module = 'Authentication' THEN REPLACE(description, 'Authentication', (".static::pageModuleExpression().')) ELSE description END';
+        $description = "CASE WHEN module IN ('Authentication', 'Theme Color Palettes') THEN REPLACE(description, module, (".static::pageModuleExpression().')) ELSE description END';
 
         return 'CASE WHEN INSTR(('.$description."), ' (record ') > 0 THEN SUBSTR((".$description.'), 1, INSTR(('.$description."), ' (record ') - 1) ELSE (".$description.') END';
     }

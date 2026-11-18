@@ -1,0 +1,155 @@
+body[data-saved-module-theme] :where(.dashboard-main-body, .auth, .modal) {
+  --primary-50: var(--module-theme-focus);
+  --primary-100: var(--module-theme-focus);
+  --primary-200: var(--module-theme-focus);
+  --primary-300: var(--module-theme-main);
+  --primary-400: var(--module-theme-main);
+  --primary-500: var(--module-theme-main);
+  --primary-600: var(--module-theme-main);
+  --primary-700: var(--module-theme-main);
+  --primary-800: var(--module-theme-main);
+  --primary-900: var(--module-theme-main);
+  --primary-light: var(--module-theme-focus);
+  --primary-light-white: var(--module-theme-focus);
+  --brand: var(--module-theme-main);
+  --button-secondary: var(--module-theme-focus);
+}
+
+body[data-saved-module-theme] :where(.dashboard-main-body, .auth, .modal)
+:is(.module-table-action, [data-theme-exempt], button[type='reset'], .role-wizard-cancel, .btn-outline-secondary, .btn-danger, .btn-outline-danger) {
+  --primary-50: var(--module-default-primary-50);
+  --primary-100: var(--module-default-primary-100);
+  --primary-200: var(--module-default-primary-200);
+  --primary-300: var(--module-default-primary-300);
+  --primary-400: var(--module-default-primary-400);
+  --primary-500: var(--module-default-primary-500);
+  --primary-600: var(--module-default-primary-600);
+  --primary-700: var(--module-default-primary-700);
+  --primary-800: var(--module-default-primary-800);
+  --primary-900: var(--module-default-primary-900);
+  --primary-light: var(--module-default-primary-light);
+  --primary-light-white: var(--module-default-primary-light-white);
+  --brand: var(--module-default-brand);
+  --button-secondary: var(--module-default-button-secondary);
+}
+
+body[data-saved-module-theme] :where(.dashboard-main-body, .auth, .modal)
+:is(.btn-primary, .btn-primary-600, .signup-submit, .role-wizard-submit, button.nav-link.active):not(.module-table-action) {
+  --bs-btn-focus-shadow-rgb: var(--module-theme-main-rgb);
+  --bs-btn-active-bg: var(--module-theme-focus);
+  --bs-btn-active-color: var(--module-theme-text);
+  background-color: var(--module-theme-main) !important;
+  color: var(--module-theme-text) !important;
+}
+
+body[data-saved-module-theme] :where(.dashboard-main-body, .auth, .modal)
+:is(.btn-primary, .btn-primary-600, .signup-submit, .role-wizard-submit, button.nav-link.active):not(.module-table-action):is(:hover, :focus-visible, :active) {
+  background-color: var(--module-theme-focus) !important;
+}
+
+body[data-saved-module-theme] :where(.dashboard-main-body, .auth, .modal)
+:is(button, a.btn):not(.module-table-action):not([type='reset']):not([data-theme-exempt]):not(.role-wizard-cancel):not(.btn-outline-secondary):not(.btn-danger):not(.btn-outline-danger):not(.text-danger-600) {
+  border-color: var(--module-theme-main) !important;
+}
+
+body[data-saved-module-theme] :where(.dashboard-main-body, .auth, .modal)
+:is(button, a.btn):not(.module-table-action):not([type='reset']):not([data-theme-exempt]):not(.role-wizard-cancel):not(.btn-outline-secondary):not(.btn-danger):not(.btn-outline-danger):not(.text-danger-600):is(:hover, :focus, :active) {
+  border-color: var(--module-theme-focus) !important;
+}
+
+body[data-saved-module-theme] :where(.dashboard-main-body, .modal)
+.dt-container .dt-paging .dt-paging-button.current:not(.disabled) {
+  background-color: var(--module-theme-main) !important;
+  color: var(--module-theme-text) !important;
+}
+
+body[data-saved-module-theme] :where(.dashboard-main-body, .modal)
+.dt-container .dt-paging .dt-paging-button:not(:disabled):not(.disabled):is(:hover, :focus-visible) {
+  background: var(--module-theme-focus) !important;
+  color: var(--module-theme-text) !important;
+}
+
+body[data-saved-module-theme] :where(.dashboard-main-body, .auth, .modal)
+:is(input.form-control:not([type='file']):not([type='color']), textarea.form-control, input.dt-input):is(:hover, :focus, :active) {
+  border-color: var(--module-theme-main) !important;
+}
+
+body[data-saved-module-theme] :where(.dashboard-main-body, .auth, .modal)
+.btn-outline-primary:not([data-theme-exempt]):not(.module-table-action) {
+  --bs-btn-focus-shadow-rgb: var(--module-theme-main-rgb);
+  --bs-btn-active-bg: var(--module-theme-focus);
+  --bs-btn-active-color: var(--module-theme-text);
+  color: var(--module-theme-main) !important;
+}
+
+body[data-saved-module-theme] :where(.dashboard-main-body, .auth, .modal)
+.btn-outline-primary:not([data-theme-exempt]):not(.module-table-action):is(:hover, :focus, :active) {
+  background-color: var(--module-theme-focus) !important;
+  color: var(--module-theme-text) !important;
+}
+
+body[data-saved-module-theme] .auth :is(a:not(.sign-in-brand):not(.signup-logo), .signup-policy-pending),
+body[data-saved-module-theme] .sign-in-panel .text-primary-600:not(.social-provider-icon) {
+  color: var(--module-theme-main) !important;
+}
+
+body[data-saved-module-theme] :where(.dashboard-main-body, .auth, .modal)
+.form-check-input:checked {
+  background-color: var(--module-theme-main);
+  border-color: var(--module-theme-main) !important;
+}
+
+body[data-saved-module-theme] :where(.dashboard-main-body, .modal)
+.border-gradient-tab .nav-link::before {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--module-theme-main) 12%, transparent) 0%,
+    color-mix(in srgb, var(--module-theme-main) 3%, transparent) 100%
+  );
+}
+
+body[data-saved-module-theme] :where(.dashboard-main-body, .modal)
+.form-wizard-list__item.active .count {
+  border-color: var(--module-theme-main) !important;
+  color: var(--module-theme-main) !important;
+}
+
+body[data-saved-module-theme] :where(.dashboard-main-body, .modal)
+.form-wizard-list__item:is(.active, .activated) .text {
+  color: var(--module-theme-main) !important;
+}
+
+body[data-saved-module-theme] :where(.dashboard-main-body, .modal)
+.form-wizard-list__item.activated .count {
+  background-color: var(--module-theme-main) !important;
+  border-color: var(--module-theme-main) !important;
+  color: var(--module-theme-text) !important;
+}
+
+body[data-saved-module-theme] :where(.dashboard-main-body, .modal)
+.form-wizard-list__line::before {
+  background-color: var(--module-theme-main) !important;
+}
+
+body[data-saved-module-theme] :where(.dashboard-main-body, .auth, .modal)
+.dropdown-item:is(.active, :active) {
+  background-color: var(--module-theme-main) !important;
+  color: var(--module-theme-text) !important;
+}
+
+body[data-saved-module-theme] :where(.dashboard-main-body, .auth, .modal)
+.dropdown-item:hover:not(.active):not(.disabled) {
+  background-color: var(--module-theme-focus);
+  color: var(--module-theme-text);
+}
+
+body[data-saved-module-theme] :where(.dashboard-main-body, .auth, .modal)
+.phone-country-code-toggle:is(.show, :hover, :focus) {
+  border-color: var(--module-theme-main) !important;
+  background-color: var(--module-theme-focus) !important;
+  color: var(--module-theme-main) !important;
+}
+
+body[data-saved-module-theme] .auth .social-provider-button:hover:not(:disabled) {
+  background-color: var(--module-theme-focus) !important;
+}

@@ -53,8 +53,10 @@ class GoogleAuthenticationTest extends TestCase
 
     public function test_google_signup_creates_a_user_and_valid_session_with_accepted_terms(): void
     {
-        $response = $this->postJson('/api/auth/google', $this->payload())->assertOk()->assertJsonMissingPath('user.password');
+        $response = $this->postJson('/api/auth/google', $this->payload())->assertOk()
+            ->assertJsonPath('user.username', 'google-user')->assertJsonMissingPath('user.password');
         $user = User::firstOrFail();
+        $this->assertSame('google-user', $user->username);
         $this->assertSame('google-test-subject', $user->google_id);
         $this->assertNotNull($user->email_verified_at);
         $this->assertNotNull($user->terms_accepted_at);
@@ -178,11 +180,14 @@ class GoogleAuthenticationTest extends TestCase
         $this->assertDatabaseCount('users', 1);
     }
 
-    public function test_linked_google_user_only_updates_missing_verification(): void
+    public function test_linked_google_user_fills_missing_verification_and_username(): void
     {
-        $user = User::factory()->unverified()->create(['google_id' => 'google-test-subject']);
+        $user = User::factory()->unverified()->create([
+            'google_id' => 'google-test-subject', 'email' => 'linked-user@example.com',
+        ]);
         $password = $user->password;
-        $this->postJson('/api/auth/google', $this->payload([], 'signin'))->assertOk();
+        $this->postJson('/api/auth/google', $this->payload([], 'signin'))->assertOk()
+            ->assertJsonPath('user.username', 'linked-user');
         $this->assertNotNull($user->fresh()->email_verified_at);
         $this->assertSame($password, $user->fresh()->password);
         $this->assertDatabaseCount('users', 1);

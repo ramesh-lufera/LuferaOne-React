@@ -130,8 +130,8 @@ export default function FacebookSignIn({ mode = 'signin', remember = false, term
 
   return (
     <div className='w-50' aria-busy={busy}>
-      <button type='button' className={buttonClass} disabled={disabled || busy} onClick={signIn}>
-        <Icon icon='ic:baseline-facebook' className='text-primary-600 text-xl line-height-1' />
+      <button type='button' className={`social-provider-button ${buttonClass}`} data-theme-exempt disabled={disabled || busy} onClick={signIn}>
+        <Icon icon='ic:baseline-facebook' className='social-provider-icon text-primary-600 text-xl line-height-1' />
         Facebook
       </button>
       {(error || settingsError) && <div role='alert' className='text-danger text-sm mt-8'>{error || settingsError}</div>}

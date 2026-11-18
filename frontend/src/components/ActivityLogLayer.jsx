@@ -75,7 +75,7 @@ export default function ActivityLogLayer() {
           </select>
         </div>)}
         <div className='col-12 d-flex gap-2'><button type='submit' className='btn btn-primary'>Apply filters</button>
-          <button type='button' className='btn btn-outline-primary' onClick={reset}>Reset</button></div>
+          <button type='button' className='btn btn-outline-primary' data-theme-exempt onClick={reset}>Reset</button></div>
       </form>
       {error && <div className='alert alert-danger' role='alert'>{error} <button type='button' className='btn btn-sm btn-outline-danger' onClick={() => { setReload((n) => n + 1); instance.current?.ajax.reload(null, false); }}>Retry</button></div>}
       {loading && <p role='status'>Loading activities…</p>}

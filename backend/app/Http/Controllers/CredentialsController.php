@@ -29,6 +29,14 @@ class CredentialsController extends Controller
         return response()->json(['credentials' => $credentials->values(), 'message' => 'Sign-in credentials saved successfully.'])->header('Cache-Control', 'no-store');
     }
 
+    public function activity(Request $request): JsonResponse
+    {
+        $request->validate(['action' => ['required', 'in:Reset']]);
+        $request->attributes->set('activity_action', 'Reset');
+
+        return response()->json(['message' => 'Activity recorded.']);
+    }
+
     public function publicSettings(): JsonResponse
     {
         return response()->json([
