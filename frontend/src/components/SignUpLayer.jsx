@@ -1,3 +1,5 @@
+import useCompanyBranding from '../helper/useCompanyBranding';
+import AuthBrandingImage from './AuthBrandingImage';
 import FacebookSignIn from "./FacebookSignIn";
 import GoogleSignIn from "./GoogleSignIn";
 import { useRef, useState } from "react";
@@ -15,6 +17,7 @@ const fields = [
 ];
 
 const SignUpLayer = () => {
+  const images = useCompanyBranding();
   const [values, setValues] = useState(initialValues);
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState("");
@@ -89,14 +92,14 @@ const SignUpLayer = () => {
 
   return (
     <section className="auth signup-page bg-base d-flex flex-wrap">
-      <div className="auth-left d-lg-block d-none" aria-hidden="true">
+      <div className="auth-left auth-image-panel d-lg-block d-none" aria-hidden="true">
         <div className="d-flex align-items-center flex-column h-100 justify-content-center">
-          <img src="/assets/images/auth/auth-img.png" alt="" />
+          <AuthBrandingImage src={images.sign_up_image_url} fallbackSrc="/assets/images/auth/auth-img.png" alt="" className="auth-company-art" width={917} height={917} />
         </div>
       </div>
       <div className="auth-right py-32 px-24 d-flex flex-column justify-content-center">
         <div className="max-w-464-px mx-auto w-100">
-          <Link to="/" className="signup-logo">{logoUrl ? <img src={logoUrl} alt="LuferaInfotech" /> : <><Icon icon="solar:cloud-linear" /><span>Lufera<span>Infotech</span></span></>}</Link>
+          <Link to="/" className="signup-logo"><AuthBrandingImage src={images.logo_url} fallbackSrc={logoUrl} alt="Company logo" className="auth-company-logo"><Icon icon="solar:cloud-linear" /><span>Lufera<span>Infotech</span></span></AuthBrandingImage></Link>
           <h4 className="mb-12">Sign Up</h4>
           <p className="mb-32 text-secondary-light text-lg">Welcome back! Enter your details</p>
           <form onSubmit={submit} aria-busy={submitting}>

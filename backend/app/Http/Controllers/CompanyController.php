@@ -27,6 +27,40 @@ class CompanyController extends Controller
         return response()->json(['company' => $company ? $this->data($company) : null]);
     }
 
+    public function branding(): JsonResponse
+    {
+        $company = Company::where('profile_key', 'shared')->first();
+        $images = [];
+        foreach (['logo', 'sign_in_image', 'sign_up_image'] as $field) {
+            $path = $this->brandingImagePath($company, $field);
+            $images[$field.'_url'] = $path ? URL::temporarySignedRoute('company.image', now()->addHour(), [
+                'image' => $field,
+                'v' => hash('sha256', $company->{$field.'_path'}),
+            ]) : null;
+        }
+
+        return response()->json(['images' => $images])->header('Cache-Control', 'no-store');
+    }
+
+    private function brandingImagePath(?Company $company, string $field): ?string
+    {
+        $path = $company?->{$field.'_path'};
+        if (! is_string($path) || ! preg_match('~^companies/[a-zA-Z0-9_-]+\.(png|jpe?g|webp)$~i', $path)) {
+            return null;
+        }
+        $disk = Storage::disk('local');
+        $absolutePath = realpath($disk->path($path));
+        $directory = realpath($disk->path('companies'));
+        if (! $absolutePath || ! $directory || ! is_file($absolutePath) || ! str_starts_with($absolutePath, $directory.DIRECTORY_SEPARATOR)) {
+            return null;
+        }
+        if (! in_array(mime_content_type($absolutePath), ['image/png', 'image/jpeg', 'image/webp'], true)) {
+            return null;
+        }
+
+        return $absolutePath;
+    }
+
     public function store(SaveCompanyRequest $request): JsonResponse
     {
         abort_if(Company::where('profile_key', 'shared')->exists(), 409, 'The company profile already exists. Reload to edit it.');
@@ -78,10 +112,10 @@ class CompanyController extends Controller
     public function image(string $image): BinaryFileResponse
     {
         $company = Company::where('profile_key', 'shared')->firstOrFail();
-        $path = $company->{$image.'_path'};
-        abort_unless($path && Storage::disk('local')->exists($path), 404);
+        $path = $this->brandingImagePath($company, $image);
+        abort_unless($path, 404);
 
-        return response()->file(Storage::disk('local')->path($path), [
+        return response()->file($path, [
             'X-Content-Type-Options' => 'nosniff',
             'Cache-Control' => 'private, max-age=300',
         ]);

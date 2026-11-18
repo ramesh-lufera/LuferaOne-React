@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'terms-conditions' => ['label' => 'Terms and Conditions', 'paths' => ['/settings/terms-conditions']],
+    'privacy-policy' => ['label' => 'Privacy Policy', 'paths' => ['/settings/privacy-policy']],
     'dashboard' => ['label' => 'Dashboard', 'paths' => ['/', '/index-2', '/index-3', '/index-4', '/index-5', '/index-6', '/index-7', '/index-8', '/index-9', '/index-10', '/index-11', '/index-12', '/index-13', '/index-14', '/index-15', '/index-16', '/index-17', '/index-18', '/index-19', '/index-20']],
     'roles' => ['label' => 'Roles & Permissions', 'paths' => ['/roles-permissions', '/role-access', '/assign-role']],
     'users' => ['label' => 'Users', 'paths' => ['/users-list', '/users-grid', '/add-user', '/view-profile']],

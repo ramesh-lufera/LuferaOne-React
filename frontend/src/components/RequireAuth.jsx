@@ -8,7 +8,8 @@ import {
   UpdateAccessUserContext,
 } from '../helper/AccessContext';
 
-export default function RequireAuth() {
+// eslint-disable-next-line react/prop-types
+export default function RequireAuth({ allowGuest = false }) {
   const [status, setStatus] = useState('loading');
   const [user, setUser] = useState(null);
   const [attempt, setAttempt] = useState(0);
@@ -40,7 +41,7 @@ export default function RequireAuth() {
       });
     return () => controller.abort();
   }, [attempt, pathname]);
-  if (status === 'unauthenticated') return <Navigate to="/sign-in" replace />;
+  if (status === 'unauthenticated') return allowGuest ? <Outlet /> : <Navigate to="/sign-in" replace />;
   if (status === 'loading')
     return (
       <p role="status" className="p-24">

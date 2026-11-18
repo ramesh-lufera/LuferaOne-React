@@ -1,6 +1,7 @@
 import modules from '../data/modules.json';
 
 const publicPaths = [
+  '/privacy-policy',
   '/sign-in',
   '/sign-up',
   '/forgot-password',

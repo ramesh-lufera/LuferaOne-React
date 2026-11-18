@@ -9,7 +9,9 @@ use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CredentialsController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoiceSettingsController;
+use App\Http\Controllers\PrivacyPolicyController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\TermsConditionController;
 use App\Http\Controllers\ThemeColorPaletteController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\EnsureModuleAccess;
@@ -37,8 +39,11 @@ Route::get('/user', [AuthController::class, 'user'])
 Route::post('/logout', [AuthController::class, 'logout'])
     ->middleware('auth:sanctum');
 
+Route::get('/auth/branding', [CompanyController::class, 'branding'])->middleware('throttle:120,1');
+
 Route::get('/auth/settings', [CredentialsController::class, 'publicSettings']);
- 
+Route::get('/theme-color-settings', [ThemeColorPaletteController::class, 'publicSettings']);
+
 Route::middleware(['auth:sanctum', EnsureModuleAccess::class.':theme-colors'])->group(function () {
     Route::get('/theme-color-palettes', [ThemeColorPaletteController::class, 'index']);
     Route::post('/theme-color-palettes', [ThemeColorPaletteController::class, 'store']);
@@ -47,10 +52,11 @@ Route::middleware(['auth:sanctum', EnsureModuleAccess::class.':theme-colors'])->
     Route::put('/theme-color-palettes/{paletteId}', [ThemeColorPaletteController::class, 'update'])->whereUuid('paletteId');
     Route::delete('/theme-color-palettes/{paletteId}', [ThemeColorPaletteController::class, 'destroy'])->whereUuid('paletteId');
 });
- 
+
 Route::middleware(['auth:sanctum', EnsureModuleAccess::class.':credentials'])->group(function () {
     Route::get('/credentials', [CredentialsController::class, 'show']);
     Route::put('/credentials', [CredentialsController::class, 'update']);
+    Route::post('/credentials/activity', [CredentialsController::class, 'activity']);
 });
 
 // Google Authentication
@@ -134,3 +140,15 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 Route::get('/users/{user}/cover', [UserController::class, 'cover'])
     ->whereNumber('user')->middleware(['signed', 'throttle:120,1'])->name('users.cover');
+
+Route::get('/privacy-policy', [PrivacyPolicyController::class, 'show']);
+Route::middleware(['auth:sanctum', EnsureModuleAccess::class.':privacy-policy'])->group(function () {
+    Route::get('/settings/privacy-policy', [PrivacyPolicyController::class, 'show']);
+    Route::match(['post', 'put'], '/settings/privacy-policy', [PrivacyPolicyController::class, 'update']);
+});
+
+Route::get('/terms-conditions', [TermsConditionController::class, 'show']);
+Route::middleware(['auth:sanctum', EnsureModuleAccess::class.':terms-conditions'])->group(function () {
+    Route::get('/settings/terms-conditions', [TermsConditionController::class, 'show']);
+    Route::match(['post', 'put'], '/settings/terms-conditions', [TermsConditionController::class, 'update']);
+});
