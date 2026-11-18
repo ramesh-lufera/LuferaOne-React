@@ -40,8 +40,9 @@ export default function PhoneCountryCodeSelect({
     >
       <Dropdown.Toggle
         id={id}
+        data-theme-exempt
         variant="light"
-        className="form-control h-100 d-flex align-items-center gap-2"
+        className="phone-country-code-toggle form-control h-100 d-flex align-items-center gap-2"
         style={{ borderTopRightRadius: 0, borderBottomRightRadius: 0 }}
         aria-label="Phone country code"
         aria-invalid={invalid}

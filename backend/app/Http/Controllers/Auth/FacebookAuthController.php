@@ -61,12 +61,13 @@ class FacebookAuthController extends Controller
                 if ($validEmail && strcasecmp($user->email, $email) === 0) {
                     $user->email_verified_at ??= now();
                 }
+                $user->setUsernameFromEmailIfMissing();
                 if ($user->isDirty()) {
                     $user->save();
                 }
 
                 return $user;
-            });
+            }, 3);
         } catch (UniqueConstraintViolationException $exception) {
             return response()->json(['message' => 'Your account changed during sign-in. Please try again.'], 409);
         }
@@ -74,6 +75,6 @@ class FacebookAuthController extends Controller
         $expiresAt = ! empty($data['remember']) ? now()->addDays(30) : now()->addHours(8);
         $token = $user->createToken('facebook-sign-in', ['*'], $expiresAt)->plainTextToken;
 
-        return response()->json(['token' => $token, 'user' => $user->only(['id', 'user_code', 'name', 'email', 'facebook_photo_url'])])->header('Cache-Control', 'no-store');
+        return response()->json(['token' => $token, 'user' => $user->only(['id', 'user_code', 'name', 'email', 'username', 'facebook_photo_url'])])->header('Cache-Control', 'no-store');
     }
 }

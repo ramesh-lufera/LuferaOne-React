@@ -18,6 +18,20 @@ class ThemeColorPaletteTest extends TestCase
         return ['id' => (string) Str::uuid(), 'label' => 'Ocean', 'color' => '#123456', 'focus' => '#abcdef', 'text' => '#000000'];
     }
 
+    public function test_public_theme_settings_expose_only_saved_colors_without_logging_reads(): void
+    {
+        $this->getJson('/api/theme-color-settings')->assertOk()->assertExactJson(['settings' => null]);
+        $this->actingAs(User::factory()->create(['role' => 'admin']), 'sanctum');
+        $settings = ['palette_id' => 'blue', 'color' => '#487fff', 'focus' => '#bfdcff', 'text' => '#000000'];
+        $this->putJson('/api/theme-color-palettes/settings', $settings)->assertOk();
+        $before = ActivityLog::count();
+        $this->app['auth']->forgetGuards();
+        $this->getJson('/api/theme-color-settings')->assertOk()->assertExactJson([
+            'settings' => ['color' => '#487fff', 'focus' => '#bfdcff', 'text' => '#000000'],
+        ])->assertHeader('Cache-Control', 'no-store, private');
+        $this->assertSame($before, ActivityLog::count());
+    }
+
     public function test_palette_routes_require_module_access(): void
     {
         $this->getJson('/api/theme-color-palettes')->assertUnauthorized();
@@ -68,18 +82,26 @@ class ThemeColorPaletteTest extends TestCase
     {
         $user = User::factory()->create(['role' => 'admin']);
         $this->actingAs($user, 'sanctum');
-        foreach (['Select Color', 'Edit Custom Color', 'Reset', 'Save Changes', 'Open Add Color', 'Cancel Add Color'] as $action) {
+        $actions = [
+            'Select Color', 'Edit Custom Color', 'Reset', 'Open Add Color', 'Cancel Add Color',
+            'Open Edit Color', 'Cancel Edit Color', 'Open Delete Color', 'Cancel Delete Color',
+        ];
+        foreach ($actions as $action) {
             $this->postJson('/api/theme-color-palettes/activity', [
                 'action' => $action, 'palette_id' => 'blue', 'palette_name' => 'Blue', 'field' => 'main', 'color' => '#123456',
             ])->assertOk();
             $this->assertDatabaseHas('activity_logs', ['module' => 'Theme Colors', 'action' => $action, 'user_id' => $user->id]);
         }
-        $this->assertDatabaseCount('activity_logs', 6);
+        $this->assertDatabaseCount('activity_logs', count($actions));
         $this->assertSame('Blue', ActivityLog::firstOrFail()->metadata['palette_name']);
-        $this->getJson('/api/activity-logs?module=Theme%20Colors')->assertOk()->assertJsonPath('recordsFiltered', 6);
+        app(ActivityLogger::class)->record($user, 'View', 'Theme Color Palettes');
+        $this->getJson('/api/activity-logs?module=Theme%20Colors&action=View')->assertOk()
+            ->assertJsonPath('data.0.description', 'View in Theme Colors');
+        $this->getJson('/api/activity-logs?module=Theme%20Colors')->assertOk()->assertJsonPath('recordsFiltered', count($actions) + 1);
         $this->getJson('/api/activity-logs/filters')->assertOk()->assertJsonPath('modules.0', 'Theme Colors');
         $this->postJson('/api/theme-color-palettes/activity', ['action' => 'Delete', 'color' => 'bad'])->assertUnprocessable();
-        $this->assertDatabaseCount('activity_logs', 6);
+        $this->postJson('/api/theme-color-palettes/activity', ['action' => 'Save Changes'])->assertUnprocessable();
+        $this->assertDatabaseCount('activity_logs', count($actions) + 1);
     }
 
     public function test_palette_creation_rolls_back_when_activity_logging_fails(): void

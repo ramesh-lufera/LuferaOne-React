@@ -17,7 +17,7 @@ class TrackActivity
 
     public function handle(Request $request, Closure $next): Response
     {
-        if ($request->is('api/health', 'api/auth/settings', 'api/company/images/*', 'api/user', 'api/activity-logs', 'api/activity-logs/*') || $request->isMethod('OPTIONS') || $request->isMethod('HEAD')) {
+        if ($request->is('api/health', 'api/auth/settings', 'api/theme-color-settings', 'api/company/images/*', 'api/user', 'api/activity-logs', 'api/activity-logs/*') || $request->isMethod('OPTIONS') || $request->isMethod('HEAD')) {
             return $next($request);
         }
         $module = Str::headline($request->segment(2) ?? 'Application');
