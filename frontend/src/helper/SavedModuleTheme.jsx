@@ -32,10 +32,10 @@ export default function SavedModuleTheme() {
   const { pathname } = useLocation();
   const path = pathname.toLowerCase().replace(/\/+$/, '');
   const enabled = themedPaths.has(path);
+  const themedPath = enabled ? path : null;
   const [settings, setSettings] = useState(null);
 
   useEffect(() => {
-    if (!enabled) return;
     const controller = new AbortController();
     const receiveSavedColors = (event) => {
       if (!validSettings(event.detail)) return;
@@ -56,10 +56,10 @@ export default function SavedModuleTheme() {
       controller.abort();
       window.removeEventListener('saved-theme-colors', receiveSavedColors);
     };
-  }, [enabled, path]);
+  }, [themedPath]);
 
   useLayoutEffect(() => {
-    if (!enabled || !settings) return;
+    if (!settings) return;
     const body = document.body;
     const previousAttribute = body.getAttribute('data-saved-module-theme');
     const template = window.getComputedStyle(document.documentElement);
@@ -73,7 +73,7 @@ export default function SavedModuleTheme() {
       ])),
     };
     const previousValues = Object.keys(variables).map((key) => [key, body.style.getPropertyValue(key)]);
-    body.setAttribute('data-saved-module-theme', '');
+    if (enabled) body.setAttribute('data-saved-module-theme', '');
     Object.entries(variables).forEach(([key, value]) => body.style.setProperty(key, value));
     return () => {
       if (previousAttribute === null) body.removeAttribute('data-saved-module-theme');

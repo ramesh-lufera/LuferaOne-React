@@ -1,3 +1,7 @@
+.topbar-profile-menu .dropdown-item.hover-text-primary:hover {
+  color: var(--module-theme-main, var(--primary-600)) !important;
+}
+
 body[data-saved-module-theme] :where(.dashboard-main-body, .auth, .modal) {
   --primary-50: var(--module-theme-focus);
   --primary-100: var(--module-theme-focus);
