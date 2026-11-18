@@ -569,6 +569,7 @@ export default function AddUserLayer({ userId, onSaved, onSavingChange } = {}) {
                     <button
                       type="button"
                       className="form-wizard-previous-btn btn btn-neutral-500 border-neutral-100 px-32"
+                      data-theme-exempt
                       onClick={() => setStep(step - 1)}
                     >
                       Back

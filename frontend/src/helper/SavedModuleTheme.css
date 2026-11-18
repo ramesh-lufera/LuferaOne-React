@@ -34,7 +34,7 @@ body[data-saved-module-theme] :where(.dashboard-main-body, .auth, .modal)
 }
 
 body[data-saved-module-theme] :where(.dashboard-main-body, .auth, .modal)
-:is(.btn-primary, .btn-primary-600, .signup-submit, .role-wizard-submit, button.nav-link.active):not(.module-table-action) {
+:is(.btn-primary, .btn-primary-600, .signup-submit, .role-wizard-submit, button.nav-link.active):not(.module-table-action):not([data-theme-exempt]) {
   --bs-btn-focus-shadow-rgb: var(--module-theme-main-rgb);
   --bs-btn-active-bg: var(--module-theme-focus);
   --bs-btn-active-color: var(--module-theme-text);
@@ -43,7 +43,7 @@ body[data-saved-module-theme] :where(.dashboard-main-body, .auth, .modal)
 }
 
 body[data-saved-module-theme] :where(.dashboard-main-body, .auth, .modal)
-:is(.btn-primary, .btn-primary-600, .signup-submit, .role-wizard-submit, button.nav-link.active):not(.module-table-action):is(:hover, :focus-visible, :active) {
+:is(.btn-primary, .btn-primary-600, .signup-submit, .role-wizard-submit, button.nav-link.active):not(.module-table-action):not([data-theme-exempt]):is(:hover, :focus-visible, :active) {
   background-color: var(--module-theme-focus) !important;
 }
 
@@ -152,4 +152,8 @@ body[data-saved-module-theme] :where(.dashboard-main-body, .auth, .modal)
 
 body[data-saved-module-theme] .auth .social-provider-button:hover:not(:disabled) {
   background-color: var(--module-theme-focus) !important;
+}
+
+body[data-saved-module-theme] .dropdown:has(#company-phone-country-code) .dropdown-item {
+  color: var(--text-primary-light) !important;
 }

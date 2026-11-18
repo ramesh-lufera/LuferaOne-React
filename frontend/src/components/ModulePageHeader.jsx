@@ -11,6 +11,7 @@ export default function ModulePageHeader({ title }) {
     >
       <button
         type="button"
+        data-theme-exempt
         className="d-inline-flex align-items-center gap-2 bg-transparent border-0 p-0 text-black"
         style={{ justifySelf: 'start' }}
         onClick={() => navigate(-1)}

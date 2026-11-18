@@ -439,6 +439,7 @@ export default function RoleAccessLayer() {
               <button
                 type="button"
                 className="btn role-wizard-back"
+                data-theme-exempt
                 disabled={saving}
                 onClick={() => setStep(1)}
               >

@@ -101,7 +101,6 @@ export default function CompanyLayer() {
       }
     } finally { setSaving(false); savingRef.current = false; }
   };
-  const reset = () => { loadValues(company); setFiles({}); setRemoved({}); setErrors({}); setError(''); setSuccess(''); setStep(1); setFileKey((key) => key + 1); };
   const update = (key, value) => { setValues((current) => ({ ...current, [key]: value })); setErrors((current) => ({ ...current, [key]: '' })); setSuccess(''); };
   const field = ([key, label, type, maxLength]) => <div className='col-sm-6' key={key}>
     <label htmlFor={`company-${key}`} className='form-label'>{label}{key !== 'website' && <span className='text-danger-600'> *</span>}</label>
@@ -148,8 +147,7 @@ export default function CompanyLayer() {
               </div>;
             })}
             <div className='form-group d-flex flex-wrap align-items-center justify-content-end gap-8 mt-24'>
-              <button type='button' className='btn btn-outline-danger px-32' onClick={reset}>Reset</button>
-              {step > 1 && <button type='button' className='form-wizard-previous-btn btn btn-neutral-500 border-neutral-100 px-32' onClick={() => setStep((current) => current - 1)}>Back</button>}
+              {step > 1 && <button type='button' className='form-wizard-previous-btn btn btn-neutral-500 border-neutral-100 px-32' data-theme-exempt onClick={() => setStep((current) => current - 1)}>Back</button>}
               {step < 3 ? <button key='next-step' type='button' className='form-wizard-next-btn btn btn-primary-600 px-32' onClick={nextStep}>Next</button> :
                 <button key='save-company' type='submit' className='form-wizard-submit btn btn-primary-600 px-32'>{saving ? 'Saving…' : 'Save Change'}</button>}
             </div>
