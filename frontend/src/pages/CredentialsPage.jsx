@@ -89,20 +89,12 @@ export default function CredentialsPage() {
     }
   };
 
-  const reset = async (event) => {
+  const reset = (event) => {
     event.preventDefault();
     setValues({ ...savedValues });
     setMessage('');
     setError('');
-    try {
-      await api('/credentials/activity', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'Reset' }),
-      });
-    } catch (failure) {
-      setError(`Credentials form reset, but the activity could not be recorded. ${failure.message}`);
-    }
+
   };
 
   return (

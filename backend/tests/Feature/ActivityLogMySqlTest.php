@@ -31,7 +31,7 @@ class ActivityLogMySqlTest extends TestCase
             $this->assertDatabaseHas('activity_logs', ['action' => 'Sign Out', 'user_id' => $user->id]);
             $this->assertDatabaseMissing('personal_access_tokens', ['tokenable_id' => $user->id]);
             $this->postJson('/api/login', ['email' => $email, 'password' => 'wrong'])->assertUnauthorized();
-            $this->assertDatabaseHas('activity_logs', ['action' => 'Failed Sign In', 'user_id' => null, 'username' => $email]);
+            $this->assertDatabaseMissing('activity_logs', ['action' => 'Failed Sign In', 'username' => $email]);
         } finally {
             DB::rollBack();
         }

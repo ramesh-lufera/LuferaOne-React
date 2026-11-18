@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Services\ActivityLogger;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
@@ -45,15 +46,15 @@ class ActivityLogTest extends TestCase
         $this->assertStringNotContainsString('secure-password', ActivityLog::all()->toJson());
     }
 
-    public function test_failed_sign_in_keeps_email_without_claiming_authenticated_user(): void
+    public function test_failed_sign_in_does_not_log_without_a_database_change(): void
     {
         User::factory()->create(['email' => 'known@example.test']);
         foreach (['known@example.test', 'unknown@example.test'] as $email) {
             $this->postJson('/api/login', ['email' => $email, 'password' => 'wrong', 'user_id' => 999])->assertUnauthorized();
-            $this->assertDatabaseHas('activity_logs', ['action' => 'Failed Sign In', 'user_id' => null, 'username' => $email]);
+            $this->assertDatabaseCount('activity_logs', 0);
         }
         $this->assertDatabaseCount('personal_access_tokens', 0);
-        $this->assertDatabaseCount('activity_logs', 2);
+        $this->assertDatabaseCount('activity_logs', 0);
     }
 
     public function test_invalid_requests_and_auth_checks_do_not_generate_artificial_activities(): void
@@ -167,10 +168,39 @@ class ActivityLogTest extends TestCase
         $this->getJson('/api/projects/'.$id)->assertOk();
         $this->deleteJson('/api/projects/'.$id)->assertNoContent();
         $this->patchJson('/api/projects/99999')->assertNotFound();
-        $this->assertDatabaseCount('activity_logs', 4);
-        foreach (['Create', 'Update', 'View', 'Delete'] as $action) {
+        $this->assertDatabaseCount('activity_logs', 3);
+        foreach (['Create', 'Update', 'Delete'] as $action) {
             $this->assertDatabaseHas('activity_logs', ['action' => $action, 'module' => 'Projects', 'user_id' => $actor->id, 'entity_id' => (string) $id]);
         }
+    }
+
+    public function test_successful_posts_without_business_database_writes_are_not_logged_even_with_token_updates(): void
+    {
+        Route::middleware(['api', 'auth:sanctum'])->post('/api/projects/preview', function (Request $request) {
+            User::count();
+            $request->attributes->set('activity_action', 'Create');
+
+            return response()->json(['message' => 'Preview only']);
+        });
+        $actor = $this->admin();
+        $token = $actor->createToken('test')->plainTextToken;
+        $this->withToken($token)->postJson('/api/projects/preview')->assertOk();
+        $this->withToken($token)->postJson('/api/projects/preview')->assertOk();
+        $this->assertDatabaseCount('activity_logs', 0);
+    }
+
+    public function test_query_builder_writes_are_logged_but_reads_on_the_next_request_are_not(): void
+    {
+        Route::middleware(['api', 'auth:sanctum'])->put('/api/projects/settings', function () {
+            DB::table('roles')->where('name', 'user')->update(['description' => 'Updated description']);
+
+            return response()->json(['message' => 'Saved']);
+        });
+        Route::middleware(['api', 'auth:sanctum'])->post('/api/projects/preview', fn () => response()->json(['message' => 'Preview only']));
+        $this->actingAs($this->admin(), 'sanctum')->putJson('/api/projects/settings')->assertOk();
+        $this->assertDatabaseHas('activity_logs', ['action' => 'Update', 'module' => 'Projects']);
+        $this->postJson('/api/projects/preview')->assertOk();
+        $this->assertDatabaseCount('activity_logs', 1);
     }
 
     public function test_storage_failure_rolls_back_registration(): void

@@ -132,6 +132,6 @@ class ThemeColorPaletteController extends Controller
         unset($values['action']);
         $request->attributes->set('activity_metadata', $values);
 
-        return response()->json(['message' => 'Activity recorded.']);
+        return response()->json(['message' => 'No database changes to record.']);
     }
 }

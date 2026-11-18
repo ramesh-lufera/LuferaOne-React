@@ -2092,18 +2092,14 @@ const MasterLayout = ({ children }) => {
         <div className='dashboard-main-body'>{logoutError && <div className='alert alert-danger' role='alert'>{logoutError}</div>}{children}</div>
 
         {/* Footer section */}
-        <footer className='d-footer'>
-          <div className='row align-items-center justify-content-between'>
-            <div className='col-auto'>
-              <p className='mb-0'>© 2025 LuferaTech. All Rights Reserved.</p>
-            </div>
-            <div className='col-auto'>
-              <p className='mb-0'>
-                <Link to='/terms-condition' className='me-16'>Terms and Conditions</Link>
-                <Link to='/privacy-policy' className='me-16'>Privacy Policy</Link>
-                Made by <span className='text-primary-600'>Lufera Infotech</span>
-              </p>
-            </div>
+        <footer className='d-footer py-12'>
+          <div className='d-flex flex-wrap align-items-center justify-content-between gap-2'>
+            <p className='mb-0'>© {new Date().getFullYear()} Lufera Infotech</p>
+            <nav aria-label='Legal links' className='d-flex align-items-center gap-1'>
+              <Link to='/privacy-policy' style={{ color: 'inherit' }}>Privacy Policy</Link>
+              <span aria-hidden='true'>|</span>
+              <Link to='/terms-condition' style={{ color: 'inherit' }}>Terms and Conditions</Link>
+            </nav>
           </div>
         </footer>
       </main>

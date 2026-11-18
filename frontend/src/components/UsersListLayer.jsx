@@ -184,7 +184,7 @@ export default function UsersListLayer({ view = 'list' }) {
                   <div key={user.id} className="col-sm-6 col-xl-4">
                     <div className="card h-100">
                       <div className="card-body p-24">
-                        <h6 className="text-break">{user.name}</h6>
+                        <h6 className="text-break">{user.name ? user.name.charAt(0).toUpperCase() + user.name.slice(1) : ''}</h6>
                         <p className="fw-semibold">User ID: {user.user_code}</p>
                         <p className="text-break">{user.email}</p>
                         <p className="text-break">{user.username || '—'}</p>
@@ -195,7 +195,7 @@ export default function UsersListLayer({ view = 'list' }) {
                             type="button"
                             className="btn btn-sm btn-primary"
                             onClick={() => openAction('view', user)}
-                            aria-label={`View ${user.name}`}
+                            aria-label={`View ${user.name ? user.name.charAt(0).toUpperCase() + user.name.slice(1) : ''}`}
                           >
                             View
                           </button>
@@ -204,7 +204,7 @@ export default function UsersListLayer({ view = 'list' }) {
                             className="btn btn-sm btn-outline-primary"
                             disabled={!canManage(user)}
                             onClick={() => openAction('edit', user)}
-                            aria-label={`Edit ${user.name}`}
+                            aria-label={`Edit ${user.name ? user.name.charAt(0).toUpperCase() + user.name.slice(1) : ''}`}
                           >
                             Edit
                           </button>
@@ -213,7 +213,7 @@ export default function UsersListLayer({ view = 'list' }) {
                             className="btn btn-sm btn-outline-danger"
                             disabled={!canManage(user)}
                             onClick={() => openAction('delete', user)}
-                            aria-label={`Delete ${user.name}`}
+                            aria-label={`Delete ${user.name ? user.name.charAt(0).toUpperCase() + user.name.slice(1) : ''}`}
                           >
                             Delete
                           </button>
@@ -243,7 +243,7 @@ export default function UsersListLayer({ view = 'list' }) {
                     <td>{user.user_code || '—'}</td>
                     <td className="fw-medium">
                       <ModuleTableCell id={`user-name-${user.id}`}>
-                        {user.name}
+                        {user.name ? user.name.charAt(0).toUpperCase() + user.name.slice(1) : ''}
                       </ModuleTableCell>
                     </td>
                     <td>
@@ -276,7 +276,7 @@ export default function UsersListLayer({ view = 'list' }) {
                         <button
                           type="button"
                           className="module-table-action bg-primary-50 text-primary-600 w-40-px h-40-px rounded-circle"
-                          aria-label={`View ${user.name}`}
+                          aria-label={`View ${user.name ? user.name.charAt(0).toUpperCase() + user.name.slice(1) : ''}`}
                           title="View user"
                           onClick={() => openAction('view', user)}
                         >
@@ -285,7 +285,7 @@ export default function UsersListLayer({ view = 'list' }) {
                         <button
                           type="button"
                           className="module-table-action bg-success-focus text-success-600 w-40-px h-40-px rounded-circle"
-                          aria-label={`Edit ${user.name}`}
+                          aria-label={`Edit ${user.name ? user.name.charAt(0).toUpperCase() + user.name.slice(1) : ''}`}
                           title="Edit user"
                           disabled={!canManage(user)}
                           onClick={() => openAction('edit', user)}
@@ -295,7 +295,7 @@ export default function UsersListLayer({ view = 'list' }) {
                         <button
                           type="button"
                           className="module-table-action bg-danger-focus text-danger-600 w-40-px h-40-px rounded-circle"
-                          aria-label={`Delete ${user.name}`}
+                          aria-label={`Delete ${user.name ? user.name.charAt(0).toUpperCase() + user.name.slice(1) : ''}`}
                           title="Delete user"
                           disabled={!canManage(user)}
                           onClick={() => openAction('delete', user)}

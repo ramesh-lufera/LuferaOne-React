@@ -17,7 +17,7 @@ class TrackActivity
 
     public function handle(Request $request, Closure $next): Response
     {
-        if ($request->is('api/health', 'api/auth/settings', 'api/theme-color-settings', 'api/company/images/*', 'api/user', 'api/activity-logs', 'api/activity-logs/*') || $request->isMethod('OPTIONS') || $request->isMethod('HEAD')) {
+        if ($request->is('api/health', 'api/auth/settings', 'api/theme-color-settings', 'api/company/images/*', 'api/user', 'api/activity-logs', 'api/activity-logs/*') || $request->isMethod('GET') || $request->isMethod('OPTIONS') || $request->isMethod('HEAD')) {
             return $next($request);
         }
         $module = Str::headline($request->segment(2) ?? 'Application');
@@ -32,12 +32,16 @@ class TrackActivity
         }
         $eventId = (string) Str::uuid();
         $transactionLevel = DB::transactionLevel();
+        $request->attributes->set('activity_track_database', true);
+        $request->attributes->set('activity_database_write', false);
         DB::beginTransaction();
         try {
             $response = $next($request);
             if ($response->isSuccessful()) {
                 $actor = $request->user() ?? $request->attributes->get('activity_actor');
-                if ($actor instanceof User && ! $request->attributes->get('activity_skip', false)) {
+                if ($actor instanceof User
+                    && ($request->attributes->get('activity_database_write', false) || $request->is('api/login', 'api/logout', 'api/auth/google', 'api/auth/google/code', 'api/auth/facebook'))
+                    && ! $request->attributes->get('activity_skip', false)) {
                     $parameters = $request->route()?->parameters();
                     $entityId = $request->attributes->get('activity_entity_id');
                     if ($entityId === null && $parameters) {
@@ -50,9 +54,7 @@ class TrackActivity
                 DB::commit();
             } else {
                 DB::rollBack();
-                if ($request->is('api/login') && $response->getStatusCode() === 401 && $request->attributes->has('activity_failed_email')) {
-                    $this->logger->record(null, 'Failed Sign In', 'Sign In', metadata: ['reason' => 'Invalid credentials'], eventId: $eventId, identifier: $request->attributes->get('activity_failed_email'));
-                }
+
             }
 
             return $response;
@@ -61,6 +63,9 @@ class TrackActivity
                 DB::rollBack($transactionLevel);
             }
             throw $exception;
+        } finally {
+            $request->attributes->remove('activity_track_database');
+            $request->attributes->remove('activity_database_write');
         }
     }
 }

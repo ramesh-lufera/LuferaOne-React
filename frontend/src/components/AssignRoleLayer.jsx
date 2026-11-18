@@ -99,7 +99,7 @@ export default function AssignRoleLayer() {
       setUsers((current) =>
         current.map((item) => (item.id === user.id ? { ...item, role } : item)),
       );
-      setNotice(`Role assigned to ${user.name}.`);
+      setNotice(`Role assigned to ${user.name ? user.name.charAt(0).toUpperCase() + user.name.slice(1) : ''}.`);
     } catch (error) {
       setError(error.message);
     } finally {
@@ -155,7 +155,7 @@ export default function AssignRoleLayer() {
                   <td>{user.user_code || '—'}</td>
                   <td>
                     <ModuleTableCell id={`assign-user-${user.id}`}>
-                      {user.name}
+                      {user.name ? user.name.charAt(0).toUpperCase() + user.name.slice(1) : ''}
                     </ModuleTableCell>
                   </td>
                   <td>
