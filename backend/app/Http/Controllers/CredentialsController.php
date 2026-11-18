@@ -34,7 +34,7 @@ class CredentialsController extends Controller
         $request->validate(['action' => ['required', 'in:Reset']]);
         $request->attributes->set('activity_action', 'Reset');
 
-        return response()->json(['message' => 'Activity recorded.']);
+        return response()->json(['message' => 'No database changes to record.']);
     }
 
     public function publicSettings(): JsonResponse

@@ -40,9 +40,8 @@ const ThemeColorsPage = () => {
   const [nameError, setNameError] = useState("");
   const [saveError, setSaveError] = useState("");
   const [message, setMessage] = useState("");
-  const [activityError, setActivityError] = useState("");
   const [appliedColors, setAppliedColors] = useState(null);
-  const [selectedPalette, setSelectedPalette] = useState('lufera-infotech');
+  const [selectedPalette, setSelectedPalette] = useState('blue');
   const [customColors, setCustomColors] = useState(defaultCustomColors);
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsError, setSettingsError] = useState("");
@@ -65,7 +64,6 @@ const ThemeColorsPage = () => {
   const selectCustomPalette = () => {
     if (busy || selectedPalette === 'custom') return;
     setSelectedPalette('custom');
-    recordActivity('Select Color', { palette_id: 'custom', palette_name: 'Custom Colors' });
   };
 
   const saveSettings = async (event) => {
@@ -91,25 +89,9 @@ const ThemeColorsPage = () => {
     }
   };
 
-  const recordActivity = async (action, details = {}) => {
-    try {
-      await api('/theme-color-palettes/activity', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, ...details }),
-      });
-      setActivityError("");
-    } catch (error) {
-      setActivityError(`Unable to record Theme Colors activity. ${error.message}`);
-    }
-  };
-
   const closeAddColor = () => {
     if (saving) return;
     setShowAddColor(false);
-    recordActivity(editingPalette ? 'Cancel Edit Color' : 'Cancel Add Color', editingPalette
-      ? { palette_id: editingPalette.id, palette_name: editingPalette.label }
-      : {});
   };
 
   const openColorEditor = (palette = null) => {
@@ -118,18 +100,15 @@ const ThemeColorsPage = () => {
     setNameError("");
     setSaveError("");
     setShowAddColor(true);
-    recordActivity(palette ? 'Open Edit Color' : 'Open Add Color', palette ? { palette_id: palette.id, palette_name: palette.label } : {});
   };
 
   const openDeleteColor = (palette) => {
     setDeleteError("");
     setDeletePalette(palette);
-    recordActivity('Open Delete Color', { palette_id: palette.id, palette_name: palette.label });
   };
 
   const closeDeleteColor = () => {
     if (deleting || !deletePalette) return;
-    recordActivity('Cancel Delete Color', { palette_id: deletePalette.id, palette_name: deletePalette.label });
     setDeletePalette(null);
   };
 
@@ -141,7 +120,7 @@ const ThemeColorsPage = () => {
       const result = await api(`/theme-color-palettes/${deletePalette.id}`, { method: 'DELETE' });
       setSavedColors((current) => ({ ...current, palettes: current.palettes.filter((palette) => palette.id !== deletePalette.id) }));
       setAppliedColors(result.settings);
-      setSelectedPalette((current) => current === deletePalette.id ? result.settings?.palette_id || 'lufera-infotech' : current);
+      setSelectedPalette((current) => current === deletePalette.id ? result.settings?.palette_id || 'blue' : current);
       if (result.settings?.palette_id === 'custom') setCustomColors(result.settings);
       setMessage(`“${deletePalette.label}” color palette deleted successfully.`);
       setDeletePalette(null);
@@ -160,7 +139,7 @@ const ThemeColorsPage = () => {
         let result = await api('/theme-color-palettes', { signal: controller.signal });
         setSavedColors({ palettes: result.palettes, error: "" });
         setAppliedColors(result.settings);
-        setSelectedPalette(result.settings?.palette_id || 'lufera-infotech');
+        setSelectedPalette(result.settings?.palette_id || 'blue');
         if (result.settings?.palette_id === 'custom') setCustomColors(result.settings);
         const browserPalettes = readSavedPalettes();
         for (const palette of browserPalettes) {
@@ -230,7 +209,6 @@ const ThemeColorsPage = () => {
       <div className={`theme-colors-page${appliedColors ? ' theme-colors-applied' : ''}`} style={pageStyle}>
         <ModulePageHeader title='Theme Colors' />
         {settingsError && <div className='alert alert-danger' role='alert'>{settingsError}</div>}
-        {activityError && <div className='alert alert-danger' role='alert'>{activityError}</div>}
         {savedColors.error && (
           <div className='alert alert-danger' role='alert'>
             {savedColors.error}{' '}
@@ -249,9 +227,8 @@ const ThemeColorsPage = () => {
             <form
               onReset={(event) => {
                 event.preventDefault();
-                setSelectedPalette(appliedColors?.palette_id || 'lufera-infotech');
+                setSelectedPalette(appliedColors?.palette_id || 'blue');
                 setCustomColors(appliedColors?.palette_id === 'custom' ? appliedColors : defaultCustomColors);
-                recordActivity('Reset');
               }}
               onSubmit={saveSettings}
             >
@@ -281,7 +258,6 @@ const ThemeColorsPage = () => {
                         aria-label={`${palette.label} palette`}
                         onChange={() => {
                           setSelectedPalette(palette.id);
-                          recordActivity('Select Color', { palette_id: palette.id, palette_name: palette.label });
                         }}
                       />
                       <label className='theme-colors-palette' htmlFor={`theme-color-${palette.id}`}>
@@ -316,13 +292,7 @@ const ThemeColorsPage = () => {
                     <div
                       className='theme-colors-palette theme-colors-custom'
                       onClick={selectCustomPalette}
-                      onFocus={(event) => { event.target.dataset.previousColor = event.target.value; }}
-                      onBlur={(event) => {
-                        const input = event.target;
-                        if (input.value !== input.dataset.previousColor) {
-                          recordActivity('Edit Custom Color', { palette_id: 'custom', field: input.name.replace('custom-', ''), color: input.value });
-                        }
-                      }}
+
                     >
                       <label className='theme-colors-swatch'>
                         <input type='color' name='custom-main' className='theme-colors-sample theme-colors-picker' value={customColors.color} disabled={savingSettings} onChange={(event) => updateCustomColor('color', event.target.value)} />

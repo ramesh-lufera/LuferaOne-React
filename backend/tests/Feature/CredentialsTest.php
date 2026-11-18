@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\ActivityLog;
 use App\Models\User;
 use Dotenv\Dotenv;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
@@ -92,7 +91,7 @@ class CredentialsTest extends TestCase
         $response->assertHeader('Cache-Control', 'no-store, private');
     }
 
-    public function test_credential_activity_is_filterable_without_recording_submitted_values(): void
+    public function test_file_configuration_changes_and_form_resets_do_not_generate_database_activity(): void
     {
         $user = User::factory()->create(['role' => 'admin']);
         $this->actingAs($user, 'sanctum');
@@ -103,13 +102,8 @@ class CredentialsTest extends TestCase
         $this->postJson('/api/credentials/activity', ['action' => 'Reset', ...$this->payload()])->assertOk();
         $this->postJson('/api/credentials/activity', ['action' => 'Update'])->assertUnprocessable();
 
-        $logs = ActivityLog::where('module', 'Credentials')->orderBy('id')->get();
-        $this->assertSame(['View', 'Update', 'Reset'], $logs->pluck('action')->all());
-        $this->assertSame([$user->id], $logs->pluck('user_id')->unique()->values()->all());
-        foreach ($logs as $log) {
-            $this->assertSame(['method', 'route'], array_keys($log->metadata));
-        }
-        $this->getJson('/api/activity-logs?module=Credentials')->assertOk()->assertJsonPath('recordsFiltered', 3);
+        $this->assertDatabaseCount('activity_logs', 0);
+        $this->getJson('/api/activity-logs?module=Credentials')->assertOk()->assertJsonPath('recordsFiltered', 0);
     }
 
     public function test_invalid_or_missing_values_do_not_change_configuration(): void

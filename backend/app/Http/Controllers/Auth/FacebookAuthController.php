@@ -75,6 +75,11 @@ class FacebookAuthController extends Controller
         $expiresAt = ! empty($data['remember']) ? now()->addDays(30) : now()->addHours(8);
         $token = $user->createToken('facebook-sign-in', ['*'], $expiresAt)->plainTextToken;
 
+        $request->attributes->set('activity_actor', $user);
+        $request->attributes->set('activity_entity_id', $user->id);
+        $request->attributes->set('activity_action', 'Sign In');
+        $request->attributes->set('activity_page', 'Sign In');
+
         return response()->json(['token' => $token, 'user' => $user->only(['id', 'user_code', 'name', 'email', 'username', 'facebook_photo_url'])])->header('Cache-Control', 'no-store');
     }
 }

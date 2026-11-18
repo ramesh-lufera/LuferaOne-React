@@ -66,7 +66,7 @@ class ThemeColorPaletteTest extends TestCase
         $this->assertDatabaseHas('theme_color_palettes', ['uuid' => $first['id'], 'label' => 'Ocean', 'color' => '#123456']);
         $this->actingAs(User::factory()->create(['role' => 'admin']), 'sanctum');
         $this->getJson('/api/theme-color-palettes')->assertOk()->assertExactJson(['palettes' => [$first, $second], 'settings' => null]);
-        $this->assertDatabaseHas('activity_logs', ['module' => 'Theme Colors', 'action' => 'View']);
+        $this->assertDatabaseMissing('activity_logs', ['module' => 'Theme Colors', 'action' => 'View']);
     }
 
     public function test_invalid_names_and_colors_are_rejected(): void
@@ -78,7 +78,7 @@ class ThemeColorPaletteTest extends TestCase
         $this->assertDatabaseCount('activity_logs', 0);
     }
 
-    public function test_module_interactions_are_logged_and_available_in_activity_filters(): void
+    public function test_module_interactions_are_not_logged_and_legacy_history_remains_filterable(): void
     {
         $user = User::factory()->create(['role' => 'admin']);
         $this->actingAs($user, 'sanctum');
@@ -90,18 +90,17 @@ class ThemeColorPaletteTest extends TestCase
             $this->postJson('/api/theme-color-palettes/activity', [
                 'action' => $action, 'palette_id' => 'blue', 'palette_name' => 'Blue', 'field' => 'main', 'color' => '#123456',
             ])->assertOk();
-            $this->assertDatabaseHas('activity_logs', ['module' => 'Theme Colors', 'action' => $action, 'user_id' => $user->id]);
+            $this->assertDatabaseCount('activity_logs', 0);
         }
-        $this->assertDatabaseCount('activity_logs', count($actions));
-        $this->assertSame('Blue', ActivityLog::firstOrFail()->metadata['palette_name']);
+        $this->assertDatabaseCount('activity_logs', 0);
         app(ActivityLogger::class)->record($user, 'View', 'Theme Color Palettes');
         $this->getJson('/api/activity-logs?module=Theme%20Colors&action=View')->assertOk()
             ->assertJsonPath('data.0.description', 'View in Theme Colors');
-        $this->getJson('/api/activity-logs?module=Theme%20Colors')->assertOk()->assertJsonPath('recordsFiltered', count($actions) + 1);
+        $this->getJson('/api/activity-logs?module=Theme%20Colors')->assertOk()->assertJsonPath('recordsFiltered', 1);
         $this->getJson('/api/activity-logs/filters')->assertOk()->assertJsonPath('modules.0', 'Theme Colors');
         $this->postJson('/api/theme-color-palettes/activity', ['action' => 'Delete', 'color' => 'bad'])->assertUnprocessable();
         $this->postJson('/api/theme-color-palettes/activity', ['action' => 'Save Changes'])->assertUnprocessable();
-        $this->assertDatabaseCount('activity_logs', count($actions) + 1);
+        $this->assertDatabaseCount('activity_logs', 1);
     }
 
     public function test_palette_creation_rolls_back_when_activity_logging_fails(): void
