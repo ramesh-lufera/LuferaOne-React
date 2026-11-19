@@ -11,7 +11,7 @@ const address = [
   ['state', 'State', 'text', 100], ['zip_code', 'Zip Code', 'text', 20],
   ['address', 'Address', 'text', 2000], ['gstin', 'GSTIN', 'text', 15],
 ];
-const imageFields = [['logo', 'Company Logo'], ['sign_in_image', 'Sign In Image'], ['sign_up_image', 'Sign Up Image']];
+const imageFields = [['logo', 'Company Logo'], ['site_logo', 'Site Logo'], ['sign_in_image', 'Sign In Image'], ['sign_up_image', 'Sign Up Image']];
 const initialValues = Object.fromEntries([...details, ...address].map(([key]) => [key, '']));
 initialValues.phone_country_code = '+91';
 const steps = ['Company Details', 'Address & GSTIN', 'Images'];
@@ -92,6 +92,7 @@ export default function CompanyLayer() {
     try {
       const result = await api('/company', { method: 'POST', body });
       loadValues(result.company); setFiles({}); setRemoved({}); setFileKey((key) => key + 1);
+      window.dispatchEvent(new Event('company-branding-updated'));
       setSuccess(result.message); setStep(1);
     } catch (err) {
       setError(err.message);
@@ -140,7 +141,7 @@ export default function CompanyLayer() {
                 <label className='form-label' htmlFor={`company-${key}`}>{label}</label>
                 <input key={`${key}-${fileKey}`} id={`company-${key}`} ref={(element) => { fileInputs.current[key] = element; }} type='file' className='form-control' accept='image/jpeg,image/png,image/webp'
                   onChange={(e) => { const file = e.target.files[0]; setFiles((current) => ({ ...current, [key]: file })); if (file) setRemoved((current) => ({ ...current, [key]: false })); }} />
-                <p className='text-secondary-light text-sm mt-8'>JPG, PNG, or WebP. Maximum 2 MB.</p>
+                <p className='text-secondary-light text-sm mt-8'>JPG, PNG, or WebP. Maximum 2 MB.{key === 'site_logo' && ' Used as the browser favicon. A square PNG is recommended.'}</p>
                 {preview && <div className='d-flex align-items-center gap-3 mt-8'><img src={preview} alt={`${label} preview`} className='radius-8' style={{ maxWidth: 180, maxHeight: 140, objectFit: 'contain' }} />
                   <button type='button' className='btn btn-sm btn-outline-danger' onClick={() => { setFiles((current) => ({ ...current, [key]: null })); setRemoved((current) => ({ ...current, [key]: true })); if (fileInputs.current[key]) fileInputs.current[key].value = ''; }}>Remove {label.toLowerCase()}</button></div>}
                 {errors[key] && <div className='text-danger-600 text-sm mt-8' role='alert'>{errors[key]}</div>}

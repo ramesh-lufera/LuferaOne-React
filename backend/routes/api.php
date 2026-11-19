@@ -30,8 +30,7 @@ Route::post('/register', RegisterController::class)
     ->middleware('throttle:5,1')
     ->name('register');
 
-Route::post('/login', [AuthController::class, 'login'])
-    ->middleware('throttle:5,1');
+Route::post('/login', [AuthController::class, 'login']);
 
 Route::get('/user', [AuthController::class, 'user'])
     ->middleware('auth:sanctum');
@@ -86,7 +85,7 @@ Route::middleware(['auth:sanctum', EnsureModuleAccess::class.':company'])->group
 });
 
 Route::get('/company/images/{image}', [CompanyController::class, 'image'])
-    ->whereIn('image', ['logo', 'sign_in_image', 'sign_up_image'])
+    ->whereIn('image', ['logo', 'sign_in_image', 'sign_up_image', 'site_logo'])
     ->middleware(['signed', 'throttle:120,1'])
     ->name('company.image');
 

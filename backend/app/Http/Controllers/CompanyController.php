@@ -31,7 +31,7 @@ class CompanyController extends Controller
     {
         $company = Company::where('profile_key', 'shared')->first();
         $images = [];
-        foreach (['logo', 'sign_in_image', 'sign_up_image'] as $field) {
+        foreach (['logo', 'sign_in_image', 'sign_up_image', 'site_logo'] as $field) {
             $path = $this->brandingImagePath($company, $field);
             $images[$field.'_url'] = $path ? URL::temporarySignedRoute('company.image', now()->addHour(), [
                 'image' => $field,
@@ -85,7 +85,7 @@ class CompanyController extends Controller
             $company->created_by = $request->user()->id;
         }
         $company->updated_by = $request->user()->id;
-        foreach (['logo', 'sign_in_image', 'sign_up_image'] as $field) {
+        foreach (['logo', 'sign_in_image', 'sign_up_image', 'site_logo'] as $field) {
             $column = $field.'_path';
             $previous = $company->$column;
             if ($request->hasFile($field)) {
@@ -124,7 +124,7 @@ class CompanyController extends Controller
     private function data(Company $company): array
     {
         $data = $company->only(array_merge(['id'], $company->getFillable(), ['created_at', 'updated_at']));
-        foreach (['logo', 'sign_in_image', 'sign_up_image'] as $field) {
+        foreach (['logo', 'sign_in_image', 'sign_up_image', 'site_logo'] as $field) {
             $path = $company->{$field.'_path'};
             $data[$field.'_url'] = $path ? URL::temporarySignedRoute('company.image', now()->addHour(), ['image' => $field]) : null;
         }

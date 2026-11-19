@@ -85,6 +85,26 @@ class CompanyTest extends TestCase
         $this->assertNotNull($company->fresh()->sign_in_image_path);
     }
 
+    public function test_site_logo_upload_reloads_replaces_and_removes_without_affecting_company_logo(): void
+    {
+        Storage::fake('local');
+        $this->actingAs(User::factory()->create(['role' => 'admin']), 'sanctum');
+        $saved = $this->post('/api/company', $this->payload() + ['logo' => $this->image(), 'site_logo' => $this->image('site.png')], ['Accept' => 'application/json'])->assertCreated();
+        $this->get($saved->json('company.site_logo_url'))->assertOk();
+        $company = Company::firstOrFail();
+        $previous = $company->site_logo_path;
+        $this->getJson('/api/company')->assertJsonPath('company.site_logo_url', fn ($url): bool => is_string($url));
+        $this->post('/api/company', $this->payload() + ['_method' => 'PUT', 'site_logo' => $this->image('updated.png')], ['Accept' => 'application/json'])->assertOk();
+        Storage::disk('local')->assertMissing($previous);
+        Storage::disk('local')->assertExists($company->fresh()->site_logo_path);
+        $this->getJson('/api/auth/branding')->assertJsonPath('images.site_logo_url', fn ($url): bool => is_string($url));
+        $this->putJson('/api/company', $this->payload() + ['remove_site_logo' => true])->assertOk()->assertJsonPath('company.site_logo_url', null);
+        $this->getJson('/api/auth/branding')->assertJsonPath('images.site_logo_url', null);
+        Storage::disk('local')->assertExists($company->logo_path);
+        $this->assertDatabaseCount('companies', 1);
+        $this->post('/api/company', $this->payload() + ['_method' => 'PUT', 'site_logo' => UploadedFile::fake()->create('unsafe.svg', 1, 'image/svg+xml')], ['Accept' => 'application/json'])->assertUnprocessable()->assertJsonValidationErrors('site_logo');
+    }
+
     public function test_company_images_require_an_unexpired_signed_link(): void
     {
         Storage::fake('local');

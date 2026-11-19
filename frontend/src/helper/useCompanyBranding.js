@@ -10,7 +10,8 @@ export default function useCompanyBranding() {
       .catch(() => { if (!controller.signal.aborted) setImages({}); });
     load();
     window.addEventListener('focus', load);
-    return () => { controller.abort(); window.removeEventListener('focus', load); };
+    window.addEventListener('company-branding-updated', load);
+    return () => { controller.abort(); window.removeEventListener('focus', load); window.removeEventListener('company-branding-updated', load); };
   }, []);
   return images;
 }

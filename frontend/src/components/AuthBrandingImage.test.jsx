@@ -76,3 +76,12 @@ test('sign in displays Company images above the unchanged working login form', a
   await waitFor(() => expect(saveToken).toHaveBeenCalledWith('signed-in-token', false));
   expect(window.fetch).toHaveBeenCalledWith('/api/login', expect.objectContaining({ method: 'POST', body: JSON.stringify({ email: 'admin@example.com', password: 'password123', remember: false }) }));
 });
+
+test('saving a Company profile refreshes the branding without a page reload', async () => {
+  api.mockResolvedValueOnce({ images: { logo_url: '/old-logo.png' } });
+  api.mockResolvedValueOnce({ images: { logo_url: '/new-logo.png' } });
+  render(<BrandingPreview />);
+  await waitFor(() => expect(screen.getByAltText('Company logo')).toHaveAttribute('src', '/old-logo.png'));
+  fireEvent(window, new Event('company-branding-updated'));
+  await waitFor(() => expect(screen.getByAltText('Company logo')).toHaveAttribute('src', '/new-logo.png'));
+});

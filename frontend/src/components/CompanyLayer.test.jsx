@@ -24,6 +24,7 @@ test('validates steps and creates a company using the numbered wizard', async ()
   next(); next();
   const image = new File(['image'], 'logo.png', { type: 'image/png' });
   fireEvent.change(screen.getByLabelText('Company Logo'), { target: { files: [image] } });
+  fireEvent.change(screen.getByLabelText('Site Logo'), { target: { files: [image] } });
   expect(await screen.findByAltText('Company Logo preview')).toHaveAttribute('src', 'blob:preview');
   fireEvent.click(screen.getByRole('button', { name: 'Save Change' }));
   expect(await screen.findByText('Company profile saved successfully.')).toBeInTheDocument();
@@ -31,6 +32,7 @@ test('validates steps and creates a company using the numbered wizard', async ()
   expect(options.body.get('full_name')).toBe('Example Company');
   expect(options.body.get('gstin')).toBe('33AEZPA0582L1Z7');
   expect(options.body.get('logo')).toBe(image);
+  expect(options.body.get('site_logo')).toBe(image);
   expect(options.body.has('_method')).toBe(false);
 });
 test('loads the shared profile and submits updates rather than duplicates', async () => {
@@ -114,4 +116,19 @@ test('Address Next only opens Images and cannot become the save submit button', 
   expect(screen.queryByText('Company profile saved successfully.')).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Save Change' }));
   expect(await screen.findByText('Company profile saved successfully.')).toBeInTheDocument();
+});
+
+test('uploads and removes the Site Logo used for the favicon', async () => {
+  api.mockResolvedValue({ company: { ...profile, site_logo_url: '/saved-site-logo.png' }, message: 'Saved' });
+  render(<CompanyLayer />);
+  await screen.findByDisplayValue('Example Company'); next(); next();
+  expect(screen.getByAltText('Site Logo preview')).toHaveAttribute('src', '/saved-site-logo.png');
+  const image = new File(['image'], 'site.png', { type: 'image/png' });
+  fireEvent.change(screen.getByLabelText('Site Logo'), { target: { files: [image] } });
+  expect(await screen.findByAltText('Site Logo preview')).toHaveAttribute('src', 'blob:preview');
+  fireEvent.click(screen.getByRole('button', { name: 'Remove site logo' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Save Change' }));
+  await screen.findByText('Saved');
+  const [, options] = api.mock.calls.find(([, opts]) => opts?.method === 'POST');
+  expect(options.body.get('remove_site_logo')).toBe('1');
 });

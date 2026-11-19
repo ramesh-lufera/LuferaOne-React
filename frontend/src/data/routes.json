@@ -1,0 +1,127 @@
+[
+  {
+    "path": "/",
+    "page": "HomePageOne",
+    "access": "protected"
+  },
+  {
+    "path": "/activity-log",
+    "page": "ActivityLogPage",
+    "access": "protected"
+  },
+  {
+    "path": "/users-list",
+    "page": "UsersListPage",
+    "access": "protected"
+  },
+  {
+    "path": "/users-grid",
+    "page": "UsersGridPage",
+    "access": "protected"
+  },
+  {
+    "path": "/add-user",
+    "page": "AddUserPage",
+    "access": "protected"
+  },
+  {
+    "path": "/view-profile",
+    "page": "ViewProfilePage",
+    "access": "protected"
+  },
+  {
+    "path": "/roles-permissions",
+    "page": "RoleAccessPage",
+    "access": "protected"
+  },
+  {
+    "path": "/role-access",
+    "page": "RoleAccessPage",
+    "access": "protected"
+  },
+  {
+    "path": "/assign-role",
+    "page": "AssignRolePage",
+    "access": "protected"
+  },
+  {
+    "path": "/company",
+    "page": "CompanyPage",
+    "access": "protected"
+  },
+  {
+    "path": "/credentials",
+    "page": "CredentialsPage",
+    "access": "protected"
+  },
+  {
+    "path": "/invoice-settings",
+    "page": "InvoiceSettingsPage",
+    "access": "protected"
+  },
+  {
+    "path": "/invoice-list",
+    "page": "InvoiceListPage",
+    "access": "protected"
+  },
+  {
+    "path": "/invoice-add",
+    "page": "InvoiceAddPage",
+    "access": "protected"
+  },
+  {
+    "path": "/invoice-edit",
+    "page": "InvoiceEditPage",
+    "access": "protected"
+  },
+  {
+    "path": "/invoice-preview",
+    "page": "InvoicePreviewPage",
+    "access": "protected"
+  },
+  {
+    "path": "/theme-colors",
+    "page": "ThemeColorsPage",
+    "access": "protected"
+  },
+  {
+    "path": "/settings/privacy-policy",
+    "page": "PrivacyPolicySettingsPage",
+    "access": "protected"
+  },
+  {
+    "path": "/settings/terms-conditions",
+    "page": "TermsConditionSettingsPage",
+    "access": "protected"
+  },
+  {
+    "path": "/privacy-policy",
+    "page": "PrivacyPolicyPage",
+    "access": "legal"
+  },
+  {
+    "path": "/terms-condition",
+    "page": "TermsConditionPage",
+    "access": "legal"
+  },
+  {
+    "path": "/404",
+    "page": "ErrorPage",
+    "access": "legal"
+  },
+  {
+    "path": "/sign-in",
+    "page": "SignInPage",
+    "access": "public"
+  },
+  {
+    "path": "/sign-up",
+    "page": "SignUpPage",
+    "access": "public"
+  },
+  {
+    "path": "/access-denied",
+    "page": "AccessDeniedPage",
+    "access": "public"
+  }
+]
