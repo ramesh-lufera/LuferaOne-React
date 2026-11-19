@@ -1,0 +1,61 @@
+.application-sidebar {
+  display: flex;
+  flex-direction: column;
+}
+.application-sidebar > div:first-of-type { flex-shrink: 0; }
+.application-sidebar .sidebar-menu-area {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+.application-sidebar .sidebar-menu {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+.application-sidebar .sidebar-dashboard { margin-bottom: 16px; }
+.application-sidebar .sidebar-bottom-start {
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--neutral-200);
+}
+.application-sidebar .sidebar-menu > li { flex-shrink: 0; }
+
+.application-sidebar {
+  --primary-600: var(--module-theme-main, #1d8b8d);
+  --sidebar-theme-focus: var(--module-theme-focus, #d8e6e7);
+  --sidebar-theme-text: var(--module-theme-text, #0b1d1f);
+  --button-secondary: var(--sidebar-theme-focus);
+}
+.application-sidebar .sidebar-menu > li > a:is(:hover, :focus-visible, .active-page),
+.application-sidebar .sidebar-menu > li > a.active-page:hover,
+.application-sidebar .sidebar-menu > li.dropdown:is(.open, .dropdown-open) > a,
+.application-sidebar .sidebar-menu > li.dropdown:is(.open, .dropdown-open) > a:hover {
+  background-color: var(--primary-600);
+  color: var(--sidebar-theme-text);
+}
+.application-sidebar .sidebar-submenu li > a {
+  color: var(--text-secondary-light);
+}
+.application-sidebar .sidebar-submenu li > a:is(:hover, :focus-visible, .active-page),
+.application-sidebar .sidebar-submenu li > a.active-page:hover {
+  background-color: var(--sidebar-theme-focus);
+  color: var(--text-secondary-light);
+}
+.application-sidebar .sidebar-submenu .circle-icon {
+  color: var(--primary-600) !important;
+}
+
+.application-sidebar .sidebar-logo img {
+  max-height: 44px;
+  object-fit: contain;
+}
+
+.application-sidebar .sidebar-menu > .dropdown > .sidebar-submenu {
+  display: none;
+  max-height: none;
+}
+.application-sidebar .sidebar-menu > .dropdown.open > .sidebar-submenu {
+  display: block;
+  max-height: none;
+}

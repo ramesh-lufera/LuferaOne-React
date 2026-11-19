@@ -1,6 +1,7 @@
 import modules from '../data/modules.json';
 
 const publicPaths = [
+  '/404',
   '/privacy-policy',
   '/sign-in',
   '/sign-up',

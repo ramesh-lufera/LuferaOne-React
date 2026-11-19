@@ -118,7 +118,7 @@ const SignUpLayer = () => {
               ))}
               <div className="form-check style-check d-flex align-items-start signup-terms">
                 <input className="form-check-input border border-neutral-300 mt-4" type="checkbox" name="terms" id="signup-terms" checked={values.terms} onChange={changeField} required aria-invalid={Boolean(errors.terms)} aria-describedby={errors.terms ? "signup-terms-error" : undefined} />
-                <label className="form-check-label text-sm" htmlFor="signup-terms">By creating an account means you agree to the <Link to="/terms-condition">Terms &amp; Conditions</Link> and our {import.meta.env.VITE_PRIVACY_POLICY_URL ? <a href={import.meta.env.VITE_PRIVACY_POLICY_URL}>Privacy Policy</a> : <span className="signup-policy-pending" title="Privacy policy has not been configured">Privacy Policy</span>}</label>
+                <label className="form-check-label text-sm" htmlFor="signup-terms">By creating an account means you agree to the <Link to="/terms-condition">Terms &amp; Conditions</Link> and our <Link to="/privacy-policy">Privacy Policy</Link></label>
               </div>
               {errors.terms && <div id="signup-terms-error" className="text-danger text-sm">{errors.terms[0]}</div>}
               <button type="submit" className="btn signup-submit text-sm px-12 py-16 w-100 radius-12 mt-32">{submitting ? "Creating account…" : "Sign Up"}</button>

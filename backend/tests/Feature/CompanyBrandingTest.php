@@ -22,10 +22,10 @@ class CompanyBrandingTest extends TestCase
     public function test_guest_branding_contains_only_available_image_urls_and_signed_images_are_public(): void
     {
         Storage::fake('local');
-        Company::factory()->create(['logo_path' => $this->image('logo'), 'sign_in_image_path' => $this->image('signin'), 'sign_up_image_path' => $this->image('signup')]);
+        Company::factory()->create(['logo_path' => $this->image('logo'), 'sign_in_image_path' => $this->image('signin'), 'sign_up_image_path' => $this->image('signup'), 'site_logo_path' => $this->image('favicon')]);
         $response = $this->getJson('/api/auth/branding')->assertOk()->assertHeader('Cache-Control', 'no-store, private');
         $this->assertSame(['images'], array_keys($response->json()));
-        $this->assertSame(['logo_url', 'sign_in_image_url', 'sign_up_image_url'], array_keys($response->json('images')));
+        $this->assertSame(['logo_url', 'sign_in_image_url', 'sign_up_image_url', 'site_logo_url'], array_keys($response->json('images')));
         foreach ($response->json('images') as $url) {
             $this->get($url)->assertOk()->assertHeader('Content-Type', 'image/png')->assertHeader('X-Content-Type-Options', 'nosniff');
         }
@@ -36,7 +36,7 @@ class CompanyBrandingTest extends TestCase
     public function test_no_profile_empty_deleted_and_invalid_files_return_null_urls(): void
     {
         Storage::fake('local');
-        $empty = ['logo_url' => null, 'sign_in_image_url' => null, 'sign_up_image_url' => null];
+        $empty = ['logo_url' => null, 'sign_in_image_url' => null, 'sign_up_image_url' => null, 'site_logo_url' => null];
         $this->getJson('/api/auth/branding')->assertExactJson(['images' => $empty]);
         $company = Company::factory()->create();
         $this->getJson('/api/auth/branding')->assertExactJson(['images' => $empty]);

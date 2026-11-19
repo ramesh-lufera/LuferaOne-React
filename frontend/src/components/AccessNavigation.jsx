@@ -1,4 +1,5 @@
 import { Children, cloneElement, isValidElement } from 'react';
+import { navigationTarget } from '../helper/navigation';
 import { canAccessPath } from '../helper/moduleAccess';
 import { useAccessUser } from '../helper/AccessContext';
 
@@ -17,10 +18,15 @@ function filterNavigation(children, user) {
     const paths = navigationPaths(child);
     if (paths.length && !paths.some((path) => canAccessPath(user, path)))
       return null;
-    if (!child.props.children) return child;
+    const props = typeof child.props.to === 'string' && child.props.to.startsWith('/')
+      ? { to: navigationTarget(child.props.to) } : {};
+    if (props.to && props.to !== child.props.to && typeof child.props.className === 'function') {
+      props.className = (state) => child.props.className({ ...state, isActive: false });
+    }
+    if (!child.props.children) return cloneElement(child, props);
     return cloneElement(
       child,
-      {},
+      props,
       filterNavigation(child.props.children, user),
     );
   });
