@@ -137,7 +137,7 @@ export default function CompanyLayer() {
             {step === 2 && address.map(field)}
             {step === 3 && imageFields.map(([key, label]) => {
               const preview = previews[key] || (!removed[key] && company?.[`${key}_url`]);
-              return <div className={key === 'logo' ? 'col-12' : 'col-sm-6'} key={key}>
+              return <div className='col-sm-6' key={key}>
                 <label className='form-label' htmlFor={`company-${key}`}>{label}</label>
                 <input key={`${key}-${fileKey}`} id={`company-${key}`} ref={(element) => { fileInputs.current[key] = element; }} type='file' className='form-control' accept='image/jpeg,image/png,image/webp'
                   onChange={(e) => { const file = e.target.files[0]; setFiles((current) => ({ ...current, [key]: file })); if (file) setRemoved((current) => ({ ...current, [key]: false })); }} />

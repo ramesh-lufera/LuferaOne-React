@@ -1,0 +1,158 @@
+[
+  {
+    "label": "LuferaSheets",
+    "icon": "solar:calculator-linear",
+    "items": [
+      {
+        "path": "/404",
+        "label": "Sheets",
+        "pending": true
+      },
+      {
+        "path": "/404",
+        "label": "Form Builder",
+        "pending": true
+      }
+    ]
+  },
+  {
+    "label": "Billing",
+    "icon": "hugeicons:invoice-03",
+    "items": [
+      {
+        "path": "/404",
+        "label": "Subscriptions",
+        "pending": true
+      },
+      {
+        "path": "/invoice-list",
+        "label": "Invoice",
+        "pending": false
+      },
+      {
+        "path": "/404",
+        "label": "Payment History",
+        "pending": true
+      }
+    ]
+  },
+  {
+    "label": "Inventory",
+    "icon": "solar:box-linear",
+    "items": [
+      {
+        "path": "/404",
+        "label": "Add on Services",
+        "pending": true
+      },
+      {
+        "path": "/404",
+        "label": "Category",
+        "pending": true
+      },
+      {
+        "path": "/404",
+        "label": "Package",
+        "pending": true
+      },
+      {
+        "path": "/404",
+        "label": "Product",
+        "pending": true
+      }
+    ]
+  },
+  {
+    "label": "Settings",
+    "icon": "icon-park-outline:setting-two",
+    "items": [
+      {
+        "path": "/activity-log",
+        "label": "Activity Log",
+        "pending": false
+      },
+      {
+        "path": "/assign-role",
+        "label": "Assign Role",
+        "pending": false
+      },
+      {
+        "path": "/404",
+        "label": "Backup",
+        "pending": true
+      },
+      {
+        "path": "/404",
+        "label": "Bank Details",
+        "pending": true
+      },
+      {
+        "path": "/404",
+        "label": "Buy For Customer",
+        "pending": true
+      },
+      {
+        "path": "/company",
+        "label": "Company",
+        "pending": false
+      },
+      {
+        "path": "/credentials",
+        "label": "Credentials",
+        "pending": false
+      },
+      {
+        "path": "/404",
+        "label": "Currencies",
+        "pending": true,
+        "permissionKey": "currencies"
+      },
+      {
+        "path": "/invoice-settings",
+        "label": "Invoice Settings",
+        "pending": false
+      },
+      {
+        "path": "/404",
+        "label": "Marketplace",
+        "pending": true,
+        "permissionKey": "marketplace"
+      },
+      {
+        "path": "/404",
+        "label": "Promotion",
+        "pending": true
+      },
+      {
+        "path": "/settings/privacy-policy",
+        "label": "Privacy Policy",
+        "pending": false
+      },
+      {
+        "path": "/roles-permissions",
+        "label": "Roles",
+        "pending": false
+      },
+      {
+        "path": "/404",
+        "label": "Taxes",
+        "pending": true
+      },
+      {
+        "path": "/settings/terms-conditions",
+        "label": "Terms and Conditions",
+        "pending": false
+      },
+      {
+        "path": "/theme-colors",
+        "label": "Theme Colors",
+        "pending": false
+      },
+      {
+        "path": "/users-list",
+        "label": "Users",
+        "pending": false
+      }
+    ]
+  }
+]

@@ -329,3 +329,35 @@ test('assign role table searches users and changes page size using the shared co
     await screen.findByText('Showing 1 to 1 of 1 entries'),
   ).toBeInTheDocument();
 });
+
+test('permissions list follows the current sidebar and select-all excludes template modules', async () => {
+  api.mockResolvedValue({ ...roleData, modules: { ...roleData.modules, widgets: { label: 'Widgets' }, calendar: { label: 'Calendar' }, 'code-generator': { label: 'Code Generator' } } });
+  render(<MemoryRouter><RoleAccessLayer /></MemoryRouter>);
+  await screen.findByText('Manager');
+  fireEvent.click(screen.getByRole('button', { name: 'Add New Role' }));
+  fireEvent.change(screen.getByLabelText('Role Name'), { target: { value: 'limited' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+  const dialog = within(screen.getByRole('dialog'));
+  expect(dialog.getByLabelText('Dashboard')).toBeInTheDocument();
+  expect(dialog.getByLabelText('Company')).toBeInTheDocument();
+  for (const name of ['Widgets', 'Calendar', 'Code Generator']) expect(dialog.queryByLabelText(name)).not.toBeInTheDocument();
+  fireEvent.click(dialog.getByLabelText('Select all modules'));
+  fireEvent.click(dialog.getByRole('button', { name: 'Save' }));
+  await waitFor(() => expect(api.mock.calls.some(([, options]) => options?.method === 'POST')).toBe(true));
+  const call = api.mock.calls.find(([, options]) => options?.method === 'POST');
+  expect(JSON.parse(call[1].body).modules).toEqual(['dashboard', 'company']);
+});
+
+test('editing visible permissions preserves existing grants outside the sidebar', async () => {
+  api.mockResolvedValue({ ...roleData, roles: [roles[0], { ...roles[1], modules: ['company', 'widgets'] }], modules: { ...roleData.modules, widgets: { label: 'Widgets' } } });
+  render(<MemoryRouter><RoleAccessLayer /></MemoryRouter>);
+  await screen.findByText('Manager');
+  fireEvent.click(screen.getByRole('button', { name: 'Edit manager' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+  const dialog = within(screen.getByRole('dialog'));
+  fireEvent.click(dialog.getByLabelText('Select all modules'));
+  fireEvent.click(dialog.getByRole('button', { name: 'Update' }));
+  await waitFor(() => expect(api.mock.calls.some(([, options]) => options?.method === 'PUT')).toBe(true));
+  const call = api.mock.calls.find(([, options]) => options?.method === 'PUT');
+  expect(JSON.parse(call[1].body).modules).toEqual(['widgets', 'dashboard', 'company']);
+});
