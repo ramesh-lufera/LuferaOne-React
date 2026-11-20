@@ -10,6 +10,26 @@ jest.mock('../masterLayout/MasterLayout', () => function MockLayout(props) { ret
 jest.mock('../components/ModulePageHeader', () => function MockHeader(props) { return <h1>{props.title}</h1>; });
 window.matchMedia = (query) => ({ matches: false, media: query, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} });
 afterEach(() => { cleanup(); jest.resetAllMocks(); });
+test('highlights only icons whose row has records and updates after adding a comment', async () => {
+  const rows = [Array.from({ length: 4 }, () => ({ value: '' })), Array.from({ length: 4 }, () => ({ value: '' }))];
+  rows[0][0].rowId = 'task-a'; rows[1][0].rowId = 'task-b';
+  api.mockResolvedValueOnce({ sheet: { id: 7, name: 'Tasks', version: 0, content: { rows } }, row_activity: { comments: { 'task-a': 2 }, attachments: { 'task-b': 1 } } })
+    .mockResolvedValueOnce({ comments: [] })
+    .mockResolvedValueOnce({ comment: { id: 1, parent_id: null, body: 'Hello', user: { name: 'Alice' }, created_at: '2026-11-20T10:00:00Z' } });
+  render(<MemoryRouter initialEntries={['/sheet?id=7']}><SheetEditorPage /></MemoryRouter>);
+  const firstComments = await screen.findByRole('button', { name: 'Add or view comments for task row 1' });
+  expect(firstComments).toHaveClass('sheet-task-has-records');
+  expect(firstComments).toHaveAttribute('title', 'Add or view comments (2)');
+  expect(screen.getByRole('button', { name: 'Add or view attachments for task row 1' })).not.toHaveClass('sheet-task-has-records');
+  expect(screen.getByRole('button', { name: 'Add or view attachments for task row 2' })).toHaveClass('sheet-task-has-records');
+  const secondComments = screen.getByRole('button', { name: 'Add or view comments for task row 2' });
+  expect(secondComments).not.toHaveClass('sheet-task-has-records');
+  fireEvent.click(secondComments);
+  await screen.findByText('No comments yet.');
+  fireEvent.change(screen.getByLabelText('Add a comment'), { target: { value: 'Hello' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Send', exact: true }));
+  await waitFor(() => expect(secondComments).toHaveClass('sheet-task-has-records'));
+});
 test('the attachment icon opens files for the respective row', async () => {
   const rows = [Array.from({ length: 4 }, () => ({ value: '' }))];
   rows[0][0] = { value: 'Planning', rowId: 'task-files' };

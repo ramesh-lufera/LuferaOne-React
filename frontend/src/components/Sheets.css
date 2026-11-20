@@ -30,21 +30,40 @@
 .sheet-grid .sheet-task-cell { min-width: 120px; width: 120px; }
 .sheet-task-content { position: relative; display: flex; align-items: center; justify-content: center; min-height: 44px; }
 .sheet-task-content > input { flex: 1; }
-.sheet-task-actions { display: flex; align-items: center; gap: 2px; padding-inline: 4px; opacity: 0; pointer-events: none; }
-.sheet-task-cell:hover .sheet-task-actions,
-.sheet-task-actions:focus-within { opacity: 1; pointer-events: auto; }
-.sheet-task-actions button { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 26px; height: 28px; padding: 0; border: 0; border-radius: 4px; background: transparent; color: var(--text-secondary-light); cursor: pointer; }
+.sheet-task-actions { display: flex; align-items: center; gap: 2px; padding-inline: 4px; }
+.sheet-task-cell:hover .sheet-task-actions button,
+.sheet-task-actions:focus-within button { opacity: 1; pointer-events: auto; }
+.sheet-task-actions button { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 26px; height: 28px; padding: 0; border: 0; border-radius: 4px; background: transparent; color: var(--text-secondary-light); cursor: pointer; opacity: 0; pointer-events: none; }
 .sheet-task-actions button:hover,
 .sheet-task-actions button:focus-visible { color: var(--module-theme-main, #1d8b8d); background: var(--module-theme-focus, #d8e6e7); }
 .sheet-task-actions button:focus-visible { outline: 2px solid var(--module-theme-main, #1d8b8d); outline-offset: -2px; }
 .sheet-task-actions button:disabled { cursor: default; opacity: .5; }
+.sheet-task-actions button.sheet-task-has-records { color: var(--module-theme-main, #1d8b8d); background: var(--module-theme-focus, #d8e6e7); opacity: 1; pointer-events: auto; }
+.sheet-row-menu { --bs-popover-max-width: 260px; width: 240px; border: 1px solid var(--neutral-200, #ddd); border-radius: 12px; box-shadow: 0 8px 24px #0002; background: var(--white, #fff); }
+.sheet-row-menu .popover-arrow { display: none; }
+.sheet-row-menu [role=menu] { padding: 8px 0; max-height: min(660px, calc(100vh - 24px)); overflow-y: auto; }
+.sheet-row-menu button { display: flex; align-items: center; gap: 16px; width: 100%; padding: 12px 18px; border: 0; background: transparent; text-align: left; color: var(--text-primary-light, #4b5563); font-size: 16px; }
+.sheet-row-menu button:is(:hover, :focus-visible) { color: var(--module-theme-main, #1d8b8d); background: var(--module-theme-focus, #d8e6e7); outline: none; }
+.sheet-row-menu button:disabled { opacity: .4; cursor: default; }
+.sheet-row-menu-divider { border-top: 1px solid var(--neutral-200, #ddd); margin-top: 4px; padding-top: 4px; }
+.sheet-row-cut td { opacity: .6; border-block: 1px dashed var(--module-theme-main, #1d8b8d); }
+.sheet-row-locked td input { cursor: not-allowed; opacity: .7; }
+.sheet-reminder-modal .sheet-reminder-save { background: var(--module-theme-main, #1d8b8d); border-color: var(--module-theme-main, #1d8b8d); color: var(--module-theme-text, #fff); }
+.sheet-print-row { display: none; }
+@media print {
+  body > *:not(.sheet-print-row) { display: none !important; }
+  .sheet-print-row { display: block; color: #111; background: #fff; }
+  .sheet-print-row table { width: 100%; border-collapse: collapse; }
+  .sheet-print-row th, .sheet-print-row td { border: 1px solid #aaa; padding: 10px; overflow-wrap: anywhere; white-space: pre-wrap; }
+}
 .sheet-comments-panel { --bs-offcanvas-width: 460px; max-width: 100vw; color: var(--text-primary-light, #4b5563); background: var(--white, #fff); }
 .sheet-comments-panel .offcanvas-header { padding: 18px 16px; border-bottom: 1px solid var(--neutral-200, #eceef2); }
-.sheet-comments-panel .offcanvas-title { font-size: 22px; font-weight: 700; }
+.sheet-comments-panel .offcanvas-title { font-size: 1.25rem; font-weight: 500; }
 .sheet-comments-panel .offcanvas-body { padding: 16px; min-height: 0; flex: 1; overflow-y: auto; }
 .sheet-comment-message { padding: 12px; margin-bottom: 12px; border-radius: 8px; background: var(--neutral-50, #f5f6fa); }
 .sheet-comment-message p { margin: 0 0 6px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 16px; }
 .sheet-comment-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 13px; }
+.sheet-comment-author { display: block; margin-bottom: 6px; font-size: 13px; overflow-wrap: anywhere; }
 .sheet-comment-reply-link { padding: 0; border: 0; background: transparent; color: var(--module-theme-main, #1d8b8d); font-weight: 600; }
 .sheet-comment-reply-link:hover { text-decoration: underline; }
 .sheet-comment-reply-form { padding: 12px; margin-top: 8px; border: 1px solid var(--neutral-200, #ddd); border-radius: 8px; background: var(--white, #fff); }
@@ -68,6 +87,7 @@
 .sheet-attachment-name:hover { color: var(--module-theme-main, #1d8b8d); text-decoration: underline; }
 .sheet-attachment-row { background: #198754; color: #fff; padding: 5px 18px; font-size: 14px; }
 .sheet-attachment-details time { font-size: 13px; }
+.sheet-attachment-author { font-size: 13px; overflow-wrap: anywhere; }
 .sheet-attachment-upload { align-items: flex-start; }
 .sheet-attachment-upload input { width: 100%; min-width: 0; }
 .sheet-attachment-upload small { color: var(--text-secondary-light); }

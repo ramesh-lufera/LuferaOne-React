@@ -22,7 +22,7 @@ function AttachmentPreview({ endpoint, attachment }) {
   return source ? <img src={source} alt={`Preview of ${attachment.name}`} onError={() => setSource('')} /> : <Paperclip size={32} aria-hidden="true" />;
 }
 
-export default function SheetAttachmentsPanel({ sheetId, rowId, rowNumber, onClose }) {
+export default function SheetAttachmentsPanel({ sheetId, rowId, rowNumber, onRecordsChange, onClose }) {
   const [attachments, setAttachments] = useState([]);
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -38,11 +38,11 @@ export default function SheetAttachmentsPanel({ sheetId, rowId, rowNumber, onClo
     const controller = new AbortController();
     setLoading(true); setError('');
     api(endpoint, { signal: controller.signal }).then((data) => {
-      if (!controller.signal.aborted) setAttachments(data.attachments);
+      if (!controller.signal.aborted) { setAttachments(data.attachments); onRecordsChange?.(rowId, 'attachments', data.attachments.length); }
     }).catch((failure) => { if (!controller.signal.aborted) setError(failure.message); })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [endpoint, attempt]);
+  }, [endpoint, attempt, rowId, onRecordsChange]);
 
   async function upload(event) {
     event.preventDefault();
@@ -53,6 +53,7 @@ export default function SheetAttachmentsPanel({ sheetId, rowId, rowNumber, onClo
     try {
       const result = await api(endpoint, { method: 'POST', body: data });
       setAttachments((current) => [result.attachment, ...current]);
+      onRecordsChange?.(rowId, 'attachments', attachments.length + 1);
       setFile(null); if (inputRef.current) inputRef.current.value = '';
       setNotice(result.message);
     } catch (failure) { setError(failure.errors?.file?.[0] || failure.message); }
@@ -82,6 +83,7 @@ export default function SheetAttachmentsPanel({ sheetId, rowId, rowNumber, onClo
         <div className="sheet-attachment-details">
           <button type="button" className="sheet-attachment-name" title={attachment.name} aria-label={`Download ${attachment.name}`} disabled={downloading !== null} onClick={() => download(attachment)}>{downloading === attachment.id ? 'Downloading…' : attachment.name}</button>
           <span className="sheet-attachment-row">Row {rowNumber}</span>
+          <span className="sheet-attachment-author">Uploaded by {attachment.user?.name || 'Deleted user'}</span>
           <time dateTime={attachment.created_at}>{new Date(attachment.created_at).toLocaleString('en-GB')}</time>
         </div>
       </article>)}</div>}

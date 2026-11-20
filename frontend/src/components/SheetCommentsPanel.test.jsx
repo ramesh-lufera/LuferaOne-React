@@ -14,6 +14,7 @@ test('loads saved messages, posts comments and opens an inline reply form', asyn
   api.mockResolvedValueOnce({ comments: [message] }).mockResolvedValueOnce({ comment: { ...message, id: 11, body: 'New comment' } }).mockResolvedValueOnce({ comment: { ...message, id: 12, parent_id: 10, body: 'Reviewed' } });
   render(<SheetCommentsPanel sheetId="7" rowId="task-a" taskName="Planning" onClose={jest.fn()} />);
   expect(await screen.findByText('Please review')).toBeInTheDocument();
+  expect(screen.getByText('Alice')).toBeVisible();
   fireEvent.change(screen.getByLabelText('Add a comment'), { target: { value: ' New comment ' } });
   fireEvent.click(screen.getByRole('button', { name: 'Send', exact: true }));
   await waitFor(() => expect(screen.getByLabelText('Add a comment')).toHaveValue(''));

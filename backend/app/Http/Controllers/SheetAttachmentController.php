@@ -16,7 +16,7 @@ class SheetAttachmentController extends Controller
     {
         abort_if($sheet->taskRowIndex($row) === null, 404, 'This task row no longer exists.');
 
-        return response()->json(['attachments' => SheetAttachment::where('sheet_id', $sheet->id)->where('row_id', $row)->orderByDesc('id')->get()]);
+        return response()->json(['attachments' => SheetAttachment::where('sheet_id', $sheet->id)->where('row_id', $row)->with('user:id,name')->orderByDesc('id')->get()]);
     }
 
     public function store(Request $request, Sheet $sheet, string $row): JsonResponse
@@ -38,7 +38,7 @@ class SheetAttachmentController extends Controller
         });
         $request->attributes->set('activity_entity_id', $sheet->id);
 
-        return response()->json(['attachment' => $attachment, 'message' => 'Attachment uploaded successfully.'], 201);
+        return response()->json(['attachment' => $attachment->load('user:id,name'), 'message' => 'Attachment uploaded successfully.'], 201);
     }
 
     public function file(Request $request, Sheet $sheet, string $row, SheetAttachment $attachment): StreamedResponse

@@ -31,6 +31,7 @@ class SheetCommentTest extends TestCase
         $reply = $this->postJson($endpoint, ['body' => 'Reviewed', 'parent_id' => $message])->assertCreated()->assertJsonPath('comment.parent_id', $message)->json('comment.id');
         $this->postJson($endpoint, ['body' => 'Thank you', 'parent_id' => $reply])->assertCreated();
         $this->getJson($endpoint)->assertOk()->assertJsonCount(3, 'comments')->assertJsonPath('comments.1.body', 'Reviewed');
+        $this->getJson('/api/sheets/'.$sheet->id)->assertOk()->assertJsonPath('row_activity.comments.task-b', 3);
         $this->getJson('/api/sheets/'.$sheet->id.'/rows/task-a/comments')->assertOk()->assertJsonCount(0, 'comments');
         $rows = [$sheet->content['rows'][1]];
         $this->putJson('/api/sheets/'.$sheet->id, ['version' => 0, 'content' => ['rows' => $rows]])->assertOk();

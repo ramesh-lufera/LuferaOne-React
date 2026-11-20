@@ -12,6 +12,42 @@ class SheetTest extends TestCase
 {
     use DatabaseMigrations;
 
+    public function test_row_locks_and_reminders_persist_and_locked_rows_require_unlocking_before_edit_or_delete(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'admin']), 'sanctum');
+        $sheet = Sheet::factory()->create();
+        $rows = [array_fill(0, 4, ['value' => 'Task A']), array_fill(0, 4, ['value' => 'Task B'])];
+        $rows[0][0] = ['value' => '', 'rowId' => 'task-a', 'locked' => true, 'reminderAt' => '2026-12-01T12:00:00.000Z', 'reminderNote' => 'Review task'];
+        $rows[1][0] = ['value' => '', 'rowId' => 'task-b'];
+        $endpoint = '/api/sheets/'.$sheet->id;
+        $this->putJson($endpoint, ['version' => 0, 'content' => ['rows' => $rows]])->assertOk();
+        $this->getJson($endpoint)->assertOk()->assertJsonPath('sheet.content.rows.0.0.locked', true)->assertJsonPath('sheet.content.rows.0.0.reminderNote', 'Review task');
+        $edited = $rows;
+        $edited[0][1]['value'] = 'Changed';
+        $this->putJson($endpoint, ['version' => 1, 'content' => ['rows' => $edited]])->assertUnprocessable();
+        $this->putJson($endpoint, ['version' => 1, 'content' => ['rows' => [$rows[1]]]])->assertUnprocessable();
+        $edited = $rows;
+        $edited[0][0]['locked'] = false;
+        $this->putJson($endpoint, ['version' => 1, 'content' => ['rows' => $edited]])->assertOk();
+        $edited[0][1]['value'] = 'Changed';
+        $this->putJson($endpoint, ['version' => 2, 'content' => ['rows' => $edited]])->assertOk();
+        $this->putJson($endpoint, ['version' => 3, 'content' => ['rows' => [$rows[1]]]])->assertOk();
+    }
+
+    public function test_row_metadata_rejects_invalid_reminders_and_duplicate_row_identifiers(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'admin']), 'sanctum');
+        $sheet = Sheet::factory()->create();
+        $row = array_fill(0, 4, ['value' => '']);
+        $row[0]['rowId'] = 'task-a';
+        foreach ([['reminderAt' => 'invalid'], ['reminderNote' => str_repeat('x', 1001)], ['locked' => 'invalid']] as $metadata) {
+            $invalid = $row;
+            $invalid[0] = [...$invalid[0], ...$metadata];
+            $this->putJson('/api/sheets/'.$sheet->id, ['version' => 0, 'content' => ['rows' => [$invalid]]])->assertUnprocessable();
+        }
+        $this->putJson('/api/sheets/'.$sheet->id, ['version' => 0, 'content' => ['rows' => [$row, $row]]])->assertUnprocessable();
+    }
+
     public function test_sheet_can_be_renamed_without_changing_its_cells_and_deleted(): void
     {
         $this->actingAs(User::factory()->create(['role' => 'admin']), 'sanctum');

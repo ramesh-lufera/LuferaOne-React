@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreSheetRequest;
 use App\Models\Sheet;
 use App\Models\SheetAttachment;
+use App\Models\SheetComment;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -40,7 +41,13 @@ class SheetController extends Controller
 
     public function show(Sheet $sheet): JsonResponse
     {
-        return response()->json(['sheet' => $sheet->only(['id', 'name', 'content', 'version', 'updated_at'])]);
+        return response()->json([
+            'sheet' => $sheet->only(['id', 'name', 'content', 'version', 'updated_at']),
+            'row_activity' => [
+                'comments' => SheetComment::where('sheet_id', $sheet->id)->selectRaw('row_id, COUNT(*) as total')->groupBy('row_id')->pluck('total', 'row_id'),
+                'attachments' => SheetAttachment::where('sheet_id', $sheet->id)->selectRaw('row_id, COUNT(*) as total')->groupBy('row_id')->pluck('total', 'row_id'),
+            ],
+        ]);
     }
 
     public function rename(StoreSheetRequest $request, Sheet $sheet): JsonResponse
@@ -71,8 +78,11 @@ class SheetController extends Controller
             'content' => ['required', 'array:rows'],
             'content.rows' => ['required', 'array', 'list', 'min:1', 'max:200'],
             'content.rows.*' => ['required', 'array', 'list', 'min:4', 'max:5'],
-            'content.rows.*.*' => ['required', 'array:value,bold,italic,underline,fontFamily,fontSize,color,backgroundColor,textAlign,rowId'],
+            'content.rows.*.*' => ['required', 'array:value,bold,italic,underline,fontFamily,fontSize,color,backgroundColor,textAlign,rowId,locked,reminderAt,reminderNote'],
             'content.rows.*.0.rowId' => ['sometimes', 'required', 'string', 'max:100', 'regex:/^[a-zA-Z0-9_-]+$/', 'distinct'],
+            'content.rows.*.0.locked' => ['sometimes', 'boolean'],
+            'content.rows.*.0.reminderAt' => ['sometimes', 'nullable', 'date'],
+            'content.rows.*.0.reminderNote' => ['sometimes', 'nullable', 'string', 'max:1000'],
             'content.rows.*.*.value' => ['present', 'nullable', 'string', 'max:2000'],
             'content.rows.*.*.bold' => ['sometimes', 'boolean'],
             'content.rows.*.*.italic' => ['sometimes', 'boolean'],
@@ -83,6 +93,20 @@ class SheetController extends Controller
             'content.rows.*.*.backgroundColor' => ['sometimes', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'content.rows.*.*.textAlign' => ['sometimes', Rule::in(['left', 'center', 'right'])],
         ]);
+        abort_unless($sheet->version === $data['version'], 409, 'This sheet changed in another session. Reload before saving again.');
+        $incomingRows = collect($data['content']['rows'])->keyBy(fn (array $cells, int $index): string => $cells[0]['rowId'] ?? 'legacy-'.$sheet->id.'-'.$index);
+        foreach ($sheet->content['rows'] ?? [] as $index => $existingRow) {
+            if (! ($existingRow[0]['locked'] ?? false)) {
+                continue;
+            }
+            $rowId = $existingRow[0]['rowId'] ?? 'legacy-'.$sheet->id.'-'.$index;
+            $incomingRow = $incomingRows->get($rowId);
+            abort_unless($incomingRow, 422, 'Unlock the row before deleting it.');
+            $existingRow[0]['rowId'] = $rowId;
+            $incomingRow[0]['rowId'] = $rowId;
+            unset($existingRow[0]['locked'], $incomingRow[0]['locked']);
+            abort_unless($existingRow == $incomingRow, 422, 'Unlock the row before changing its cells or reminder.');
+        }
         $updated = Sheet::whereKey($sheet->id)->where('version', $data['version'])->update([
             'content' => json_encode($data['content']), 'version' => $data['version'] + 1, 'updated_at' => now(),
         ]);

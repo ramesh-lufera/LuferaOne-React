@@ -30,10 +30,11 @@ class SheetAttachmentTest extends TestCase
         $this->actingAs($user, 'sanctum');
         $sheet = $this->sheetWithRows();
         $endpoint = '/api/sheets/'.$sheet->id.'/rows/task-b/attachments';
-        $response = $this->postJson($endpoint, ['file' => UploadedFile::fake()->create('report.pdf', 10, 'application/pdf'), 'user_id' => 999])->assertCreated()->assertJsonPath('attachment.name', 'report.pdf')->assertJsonPath('attachment.user_id', $user->id)->assertJsonMissingPath('attachment.path');
+        $response = $this->postJson($endpoint, ['file' => UploadedFile::fake()->create('report.pdf', 10, 'application/pdf'), 'user_id' => 999])->assertCreated()->assertJsonPath('attachment.name', 'report.pdf')->assertJsonPath('attachment.user_id', $user->id)->assertJsonPath('attachment.user.name', $user->name)->assertJsonMissingPath('attachment.path');
         $attachment = SheetAttachment::findOrFail($response->json('attachment.id'));
         Storage::disk('local')->assertExists($attachment->path);
-        $this->getJson($endpoint)->assertOk()->assertJsonCount(1, 'attachments')->assertJsonPath('attachments.0.name', 'report.pdf');
+        $this->getJson('/api/sheets/'.$sheet->id)->assertOk()->assertJsonPath('row_activity.attachments.task-b', 1);
+        $this->getJson($endpoint)->assertOk()->assertJsonCount(1, 'attachments')->assertJsonPath('attachments.0.name', 'report.pdf')->assertJsonPath('attachments.0.user.name', $user->name);
         $this->getJson('/api/sheets/'.$sheet->id.'/rows/task-a/attachments')->assertOk()->assertJsonCount(0, 'attachments');
         $this->get($endpoint.'/'.$attachment->id.'/file')->assertOk()->assertDownload('report.pdf')->assertHeader('X-Content-Type-Options', 'nosniff');
         $this->get('/api/sheets/'.$sheet->id.'/rows/task-a/attachments/'.$attachment->id.'/file')->assertNotFound();

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Offcanvas } from 'react-bootstrap';
 import { api } from '../services/api';
 
-export default function SheetCommentsPanel({ sheetId, rowId, taskName, onClose }) {
+export default function SheetCommentsPanel({ sheetId, rowId, taskName, onRecordsChange, onClose }) {
   const [comments, setComments] = useState([]);
   const [body, setBody] = useState('');
   const [replyTo, setReplyTo] = useState(null);
@@ -18,11 +18,11 @@ export default function SheetCommentsPanel({ sheetId, rowId, taskName, onClose }
     const controller = new AbortController();
     setLoading(true); setError('');
     api(endpoint, { signal: controller.signal }).then((data) => {
-      if (!controller.signal.aborted) setComments(data.comments);
+      if (!controller.signal.aborted) { setComments(data.comments); onRecordsChange?.(rowId, 'comments', data.comments.length); }
     }).catch((failure) => { if (!controller.signal.aborted) setError(failure.message); })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [endpoint, attempt]);
+  }, [endpoint, attempt, rowId, onRecordsChange]);
 
   async function submit(event, parentId = null) {
     event.preventDefault();
@@ -33,6 +33,7 @@ export default function SheetCommentsPanel({ sheetId, rowId, taskName, onClose }
     try {
       const data = await api(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ body: text, parent_id: parentId }) });
       setComments((current) => [...current, data.comment]);
+      onRecordsChange?.(rowId, 'comments', comments.length + 1);
       if (parentId) { setReplies((current) => ({ ...current, [parentId]: '' })); setReplyTo(null); }
       else setBody('');
     } catch (failure) { setError(failure.errors?.body?.[0] || failure.message); }
@@ -41,6 +42,7 @@ export default function SheetCommentsPanel({ sheetId, rowId, taskName, onClose }
 
   function messages(parentId = null) {
     return comments.filter((comment) => comment.parent_id === parentId).map((comment) => <article key={comment.id} className="sheet-comment-message" aria-label={`Message from ${comment.user?.name || 'Deleted user'}`}>
+      <strong className="sheet-comment-author">{comment.user?.name || 'Deleted user'}</strong>
       <p>{comment.body}</p>
       <div className="sheet-comment-meta"><time dateTime={comment.created_at} title={comment.user?.name}>{new Date(comment.created_at).toLocaleString('en-GB')}</time><span aria-hidden="true">•</span><button type="button" className="sheet-comment-reply-link" disabled={pending} aria-label={`Reply to message ${comment.id}`} onClick={() => setReplyTo(replyTo === comment.id ? null : comment.id)}>Reply</button></div>
       {replyTo === comment.id && <form className="sheet-comment-reply-form" onSubmit={(event) => submit(event, comment.id)}>

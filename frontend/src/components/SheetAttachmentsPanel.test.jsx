@@ -7,7 +7,7 @@ import { api } from '../services/api';
 jest.mock('../services/api', () => ({ api: jest.fn() }));
 window.matchMedia = (query) => ({ matches: false, media: query, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} });
 afterEach(() => { cleanup(); jest.resetAllMocks(); });
-const attachment = { id: 4, name: 'report.pdf', mime_type: 'application/pdf', created_at: '2026-11-20T10:00:00Z' };
+const attachment = { id: 4, name: 'report.pdf', mime_type: 'application/pdf', user: { id: 1, name: 'Alice' }, created_at: '2026-11-20T10:00:00Z' };
 const endpoint = '/sheets/7/rows/task-a/attachments';
 
 test('shows existing attachments and uploads a file linked to the task row', async () => {
@@ -15,6 +15,7 @@ test('shows existing attachments and uploads a file linked to the task row', asy
   render(<SheetAttachmentsPanel sheetId="7" rowId="task-a" rowNumber={2} onClose={jest.fn()} />);
   expect(await screen.findByRole('button', { name: 'Download report.pdf' })).toBeInTheDocument();
   expect(screen.getByText('Row 2')).toBeInTheDocument();
+  expect(screen.getByText('Uploaded by Alice')).toBeInTheDocument();
   const file = new File(['budget'], 'budget.pdf', { type: 'application/pdf' });
   fireEvent.change(screen.getByLabelText('Choose attachment'), { target: { files: [file] } });
   fireEvent.click(screen.getByRole('button', { name: 'Upload', exact: true }));
