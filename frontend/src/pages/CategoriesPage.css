@@ -1,0 +1,101 @@
+.categories-header,
+.categories-card {
+  container-type: inline-size;
+}
+
+.categories-card .navbar-search input:focus,
+.categories-card .form-select:focus {
+  border-color: var(--primary-600);
+  box-shadow: 0 0 0 2px var(--primary-50);
+}
+
+.category-actions .module-table-action {
+  width: 36px;
+  height: 36px;
+}
+
+.category-actions .module-table-action:disabled {
+  opacity: 1;
+}
+
+@container (max-width: 800px) {
+  .categories-card .card-body {
+    padding: 16px !important;
+  }
+
+  .categories-card .module-table {
+    min-width: 0 !important;
+  }
+
+  .categories-card .module-table col:first-child {
+    width: 29% !important;
+  }
+
+  .categories-card .module-table col:nth-child(2) {
+    width: 33% !important;
+  }
+
+  .categories-card .module-table col:nth-child(3) {
+    width: auto !important;
+  }
+
+  .categories-card .module-table col:last-child {
+    width: 92px !important;
+  }
+
+  .categories-card .module-table th,
+  .categories-card .module-table td {
+    padding: 8px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .categories-card .module-cell-content {
+    white-space: normal;
+  }
+}
+
+@container (max-width: 480px) {
+  .categories-header > .d-grid {
+    grid-template-columns: auto 1fr !important;
+  }
+
+  .categories-header h6 {
+    justify-self: end;
+  }
+
+  .categories-header nav {
+    grid-column: 1 / -1;
+  }
+
+  .categories-card .card-header,
+  .categories-card .card-body {
+    padding-inline: 12px !important;
+  }
+
+  .categories-card .card-header > div,
+  .categories-card .navbar-search,
+  .categories-card .navbar-search input {
+    width: 100% !important;
+    min-width: 0;
+  }
+
+  .categories-card .card-header .btn-primary {
+    width: 100%;
+  }
+
+  .categories-card .module-table col:first-child,
+  .categories-card .module-table col:nth-child(2) {
+    width: 27% !important;
+  }
+
+  .categories-card .module-table col:last-child {
+    width: 80px !important;
+  }
+
+  .category-actions .module-table-action {
+    width: 30px;
+    height: 30px;
+    font-size: 17px;
+  }
+}

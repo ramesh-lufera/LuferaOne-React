@@ -83,6 +83,13 @@
     ]
   },
   {
+    "key": "categories",
+    "label": "Categories",
+    "paths": [
+      "/categories"
+    ]
+  },
+  {
     "key": "calendar",
     "label": "Calendar",
     "paths": [
@@ -515,6 +522,14 @@
     "label": "Terms and Conditions",
     "paths": [
       "/settings/terms-conditions"
+    ]
+  },
+  {
+    "key": "sheets",
+    "label": "Sheets",
+    "paths": [
+      "/sheets",
+      "/sheet"
     ]
   }
 ]

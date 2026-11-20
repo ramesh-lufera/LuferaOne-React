@@ -56,9 +56,9 @@ const groups = [
         "pending": true
       },
       {
-        "path": "/404",
+        "path": "/categories",
         "label": "Category",
-        "pending": true
+        "pending": false
       },
       {
         "path": "/404",

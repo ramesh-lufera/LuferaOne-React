@@ -1,3 +1,5 @@
+import SheetEditorPage from '../pages/SheetEditorPage';
+import SheetsPage from '../pages/SheetsPage';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import RequireAuth from './RequireAuth';
 import routes from '../data/routes.json';
@@ -5,6 +7,9 @@ import AccessDeniedPage from '../pages/AccessDeniedPage';
 import ActivityLogPage from '../pages/ActivityLogPage';
 import AddUserPage from '../pages/AddUserPage';
 import AssignRolePage from '../pages/AssignRolePage';
+import CategoriesPage from '../pages/CategoriesPage';
+import CategoryPage from '../pages/categories/CategoryPage';
+import ExternalCategoryPage from '../pages/categories/external/ExternalCategoryPage';
 import CompanyPage from '../pages/CompanyPage';
 import CredentialsPage from '../pages/CredentialsPage';
 import ErrorPage from '../pages/ErrorPage';
@@ -26,7 +31,7 @@ import UsersGridPage from '../pages/UsersGridPage';
 import UsersListPage from '../pages/UsersListPage';
 import ViewProfilePage from '../pages/ViewProfilePage';
 
-const pages = { AccessDeniedPage, ActivityLogPage, AddUserPage, AssignRolePage, CompanyPage, CredentialsPage, ErrorPage, HomePageOne, InvoiceAddPage, InvoiceEditPage, InvoiceListPage, InvoicePreviewPage, InvoiceSettingsPage, PrivacyPolicyPage, PrivacyPolicySettingsPage, RoleAccessPage, SignInPage, SignUpPage, TermsConditionPage, TermsConditionSettingsPage, ThemeColorsPage, UsersGridPage, UsersListPage, ViewProfilePage };
+const pages = { SheetEditorPage, SheetsPage, AccessDeniedPage, ActivityLogPage, AddUserPage, AssignRolePage, CategoriesPage, CompanyPage, CredentialsPage, ErrorPage, HomePageOne, InvoiceAddPage, InvoiceEditPage, InvoiceListPage, InvoicePreviewPage, InvoiceSettingsPage, PrivacyPolicyPage, PrivacyPolicySettingsPage, RoleAccessPage, SignInPage, SignUpPage, TermsConditionPage, TermsConditionSettingsPage, ThemeColorsPage, UsersGridPage, UsersListPage, ViewProfilePage };
 
 export default function ApplicationRoutes() {
   const renderRoutes = (access) => routes.filter((route) => route.access === access).map(({ path, page }) => {
@@ -34,8 +39,12 @@ export default function ApplicationRoutes() {
     return <Route key={path} path={path} element={<Page />} />;
   });
   return <Routes>
-    <Route element={<RequireAuth />}>{renderRoutes('protected')}</Route>
+    <Route element={<RequireAuth />}>
+      {renderRoutes('protected')}
+      <Route path="/categories/:filename" element={<CategoryPage />} />
+    </Route>
     <Route element={<RequireAuth allowGuest />}>{renderRoutes('legal')}</Route>
+    <Route path="/external/categories/:filename" element={<ExternalCategoryPage />} />
     {renderRoutes('public')}
     <Route path="*" element={<Navigate to="/404" replace />} />
   </Routes>;

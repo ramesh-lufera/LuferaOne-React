@@ -41,6 +41,7 @@ export function ModuleTableToolbar({
   onLimitChange,
   search,
   searchLabel,
+  searchMaxLength,
   onSearchChange,
   filters,
   actions,
@@ -64,6 +65,7 @@ export function ModuleTableToolbar({
             className="bg-base h-40-px w-auto"
             aria-label={searchLabel}
             placeholder={searchLabel}
+            maxLength={searchMaxLength}
             value={search}
             onChange={(event) => onSearchChange(event.target.value)}
           />

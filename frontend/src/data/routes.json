@@ -60,6 +60,11 @@
     "access": "protected"
   },
   {
+    "path": "/categories",
+    "page": "CategoriesPage",
+    "access": "protected"
+  },
+  {
     "path": "/invoice-list",
     "page": "InvoiceListPage",
     "access": "protected"
@@ -123,5 +128,15 @@
     "path": "/access-denied",
     "page": "AccessDeniedPage",
     "access": "public"
+  },
+  {
+    "path": "/sheets",
+    "page": "SheetsPage",
+    "access": "protected"
+  },
+  {
+    "path": "/sheet",
+    "page": "SheetEditorPage",
+    "access": "protected"
   }
 ]

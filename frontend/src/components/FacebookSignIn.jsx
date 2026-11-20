@@ -46,7 +46,7 @@ function loadFacebookLibrary(appId, version) {
   return facebookLibrary;
 }
 
-export default function FacebookSignIn({ mode = 'signin', remember = false, terms = false, disabled = false, onBusyChange }) {
+export default function FacebookSignIn({ mode = 'signin', remember = false, terms = false, disabled = false, onBusyChange, destination = '/' }) {
   const navigate = useNavigate();
   const sdk = useRef(null);
   const active = useRef(false);
@@ -98,7 +98,7 @@ export default function FacebookSignIn({ mode = 'signin', remember = false, term
       if (!active.current) return;
       saveToken(result.token, options.current.remember);
       markTokenVerified(result.token);
-      navigate('/', { replace: true });
+      navigate(destination, { replace: true });
     } catch (failure) {
       if (active.current) setError(failure.name === 'TimeoutError' ? 'Facebook sign-in timed out. Please try again.' : failure instanceof TypeError ? 'Unable to connect. Please try again.' : failure.message);
     } finally { finish(); }
