@@ -20,6 +20,10 @@ const themedPaths = new Set([
   '/categories',
   '/theme-colors',
   '/invoice-settings',
+  '/settings/privacy-policy',
+  '/settings/terms-conditions',
+  '/privacy-policy',
+  '/terms-condition',
 ]);
 
 const primaryVariables = [

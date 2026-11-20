@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Icon } from '@iconify/react/dist/iconify.js';
 import { Modal } from 'react-bootstrap';
 import { api } from '../services/api';
+import { sidebarPermissionModules } from '../helper/sidebarPermissions';
 import './RoleAccessLayer.css';
 import ModuleTable, {
   ModuleTablePagination,
@@ -23,6 +24,7 @@ const roleColumns = [
 export default function RoleAccessLayer() {
   const [roles, setRoles] = useState([]);
   const [modules, setModules] = useState({});
+  const selectableModules = sidebarPermissionModules(modules);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [limit, setLimit] = useState(10);
@@ -383,24 +385,25 @@ export default function RoleAccessLayer() {
                       <input
                         type="checkbox"
                         checked={
-                          Object.keys(modules).length > 0 &&
-                          Object.keys(modules).every((key) =>
+                          Object.keys(selectableModules).length > 0 &&
+                          Object.keys(selectableModules).every((key) =>
                             draft.modules.includes(key),
                           )
                         }
                         onChange={(event) =>
                           setDraft({
                             ...draft,
-                            modules: event.target.checked
-                              ? Object.keys(modules)
-                              : [],
+                            modules: [
+                              ...draft.modules.filter((key) => !Object.hasOwn(selectableModules, key)),
+                              ...(event.target.checked ? Object.keys(selectableModules) : []),
+                            ],
                           })
                         }
                       />
                       Select all modules
                     </label>
                     <div className="role-wizard-modules">
-                      {Object.entries(modules).map(([key, module]) => (
+                      {Object.entries(selectableModules).map(([key, module]) => (
                         <label key={key} className="role-wizard-choice">
                           <input
                             type="checkbox"

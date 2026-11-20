@@ -27,7 +27,11 @@
   --sidebar-theme-text: var(--module-theme-text, #0b1d1f);
   --button-secondary: var(--sidebar-theme-focus);
 }
-.application-sidebar .sidebar-menu > li > a:is(:hover, :focus-visible, .active-page),
+.application-sidebar .sidebar-menu > li > a:is(:hover, :focus-visible) {
+  background-color: transparent;
+  color: var(--primary-600);
+}
+.application-sidebar .sidebar-menu > li > a.active-page,
 .application-sidebar .sidebar-menu > li > a.active-page:hover,
 .application-sidebar .sidebar-menu > li.dropdown:is(.open, .dropdown-open) > a,
 .application-sidebar .sidebar-menu > li.dropdown:is(.open, .dropdown-open) > a:hover {
@@ -37,7 +41,11 @@
 .application-sidebar .sidebar-submenu li > a {
   color: var(--text-secondary-light);
 }
-.application-sidebar .sidebar-submenu li > a:is(:hover, :focus-visible, .active-page),
+.application-sidebar .sidebar-submenu li > a:is(:hover, :focus-visible) {
+  background-color: transparent;
+  color: var(--primary-600);
+}
+.application-sidebar .sidebar-submenu li > a.active-page,
 .application-sidebar .sidebar-submenu li > a.active-page:hover {
   background-color: var(--sidebar-theme-focus);
   color: var(--text-secondary-light);

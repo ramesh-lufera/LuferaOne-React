@@ -12,6 +12,7 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoiceSettingsController;
 use App\Http\Controllers\PrivacyPolicyController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\SheetAttachmentController;
 use App\Http\Controllers\SheetCommentController;
 use App\Http\Controllers\SheetController;
 use App\Http\Controllers\TermsConditionController;
@@ -176,4 +177,7 @@ Route::middleware(['auth:sanctum', EnsureModuleAccess::class.':sheets'])->group(
     Route::delete('/sheets/{sheet}', [SheetController::class, 'destroy'])->whereNumber('sheet');
     Route::get('/sheets/{sheet}/rows/{row}/comments', [SheetCommentController::class, 'index'])->whereNumber('sheet')->where('row', '[a-zA-Z0-9_-]{1,100}');
     Route::post('/sheets/{sheet}/rows/{row}/comments', [SheetCommentController::class, 'store'])->whereNumber('sheet')->where('row', '[a-zA-Z0-9_-]{1,100}');
+    Route::get('/sheets/{sheet}/rows/{row}/attachments', [SheetAttachmentController::class, 'index'])->whereNumber('sheet')->where('row', '[a-zA-Z0-9_-]{1,100}');
+    Route::post('/sheets/{sheet}/rows/{row}/attachments', [SheetAttachmentController::class, 'store'])->whereNumber('sheet')->where('row', '[a-zA-Z0-9_-]{1,100}');
+    Route::get('/sheets/{sheet}/rows/{row}/attachments/{attachment}/file', [SheetAttachmentController::class, 'file'])->whereNumber(['sheet', 'attachment'])->where('row', '[a-zA-Z0-9_-]{1,100}');
 });
