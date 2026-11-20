@@ -4,9 +4,9 @@
     "icon": "solar:calculator-linear",
     "items": [
       {
-        "path": "/404",
+        "path": "/sheets",
         "label": "Sheets",
-        "pending": true
+        "pending": false
       },
       {
         "path": "/404",
