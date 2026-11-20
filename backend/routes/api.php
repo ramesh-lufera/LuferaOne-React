@@ -5,12 +5,15 @@ use App\Http\Controllers\Auth\FacebookAuthController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CredentialsController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoiceSettingsController;
 use App\Http\Controllers\PrivacyPolicyController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\SheetCommentController;
+use App\Http\Controllers\SheetController;
 use App\Http\Controllers\TermsConditionController;
 use App\Http\Controllers\ThemeColorPaletteController;
 use App\Http\Controllers\UserController;
@@ -77,6 +80,18 @@ Route::middleware(['auth:sanctum', 'can:view-activity-logs'])->group(function ()
     Route::get('/activity-logs/filters', [ActivityLogController::class, 'filters']);
     Route::get('/activity-logs', [ActivityLogController::class, 'index']);
 });
+
+Route::middleware(['auth:sanctum', EnsureModuleAccess::class.':categories'])->group(function () {
+    Route::get('/categories', [CategoryController::class, 'index']);
+    Route::post('/categories', [CategoryController::class, 'store']);
+    Route::put('/categories/{category}', [CategoryController::class, 'update'])->whereNumber('category');
+    Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->whereNumber('category');
+    Route::get('/categories/{category}', [CategoryController::class, 'show'])->where('category', '[a-zA-Z0-9._-]+');
+});
+Route::get('/categories/{category}/image', [CategoryController::class, 'image'])
+    ->where('category', '[a-zA-Z0-9._-]+')->middleware(['signed', 'throttle:120,1'])->name('categories.image');
+Route::get('/external/categories/{category}', [CategoryController::class, 'external'])
+    ->where('category', '[a-zA-Z0-9._-]+')->middleware('throttle:120,1');
 
 Route::middleware(['auth:sanctum', EnsureModuleAccess::class.':company'])->group(function () {
     Route::get('/company', [CompanyController::class, 'show']);
@@ -150,4 +165,15 @@ Route::get('/terms-conditions', [TermsConditionController::class, 'show']);
 Route::middleware(['auth:sanctum', EnsureModuleAccess::class.':terms-conditions'])->group(function () {
     Route::get('/settings/terms-conditions', [TermsConditionController::class, 'show']);
     Route::match(['post', 'put'], '/settings/terms-conditions', [TermsConditionController::class, 'update']);
+});
+
+Route::middleware(['auth:sanctum', EnsureModuleAccess::class.':sheets'])->group(function () {
+    Route::get('/sheets', [SheetController::class, 'index']);
+    Route::post('/sheets', [SheetController::class, 'store']);
+    Route::get('/sheets/{sheet}', [SheetController::class, 'show'])->whereNumber('sheet');
+    Route::put('/sheets/{sheet}', [SheetController::class, 'update'])->whereNumber('sheet');
+    Route::patch('/sheets/{sheet}', [SheetController::class, 'rename'])->whereNumber('sheet');
+    Route::delete('/sheets/{sheet}', [SheetController::class, 'destroy'])->whereNumber('sheet');
+    Route::get('/sheets/{sheet}/rows/{row}/comments', [SheetCommentController::class, 'index'])->whereNumber('sheet')->where('row', '[a-zA-Z0-9_-]{1,100}');
+    Route::post('/sheets/{sheet}/rows/{row}/comments', [SheetCommentController::class, 'store'])->whereNumber('sheet')->where('row', '[a-zA-Z0-9_-]{1,100}');
 });

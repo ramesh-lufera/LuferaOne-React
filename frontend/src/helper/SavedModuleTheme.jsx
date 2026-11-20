@@ -4,6 +4,8 @@ import { apiUrl } from './auth';
 import './SavedModuleTheme.css';
 
 const themedPaths = new Set([
+  '/sheets',
+  '/sheet',
   '/sign-in',
   '/sign-up',
   '/activity-log',
@@ -15,6 +17,7 @@ const themedPaths = new Set([
   '/assign-role',
   '/credentials',
   '/company',
+  '/categories',
   '/theme-colors',
   '/invoice-settings',
   '/settings/privacy-policy',
