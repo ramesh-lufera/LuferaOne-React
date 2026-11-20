@@ -20,8 +20,11 @@ const normalizePath = (path) => {
   }
 };
 
-export const moduleForPath = (path) =>
-  modules.find((module) => module.paths.includes(normalizePath(path)))?.key;
+export const moduleForPath = (path) => {
+  const normalized = normalizePath(path);
+  if (/^\/categories\/[a-z0-9._-]+$/.test(normalized)) return 'categories';
+  return modules.find((module) => module.paths.includes(normalized))?.key;
+};
 export const canAccessPath = (user, path) => {
   if (publicPaths.includes(normalizePath(path))) return true;
   if (normalizePath(path) === '/view-profile') return Boolean(user);

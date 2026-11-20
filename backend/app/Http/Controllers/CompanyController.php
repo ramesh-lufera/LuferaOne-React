@@ -27,7 +27,7 @@ class CompanyController extends Controller
         return response()->json(['company' => $company ? $this->data($company) : null]);
     }
 
-    public function branding(): JsonResponse
+    public function branding(Request $request): JsonResponse
     {
         $company = Company::where('profile_key', 'shared')->first();
         $images = [];
@@ -39,7 +39,12 @@ class CompanyController extends Controller
             ]) : null;
         }
 
-        return response()->json(['images' => $images])->header('Cache-Control', 'no-store');
+        $branding = ['images' => $images];
+        if ($request->boolean('include_contact')) {
+            $branding['contact'] = $company?->only(['phone_country_code', 'phone_number', 'address']);
+        }
+
+        return response()->json($branding)->header('Cache-Control', 'no-store');
     }
 
     private function brandingImagePath(?Company $company, string $field): ?string

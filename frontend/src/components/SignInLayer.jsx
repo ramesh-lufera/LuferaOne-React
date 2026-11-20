@@ -6,12 +6,15 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 
 import { useEffect, useState } from "react";
 import { saveToken, getToken, clearToken, markTokenVerified, apiUrl } from "../helper/auth";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import "./SignInLayer.css";
 
 const SignInLayer = () => {
   const images = useCompanyBranding();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const returnTo = searchParams.get('returnTo') || '';
+  const destination = /^\/external\/categories\/[a-zA-Z0-9._-]+\/?$/.test(returnTo) ? returnTo : '/';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -36,7 +39,7 @@ const SignInLayer = () => {
         const data = await response.json();
         if (active && data.user) {
           markTokenVerified(token);
-          navigate('/', { replace: true });
+          navigate(destination, { replace: true });
         }
       }
     }).catch(() => {
@@ -45,7 +48,7 @@ const SignInLayer = () => {
       if (active) setRestoringSession(false);
     });
     return () => { active = false; controller.abort(); };
-  }, [navigate]);
+  }, [destination, navigate]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -65,7 +68,7 @@ const SignInLayer = () => {
       }
       saveToken(data.token, remember);
       markTokenVerified(data.token);
-      navigate('/', { replace: true });
+      navigate(destination, { replace: true });
     } catch {
       setError('Unable to connect to the server. Please try again.');
     } finally {
@@ -168,8 +171,8 @@ const SignInLayer = () => {
               <span className='bg-base z-1 px-4'>Or sign in with</span>
             </div>
             <div className='mt-32 d-flex align-items-center gap-3'>
-              <FacebookSignIn remember={remember} disabled={loading || restoringSession} onBusyChange={setLoading} />
-              <GoogleSignIn remember={remember} disabled={loading || restoringSession} onBusyChange={setLoading} />
+              <FacebookSignIn remember={remember} disabled={loading || restoringSession} onBusyChange={setLoading} destination={destination} />
+              <GoogleSignIn remember={remember} disabled={loading || restoringSession} onBusyChange={setLoading} destination={destination} />
             </div>
             <div className='mt-32 text-center text-sm'>
               <p className='mb-0'>
