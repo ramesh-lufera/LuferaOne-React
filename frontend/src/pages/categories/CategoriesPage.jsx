@@ -2,15 +2,15 @@ import { useEffect, useRef, useState } from 'react';
 import { PencilSimple, Trash } from '@phosphor-icons/react';
 import { Modal } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
-import MasterLayout from '../masterLayout/MasterLayout';
-import ModulePageHeader from '../components/ModulePageHeader';
+import MasterLayout from '../../masterLayout/MasterLayout';
+import ModulePageHeader from '../../components/ModulePageHeader';
 import ModuleTable, {
   ModuleTablePagination,
   ModuleTableToolbar,
-} from '../components/ModuleTable';
-import ModuleTableCell from '../components/ModuleTableCell';
-import { api } from '../services/api';
-import { categoriesChangedEvent } from '../services/categories';
+} from '../../components/ModuleTable';
+import ModuleTableCell from '../../components/ModuleTableCell';
+import { api } from '../../services/api';
+import { categoriesChangedEvent } from './categories';
 import './CategoriesPage.css';
 
 const columns = [
