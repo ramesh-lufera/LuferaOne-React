@@ -171,6 +171,7 @@ Route::middleware(['auth:sanctum', EnsureModuleAccess::class.':terms-conditions'
 Route::middleware(['auth:sanctum', EnsureModuleAccess::class.':sheets'])->group(function () {
     Route::get('/sheets', [SheetController::class, 'index']);
     Route::post('/sheets', [SheetController::class, 'store']);
+    Route::post('/sheets/import', [SheetController::class, 'import']);
     Route::get('/sheets/{sheet}', [SheetController::class, 'show'])->whereNumber('sheet');
     Route::put('/sheets/{sheet}', [SheetController::class, 'update'])->whereNumber('sheet');
     Route::patch('/sheets/{sheet}', [SheetController::class, 'rename'])->whereNumber('sheet');

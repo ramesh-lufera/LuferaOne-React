@@ -12,6 +12,26 @@ class SheetTest extends TestCase
 {
     use DatabaseMigrations;
 
+    public function test_import_creates_a_new_sheet_with_headers_and_content_and_requires_access(): void
+    {
+        $content = ['headers' => ['Tasks', 'Client', 'Amount', 'Notes', 'Status', 'Owner'], 'rows' => [[['value' => '', 'rowId' => 'import-a'], ['value' => 'Client A'], ['value' => '10'], ['value' => 'Review'], ['value' => 'Open'], ['value' => 'Alice']]]];
+        $this->postJson('/api/sheets/import', ['name' => 'Budget', 'content' => $content])->assertUnauthorized();
+        $this->actingAs(User::factory()->create(), 'sanctum')->postJson('/api/sheets/import', ['name' => 'Budget', 'content' => $content])->assertForbidden();
+        $actor = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($actor, 'sanctum');
+        $existing = Sheet::factory()->create(['name' => 'Original']);
+        $id = $this->postJson('/api/sheets/import', ['name' => ' Budget ', 'content' => $content])->assertCreated()->assertJsonPath('sheet.name', 'Budget')->json('sheet.id');
+        $this->getJson('/api/sheets/'.$id)->assertOk()->assertJsonPath('sheet.content.headers.1', 'Client')->assertJsonPath('sheet.content.rows.0.5.value', 'Alice');
+        $this->assertDatabaseHas('sheets', ['id' => $id, 'created_by' => $actor->id]);
+        $this->assertSame('Original', $existing->fresh()->name);
+        $this->assertNull($existing->fresh()->content);
+        $this->putJson('/api/sheets/'.$id, ['version' => 0, 'content' => $content])->assertOk()->assertJsonPath('sheet.content.headers.1', 'Client');
+        $this->postJson('/api/sheets/import', ['name' => '   ', 'content' => $content])->assertUnprocessable();
+        $content['rows'] = array_fill(0, 201, $content['rows'][0]);
+        $this->postJson('/api/sheets/import', ['name' => 'Too large', 'content' => $content])->assertUnprocessable();
+        $this->assertDatabaseCount('sheets', 2);
+    }
+
     public function test_row_locks_and_reminders_persist_and_locked_rows_require_unlocking_before_edit_or_delete(): void
     {
         $this->actingAs(User::factory()->create(['role' => 'admin']), 'sanctum');
@@ -124,11 +144,12 @@ class SheetTest extends TestCase
         $rows = [array_fill(0, 5, ['value' => ''])];
         $rows[0][1] = ['value' => 'Alice', 'bold' => true, 'color' => '#8252e9'];
         $this->getJson('/api/sheets/'.$sheet->id)->assertOk()->assertJsonPath('sheet.id', $sheet->id);
-        $this->putJson('/api/sheets/'.$sheet->id, ['version' => 0, 'content' => ['rows' => $rows]])->assertOk()->assertJsonPath('sheet.version', 1);
-        $this->getJson('/api/sheets/'.$sheet->id)->assertJsonPath('sheet.content.rows.0.1.value', 'Alice')->assertJsonPath('sheet.content.rows.0.1.bold', true);
+        $this->putJson('/api/sheets/'.$sheet->id, ['version' => 0, 'content' => ['rows' => $rows, 'columnWidths' => [180, 380, 260, 260, 260]]])->assertOk()->assertJsonPath('sheet.version', 1);
+        $this->getJson('/api/sheets/'.$sheet->id)->assertJsonPath('sheet.content.rows.0.1.value', 'Alice')->assertJsonPath('sheet.content.rows.0.1.bold', true)->assertJsonPath('sheet.content.columnWidths.1', 380);
         $this->assertNull($other->fresh()->content);
         $this->putJson('/api/sheets/'.$sheet->id, ['version' => 0, 'content' => ['rows' => $rows]])->assertConflict();
-        $this->putJson('/api/sheets/'.$sheet->id, ['version' => 1, 'content' => ['rows' => [[['value' => 'Bad']]]]])->assertUnprocessable();
+        $this->putJson('/api/sheets/'.$sheet->id, ['version' => 1, 'content' => ['rows' => $rows, 'columnWidths' => [10]]])->assertUnprocessable();
+        $this->putJson('/api/sheets/'.$sheet->id, ['version' => 1, 'content' => ['rows' => [[]]]])->assertUnprocessable();
         $this->getJson('/api/sheets/99999')->assertNotFound();
     }
 

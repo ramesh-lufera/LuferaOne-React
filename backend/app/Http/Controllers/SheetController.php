@@ -71,13 +71,12 @@ class SheetController extends Controller
         return response()->json(['message' => 'Sheet deleted successfully.']);
     }
 
-    public function update(Request $request, Sheet $sheet): JsonResponse
+    private function contentRules(): array
     {
-        $data = $request->validate([
-            'version' => ['required', 'integer', 'min:0'],
-            'content' => ['required', 'array:rows'],
+        return [
+            'content' => ['required', 'array:rows,headers,columnWidths'],
             'content.rows' => ['required', 'array', 'list', 'min:1', 'max:200'],
-            'content.rows.*' => ['required', 'array', 'list', 'min:4', 'max:5'],
+            'content.rows.*' => ['required', 'array', 'list', 'min:1', 'max:51'],
             'content.rows.*.*' => ['required', 'array:value,bold,italic,underline,fontFamily,fontSize,color,backgroundColor,textAlign,rowId,locked,reminderAt,reminderNote'],
             'content.rows.*.0.rowId' => ['sometimes', 'required', 'string', 'max:100', 'regex:/^[a-zA-Z0-9_-]+$/', 'distinct'],
             'content.rows.*.0.locked' => ['sometimes', 'boolean'],
@@ -92,6 +91,36 @@ class SheetController extends Controller
             'content.rows.*.*.color' => ['sometimes', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'content.rows.*.*.backgroundColor' => ['sometimes', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'content.rows.*.*.textAlign' => ['sometimes', Rule::in(['left', 'center', 'right'])],
+            'content.headers' => ['sometimes', 'array', 'list', 'min:1', 'max:51'],
+            'content.columnWidths' => ['sometimes', 'array', 'list', 'min:1', 'max:51'],
+            'content.columnWidths.*' => ['required', 'integer', 'min:120', 'max:1200'],
+            'content.headers.*' => ['required', 'string', 'max:255'],
+        ];
+    }
+
+    public function import(Request $request): JsonResponse
+    {
+        if (is_string($request->input('name'))) {
+            $request->merge(['name' => trim($request->input('name'))]);
+        }
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            ...$this->contentRules(),
+        ]);
+        $sheet = new Sheet(['name' => trim($data['name'])]);
+        $sheet->content = $data['content'];
+        $sheet->created_by = $request->user()->id;
+        $sheet->save();
+        $request->attributes->set('activity_entity_id', $sheet->id);
+
+        return response()->json(['sheet' => $sheet->only(['id', 'name', 'content', 'version']), 'message' => 'Sheet imported successfully.'], 201);
+    }
+
+    public function update(Request $request, Sheet $sheet): JsonResponse
+    {
+        $data = $request->validate([
+            'version' => ['required', 'integer', 'min:0'],
+            ...$this->contentRules(),
         ]);
         abort_unless($sheet->version === $data['version'], 409, 'This sheet changed in another session. Reload before saving again.');
         $incomingRows = collect($data['content']['rows'])->keyBy(fn (array $cells, int $index): string => $cells[0]['rowId'] ?? 'legacy-'.$sheet->id.'-'.$index);
