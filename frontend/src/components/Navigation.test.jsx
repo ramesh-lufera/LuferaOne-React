@@ -41,7 +41,7 @@ test('sidebar, account menu, and footer contain valid links with placeholders po
 test('sidebar and account settings remain filtered by existing module permissions', () => {
   const view = show(['users']);
   const sidebar = within(view.container.querySelector('aside'));
-  expect(sidebar.getByRole('link', { name: 'Users' })).toBeInTheDocument();
+  expect(sidebar.queryByRole('link', { name: 'Users' })).not.toBeInTheDocument();
   expect(sidebar.queryByRole('link', { name: 'Company' })).not.toBeInTheDocument();
   expect(sidebar.queryByRole('link', { name: 'Settings' })).not.toBeInTheDocument();
   expect(sidebar.queryByRole('link', { name: 'Invoice' })).not.toBeInTheDocument();
@@ -111,6 +111,7 @@ test('restoring the sidebar preserves the topbar notifications and profile menu'
   const settings = within(view.container.querySelector('.sidebar-submenu#sidebar-settings'));
   const labels = settings.getAllByRole('link').map((link) => link.textContent.trim());
   expect(labels.indexOf('Assign Role')).toBe(labels.indexOf('Activity Log') + 1);
+  expect(labels).not.toContain('Users');
 });
 
 test.each(['LuferaSheets', 'Billing', 'Inventory', 'Settings'])('%s expands beyond the template zero-height rule', (title) => {

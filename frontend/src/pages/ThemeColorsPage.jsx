@@ -224,14 +224,7 @@ const ThemeColorsPage = () => {
         )}
         <div className='card p-0 radius-12'>
           <div className='card-body p-24'>
-            <form
-              onReset={(event) => {
-                event.preventDefault();
-                setSelectedPalette(appliedColors?.palette_id || 'blue');
-                setCustomColors(appliedColors?.palette_id === 'custom' ? appliedColors : defaultCustomColors);
-              }}
-              onSubmit={saveSettings}
-            >
+            <form onSubmit={saveSettings}>
               <section aria-labelledby='theme-colors-title'>
                 <div className='d-flex flex-wrap align-items-center justify-content-between gap-3 mb-16'>
                   <h6 id='theme-colors-title' className='text-xl mb-0'>Theme Colors</h6>
@@ -311,9 +304,6 @@ const ThemeColorsPage = () => {
                 </div>
               </section>
               <div className='d-flex align-items-center justify-content-center gap-3 mt-24'>
-                <button type='reset' disabled={loading || busy} className='border border-danger-600 bg-hover-danger-200 text-danger-600 text-md px-40 py-11 radius-8'>
-                  Reset
-                </button>
                 <button type='submit' disabled={loading || busy} className='btn btn-primary border border-primary-600 text-md px-24 py-12 radius-8'>
                   {savingSettings ? 'Saving...' : 'Save Change'}
                 </button>

@@ -1,16 +1,59 @@
 /* eslint-disable react/prop-types */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { Icon } from '@iconify/react/dist/iconify.js';
 import AccessNavigation from '../components/AccessNavigation';
 import AuthBrandingImage from '../components/AuthBrandingImage';
 import { useAccessUser } from '../helper/AccessContext';
+import { canAccessPath } from '../helper/moduleAccess';
 import useCompanyBranding from '../helper/useCompanyBranding';
+import { categoriesChangedEvent, listSidebarCategories } from '../services/categories';
 import './Sidebar.css';
 
-import groups from '../data/sidebarMenu.json';
+import sidebarMenu from '../data/sidebarMenu.json';
+
+const groups = sidebarMenu.map((group) => ({
+  ...group,
+  items: group.items.filter(({ hidden }) => !hidden),
+}));
 
 const activeClass = ({ isActive }) => isActive ? 'active-page' : '';
+
+function SidebarCategories() {
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    let controller;
+    function refreshCategories() {
+      controller?.abort();
+      controller = new AbortController();
+      const { signal } = controller;
+      listSidebarCategories(signal)
+        .then((items) => {
+          if (!signal.aborted) setCategories(items);
+        })
+        .catch((error) => {
+          if (!signal.aborted && [401, 403].includes(error.status)) setCategories([]);
+        });
+    }
+
+    refreshCategories();
+    window.addEventListener(categoriesChangedEvent, refreshCategories);
+    return () => {
+      controller.abort();
+      window.removeEventListener(categoriesChangedEvent, refreshCategories);
+    };
+  }, []);
+
+  return categories.map(({ id, name, page_path: pagePath }) => (
+    <li key={id}>
+      <NavLink to={pagePath} end className={activeClass} title={name}>
+        <Icon icon="solar:folder-outline" className="menu-icon flex-shrink-0" aria-hidden="true" />
+        <span className="text-truncate">{name}</span>
+      </NavLink>
+    </li>
+  ));
+}
 
 export default function ApplicationSidebar({ sidebarActive, mobileMenu, onClose, onLogout }) {
   const user = useAccessUser();
@@ -28,6 +71,7 @@ export default function ApplicationSidebar({ sidebarActive, mobileMenu, onClose,
     </Link></div>
     <div className="sidebar-menu-area"><ul className="sidebar-menu" id="sidebar-menu">
       <AccessNavigation><li className="sidebar-dashboard"><NavLink to="/" end className={activeClass}><Icon icon="solar:home-smile-angle-outline" className="menu-icon" /><span>Dashboard</span></NavLink></li></AccessNavigation>
+      {canAccessPath(user, '/categories') && <SidebarCategories />}
       {user && <>
         {groups.map(({ label, icon, items }, index) => <AccessNavigation key={label}>
           <li className={`dropdown${index === 0 ? ' sidebar-bottom-start' : ''}${expanded === label ? ' open' : ''}`}>
@@ -40,7 +84,7 @@ export default function ApplicationSidebar({ sidebarActive, mobileMenu, onClose,
             </ul>
           </li>
         </AccessNavigation>)}
-        <li><Link to="#" role="button" onClick={(event) => { event.preventDefault(); onLogout(); }}><Icon icon="solar:close-circle-linear" className="menu-icon" /><span>Log-Out</span></Link></li>
+        <li><Link to="#" role="button" className="sidebar-logout" onClick={(event) => { event.preventDefault(); onLogout(); }}><Icon icon="solar:close-circle-linear" className="menu-icon" /><span>Log-Out</span></Link></li>
       </>}
     </ul></div>
   </aside>;

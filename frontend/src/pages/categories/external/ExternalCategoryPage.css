@@ -1,9 +1,12 @@
 .category-external {
   --category-accent: var(--module-theme-main, #1b8588);
-  width: min(896px, calc(100% - 32px));
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+.category-external > :is(.category-external-brand, main, .category-external-footer) {
+  width: min(calc(100% - 32px), 1333px);
   margin-inline: auto;
 }
 
@@ -12,15 +15,15 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  min-height: 94px;
-  padding: 14px 30px 24px;
+  min-height: 77px;
+  padding: 12px 32px 16px;
 }
 
 .category-external-logo {
   display: block;
-  width: min(38vw, 280px);
+  width: 280px;
   max-width: 51%;
-  max-height: 44px;
+  max-height: 40px;
   object-fit: contain;
   object-position: left center;
 }
@@ -29,7 +32,7 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 6px 14px;
+  gap: 6px 16px;
   margin: 0 0 0 auto;
   color: var(--text-secondary-light, #506071);
   font-size: 14px;
@@ -47,7 +50,52 @@
 }
 
 .category-external .category-detail-panel {
+  padding: 18px;
+  border-radius: 11px;
   background: var(--white, #fff);
+}
+
+.category-external .category-detail-panel h2 {
+  font-size: 20px !important;
+}
+
+.category-external .category-detail-description-panel {
+  padding-bottom: 34px;
+}
+
+.category-external .category-detail-description-panel h2 {
+  margin-bottom: 8px;
+}
+
+.category-external :is(.category-detail-description, .category-detail-features, .category-detail-pricing) {
+  font-size: 16px;
+}
+
+.category-external .category-detail-features-panel {
+  padding-bottom: 42px;
+}
+
+.category-external .category-detail-features {
+  margin-top: 36px;
+  padding-inline: 14px;
+}
+
+.category-external .category-detail-feature-mark {
+  font-size: 19px;
+}
+
+.category-external .category-detail-pricing-panel {
+  min-height: 218px;
+}
+
+.category-external .category-detail-pricing {
+  gap: 9px;
+  padding-top: 4px;
+}
+
+.category-external .category-detail-pricing::after {
+  width: 60px;
+  height: 3px;
 }
 
 .category-external-hero {
@@ -55,33 +103,39 @@
   isolation: isolate;
   display: grid;
   place-items: center;
-  min-height: clamp(170px, 31vw, 281px);
+  aspect-ratio: 1333 / 281;
+  min-height: 155px;
   padding: 20px;
-  background: #252525;
+  overflow: hidden;
+  background: #fff;
   text-align: center;
 }
 
-.category-external-hero img {
+.category-external-hero::after {
+  content: '';
   position: absolute;
-  z-index: -1;
+  inset: 0;
+  background: rgb(0 0 0 / 42%);
+  pointer-events: none;
+}
+
+.category-external-hero > img {
+  position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  opacity: 0.58;
+  object-position: center;
 }
 
 .category-external-hero h1 {
+  position: relative;
+  z-index: 1;
   margin: 0;
   color: #fff;
   font-size: 24px !important;
   font-weight: 700;
   line-height: 1.2;
-}
-
-.category-external-help {
-  padding: 18px;
-  border-radius: 10px;
 }
 
 .category-external-help h2 {
@@ -91,12 +145,14 @@
 .category-external-help button {
   display: inline-block;
   white-space: nowrap;
-  padding: 10px 12px;
+  min-height: 44px;
+  padding: 8px 22px;
   border: 0;
   border-radius: 6px;
   background: var(--category-accent);
   color: var(--module-theme-text, #081a1c);
   text-align: center;
+  font-size: 16px;
   line-height: 1.5;
 }
 
@@ -219,11 +275,10 @@
   justify-content: space-between;
   gap: 10px;
   margin-top: auto;
-  padding: 17px 10px;
-  border-top: 1px solid var(--neutral-200, #e8eaed);
+  padding: 11px 23px;
   background: var(--white, #fff);
   color: var(--text-secondary-light, #506071);
-  font-size: 15px;
+  font-size: 16px;
 }
 
 .category-external-footer p {
@@ -237,21 +292,21 @@
 }
 
 .category-external-footer nav > * + * {
-  margin-inline-start: 16px;
-  padding-inline-start: 16px;
+  margin-inline-start: 6px;
+  padding-inline-start: 6px;
   border-inline-start: 1px solid currentColor;
 }
 
-.category-external-footer nav span a {
-  color: var(--category-accent);
-}
-
 @media (max-width: 680px) {
+  .category-external > :is(.category-external-brand, main, .category-external-footer) {
+    width: calc(100% - 24px);
+  }
+
   .category-external-brand {
     flex-direction: column;
     justify-content: center;
     min-height: auto;
-    padding: 18px 8px;
+    padding: 18px 8px 12px;
   }
 
   .category-external-logo {
@@ -264,6 +319,15 @@
     margin: 0;
   }
 
+  .category-external :is(.category-detail-description, .category-detail-features, .category-detail-pricing, .category-external-help button) {
+    font-size: 14px;
+  }
+
+  .category-external .category-detail-features {
+    margin-top: 18px;
+    padding-inline: 0;
+  }
+
   .category-external-footer,
   .category-external-footer nav {
     justify-content: center;
@@ -272,6 +336,11 @@
 }
 
 @media (max-width: 430px) {
+  .category-external-footer {
+    padding-inline: 12px;
+    font-size: 14px;
+  }
+
   .category-external-footer nav {
     gap: 8px 12px;
   }

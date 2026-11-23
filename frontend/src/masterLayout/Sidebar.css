@@ -21,15 +21,16 @@
 }
 .application-sidebar .sidebar-menu > li { flex-shrink: 0; }
 
-.application-sidebar {
+.application-sidebar .sidebar-menu > li > a {
   --primary-600: var(--module-theme-main, #1d8b8d);
-  --sidebar-theme-focus: var(--module-theme-focus, #d8e6e7);
   --sidebar-theme-text: var(--module-theme-text, #0b1d1f);
-  --button-secondary: var(--sidebar-theme-focus);
 }
 .application-sidebar .sidebar-menu > li > a:is(:hover, :focus-visible) {
   background-color: transparent;
   color: var(--primary-600);
+}
+.application-sidebar .sidebar-logout:hover > :is(span, .menu-icon) {
+  color: var(--danger-main);
 }
 .application-sidebar .sidebar-menu > li > a.active-page,
 .application-sidebar .sidebar-menu > li > a.active-page:hover,
@@ -38,22 +39,21 @@
   background-color: var(--primary-600);
   color: var(--sidebar-theme-text);
 }
-.application-sidebar .sidebar-submenu li > a {
-  color: var(--text-secondary-light);
+.application-sidebar .sidebar-menu > li > a.active-page > :is(span, .menu-icon),
+.application-sidebar .sidebar-menu > li.dropdown > a.active-page::after,
+.application-sidebar .sidebar-menu > li.dropdown:is(.open, .dropdown-open) > a::after,
+.application-sidebar .sidebar-menu > li.dropdown:is(.open, .dropdown-open) > a > :is(span, .menu-icon) {
+  color: #fff;
 }
-.application-sidebar .sidebar-submenu li > a:is(:hover, :focus-visible) {
-  background-color: transparent;
-  color: var(--primary-600);
+.application-sidebar .sidebar-submenu li > a:not(.active-page):is(:hover, :focus-visible) {
+  color: var(--module-theme-main, #1d8b8d);
 }
-.application-sidebar .sidebar-submenu li > a.active-page,
-.application-sidebar .sidebar-submenu li > a.active-page:hover {
-  background-color: var(--sidebar-theme-focus);
-  color: var(--text-secondary-light);
+.application-sidebar .sidebar-menu .sidebar-submenu li > a.active-page {
+  background-color: var(--module-theme-focus, #d8e6e7);
 }
 .application-sidebar .sidebar-submenu .circle-icon {
-  color: var(--primary-600) !important;
+  --primary-600: var(--module-theme-main, #1d8b8d);
 }
-
 .application-sidebar .sidebar-logo img {
   max-height: 44px;
   object-fit: contain;
