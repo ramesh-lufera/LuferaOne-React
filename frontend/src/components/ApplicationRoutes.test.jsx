@@ -13,7 +13,7 @@ jest.mock('../pages/AccessDeniedPage', () => function AccessDeniedPageStub() { r
 jest.mock('../pages/ActivityLogPage', () => function ActivityLogPageStub() { return <h1>ActivityLogPage</h1>; });
 jest.mock('../pages/AddUserPage', () => function AddUserPageStub() { return <h1>AddUserPage</h1>; });
 jest.mock('../pages/AssignRolePage', () => function AssignRolePageStub() { return <h1>AssignRolePage</h1>; });
-jest.mock('../pages/CategoriesPage', () => function CategoriesPageStub() { return <h1>CategoriesPage</h1>; });
+jest.mock('../pages/categories/CategoriesPage', () => function CategoriesPageStub() { return <h1>CategoriesPage</h1>; });
 jest.mock('../pages/categories/CategoryPage', () => () => null);
 jest.mock('../pages/CompanyPage', () => function CompanyPageStub() { return <h1>CompanyPage</h1>; });
 jest.mock('../pages/CredentialsPage', () => function CredentialsPageStub() { return <h1>CredentialsPage</h1>; });

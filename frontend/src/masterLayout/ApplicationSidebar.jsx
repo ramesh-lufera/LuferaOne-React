@@ -7,7 +7,7 @@ import AuthBrandingImage from '../components/AuthBrandingImage';
 import { useAccessUser } from '../helper/AccessContext';
 import { canAccessPath } from '../helper/moduleAccess';
 import useCompanyBranding from '../helper/useCompanyBranding';
-import { categoriesChangedEvent, listSidebarCategories } from '../services/categories';
+import { categoriesChangedEvent, listSidebarCategories } from '../pages/categories/categories';
 import './Sidebar.css';
 
 import sidebarMenu from '../data/sidebarMenu.json';

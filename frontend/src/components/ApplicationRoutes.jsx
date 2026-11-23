@@ -7,7 +7,7 @@ import AccessDeniedPage from '../pages/AccessDeniedPage';
 import ActivityLogPage from '../pages/ActivityLogPage';
 import AddUserPage from '../pages/AddUserPage';
 import AssignRolePage from '../pages/AssignRolePage';
-import CategoriesPage from '../pages/CategoriesPage';
+import CategoriesPage from '../pages/categories/CategoriesPage';
 import CategoryPage from '../pages/categories/CategoryPage';
 import ExternalCategoryPage from '../pages/categories/external/ExternalCategoryPage';
 import CompanyPage from '../pages/CompanyPage';
