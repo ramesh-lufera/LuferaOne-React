@@ -6,7 +6,6 @@ import { CategoryDetails } from '../CategoryPage';
 import './ExternalCategoryPage.css';
 
 const supportEmail = 'info@luferatech.com';
-const companyWebsite = 'https://luferatech.com';
 
 export default function ExternalCategoryPage() {
   const { images, contact } = useCompanyBranding({ includeContact: true });
@@ -53,11 +52,10 @@ export default function ExternalCategoryPage() {
         </CategoryDetails>
       </main>
       <footer className="category-external-footer">
-        <p>© {new Date().getFullYear()} Lufera Infotech. All Rights Reserved.</p>
-        <nav aria-label="Footer">
+        <p>© {new Date().getFullYear()} Lufera Infotech</p>
+        <nav aria-label="Legal links">
           <Link to="/privacy-policy">Privacy Policy</Link>
           <Link to="/terms-condition">Terms and Conditions</Link>
-          <span>Made by <a href={companyWebsite}>Lufera Infotech</a></span>
         </nav>
       </footer>
       <Modal

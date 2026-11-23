@@ -71,7 +71,7 @@ export function CategoryDetails({ external = false, children }) {
   const pricingItems = category.type === 'product' ? 'products' : 'packages';
 
   return (
-    <article className="category-detail">
+    <article className={external ? 'category-detail' : 'category-detail category-detail-internal'}>
       {external ? (
         <header className="category-external-hero">
           {category.featured_image_url && <img src={category.featured_image_url} alt="" />}
@@ -82,8 +82,8 @@ export function CategoryDetails({ external = false, children }) {
           <div className="category-detail-heading">
             <h1>{category.name}</h1>
             <nav aria-label="Breadcrumb">
-              <Link to="/categories">Categories</Link>
-              <span aria-hidden="true">/</span>
+            <span className="category-detail-breadcrumb-label">Categories</span>
+            <span aria-hidden="true">/</span>
               <span aria-current="page">{category.name}</span>
             </nav>
           </div>

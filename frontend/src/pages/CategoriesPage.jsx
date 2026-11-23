@@ -10,6 +10,7 @@ import ModuleTable, {
 } from '../components/ModuleTable';
 import ModuleTableCell from '../components/ModuleTableCell';
 import { api } from '../services/api';
+import { categoriesChangedEvent } from '../services/categories';
 import './CategoriesPage.css';
 
 const columns = [
@@ -158,6 +159,7 @@ export default function CategoriesPage() {
     try {
       const path = editingCategory ? `/categories/${editingCategory.id}` : '/categories';
       const result = await api(path, { method: 'POST', body });
+      window.dispatchEvent(new Event(categoriesChangedEvent));
       setShowEditor(false);
       setSuccess(result.message);
       setSearch('');
@@ -180,6 +182,7 @@ export default function CategoriesPage() {
 
     try {
       const result = await api(`/categories/${deleteTarget.id}`, { method: 'DELETE' });
+      window.dispatchEvent(new Event(categoriesChangedEvent));
       setDeleteTarget(null);
       setSuccess(result.message);
       if (page > 1 && categories.data.length === 1) {

@@ -151,6 +151,7 @@
       {
         "path": "/users-list",
         "label": "Users",
+        "hidden": true,
         "pending": false
       }
     ]

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { apiUrl, getToken, clearToken } from '../helper/auth';
 import { canAccessPath } from '../helper/moduleAccess';
@@ -13,41 +13,44 @@ export default function RequireAuth({ allowGuest = false }) {
   const [status, setStatus] = useState('loading');
   const [user, setUser] = useState(null);
   const [attempt, setAttempt] = useState(0);
+  const verifiedToken = useRef(null);
   const { pathname } = useLocation();
   useEffect(() => {
     const controller = new AbortController();
     const token = getToken();
     if (!token) {
+      verifiedToken.current = null;
       setStatus('unauthenticated');
       return;
     }
-    setStatus('loading');
+    const isVerifiedSession = verifiedToken.current === token;
+    if (!isVerifiedSession) verifiedToken.current = null;
+    setStatus((current) => isVerifiedSession && current === 'authenticated' ? current : 'loading');
     fetch(apiUrl + '/user', {
       headers: { Accept: 'application/json', Authorization: 'Bearer ' + token },
       signal: controller.signal,
     })
       .then(async (response) => {
+        if (controller.signal.aborted) return;
         if (response.status === 401) {
+          verifiedToken.current = null;
           clearToken();
           setStatus('unauthenticated');
         } else if (response.ok) {
           const data = await response.json();
+          if (controller.signal.aborted) return;
+          verifiedToken.current = data.user ? token : null;
           setUser(data.user);
           setStatus(data.user ? 'authenticated' : 'error');
         } else setStatus('error');
       })
       .catch((error) => {
-        if (error.name !== 'AbortError') setStatus('error');
+        if (!controller.signal.aborted && error.name !== 'AbortError') setStatus('error');
       });
     return () => controller.abort();
   }, [attempt, pathname]);
   if (status === 'unauthenticated') return allowGuest ? <Outlet /> : <Navigate to="/sign-in" replace />;
-  if (status === 'loading')
-    return (
-      <p role="status" className="p-24">
-        Checking access...
-      </p>
-    );
+  if (status === 'loading') return null;
   if (status === 'error')
     return (
       <div className="p-24" role="alert">
