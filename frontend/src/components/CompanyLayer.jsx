@@ -5,7 +5,9 @@ import PhoneCountryCodeSelect from './PhoneCountryCodeSelect';
 const details = [
   ['full_name', 'Full Name', 'text', 255], ['email', 'Email', 'email', 255],
   ['phone_number', 'Phone Number', 'tel', 30], ['website', 'Website', 'text', 2048],
+  ['site_title', 'Site Title', 'text', 255],
 ];
+const optionalFields = ['website', 'site_title'];
 const address = [
   ['country', 'Country', 'text', 100], ['city', 'City', 'text', 100],
   ['state', 'State', 'text', 100], ['zip_code', 'Zip Code', 'text', 20],
@@ -55,7 +57,7 @@ export default function CompanyLayer() {
   const validate = (all = false) => {
     const next = {};
     [...details, ...address].forEach(([key, label]) => {
-      if ((all || stepFor(key) === step) && key !== 'website' && !values[key].trim()) next[key] = `${label} is required.`;
+      if ((all || stepFor(key) === step) && !optionalFields.includes(key) && !values[key].trim()) next[key] = `${label} is required.`;
     });
     if (all || step === 1) {
       if (values.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) next.email = 'Enter a valid email address.';
@@ -104,11 +106,11 @@ export default function CompanyLayer() {
   };
   const update = (key, value) => { setValues((current) => ({ ...current, [key]: value })); setErrors((current) => ({ ...current, [key]: '' })); setSuccess(''); };
   const field = ([key, label, type, maxLength]) => <div className='col-sm-6' key={key}>
-    <label htmlFor={`company-${key}`} className='form-label'>{label}{key !== 'website' && <span className='text-danger-600'> *</span>}</label>
+    <label htmlFor={`company-${key}`} className='form-label'>{label}{!optionalFields.includes(key) && <span className='text-danger-600'> *</span>}</label>
     {key === 'phone_number' ? <div className='input-group'>
       <PhoneCountryCodeSelect id='company-phone-country-code' value={values.phone_country_code} onChange={(code) => update('phone_country_code', code)} invalid={Boolean(errors.phone_country_code)} />
       <input id={`company-${key}`} type={type} className='form-control wizard-required' value={values[key]} maxLength={maxLength} onChange={(e) => update(key, e.target.value)} aria-invalid={Boolean(errors[key])} />
-    </div> : <input id={`company-${key}`} type={type} className='form-control wizard-required' value={values[key]} maxLength={maxLength} required={key !== 'website'}
+    </div> : <input id={`company-${key}`} type={type} className='form-control wizard-required' value={values[key]} maxLength={maxLength} required={!optionalFields.includes(key)}
       onChange={(e) => update(key, key === 'gstin' ? e.target.value.toUpperCase() : e.target.value)} aria-invalid={Boolean(errors[key])} />}
     {(errors[key] || (key === 'phone_number' && errors.phone_country_code)) && <div className='text-danger-600 text-sm mt-8' role='alert'>{errors[key] || errors.phone_country_code}</div>}
   </div>;

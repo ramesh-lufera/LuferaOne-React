@@ -10,11 +10,13 @@ use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CredentialsController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoiceSettingsController;
+use App\Http\Controllers\PackageController;
 use App\Http\Controllers\PrivacyPolicyController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SheetAttachmentController;
 use App\Http\Controllers\SheetCommentController;
 use App\Http\Controllers\SheetController;
+use App\Http\Controllers\TaxController;
 use App\Http\Controllers\TermsConditionController;
 use App\Http\Controllers\ThemeColorPaletteController;
 use App\Http\Controllers\UserController;
@@ -33,6 +35,16 @@ Route::get('/health', function () {
 Route::post('/register', RegisterController::class)
     ->middleware('throttle:5,1')
     ->name('register');
+
+Route::post('/register/verify/{pending}', [RegisterController::class, 'verify'])
+    ->middleware(['signed:relative', 'throttle:6,1,signup-verification'])
+    ->whereUuid('pending')
+    ->name('signup.verify');
+
+Route::get('/register/status/{pending}', [RegisterController::class, 'status'])
+    ->middleware(['signed:relative', 'throttle:30,1,signup-status'])
+    ->whereUuid('pending')
+    ->name('signup.status');
 
 Route::post('/login', [AuthController::class, 'login']);
 
@@ -87,6 +99,9 @@ Route::middleware(['auth:sanctum', EnsureModuleAccess::class.':categories'])->gr
     Route::post('/categories', [CategoryController::class, 'store']);
     Route::put('/categories/{category}', [CategoryController::class, 'update'])->whereNumber('category');
     Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->whereNumber('category');
+});
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/sidebar-categories', [CategoryController::class, 'sidebar']);
     Route::get('/categories/{category}', [CategoryController::class, 'show'])->where('category', '[a-zA-Z0-9._-]+');
 });
 Route::get('/categories/{category}/image', [CategoryController::class, 'image'])
@@ -181,4 +196,27 @@ Route::middleware(['auth:sanctum', EnsureModuleAccess::class.':sheets'])->group(
     Route::get('/sheets/{sheet}/rows/{row}/attachments', [SheetAttachmentController::class, 'index'])->whereNumber('sheet')->where('row', '[a-zA-Z0-9_-]{1,100}');
     Route::post('/sheets/{sheet}/rows/{row}/attachments', [SheetAttachmentController::class, 'store'])->whereNumber('sheet')->where('row', '[a-zA-Z0-9_-]{1,100}');
     Route::get('/sheets/{sheet}/rows/{row}/attachments/{attachment}/file', [SheetAttachmentController::class, 'file'])->whereNumber(['sheet', 'attachment'])->where('row', '[a-zA-Z0-9_-]{1,100}');
+});
+
+Route::middleware(['auth:sanctum', EnsureModuleAccess::class.':packages'])->group(function () {
+    Route::get('/packages/categories', [PackageController::class, 'categories']);
+    Route::get('/packages/options/taxes', [PackageController::class, 'taxes']);
+    Route::get('/packages', [PackageController::class, 'index']);
+    Route::post('/packages', [PackageController::class, 'store']);
+    Route::put('/packages/{package}', [PackageController::class, 'update'])->whereNumber('package');
+    Route::delete('/packages/{package}', [PackageController::class, 'destroy'])->whereNumber('package');
+    Route::get('/packages/{package}', [PackageController::class, 'show'])->where('package', '[a-z0-9-]+');
+});
+Route::get('/packages/{package}/images/{image}', [PackageController::class, 'image'])
+    ->where('package', '[a-z0-9-]+')->whereIn('image', ['package_image', 'breadcrumb_image', 'gallery_0', 'gallery_1', 'gallery_2', 'gallery_3'])
+    ->middleware(['signed', 'throttle:120,1'])->name('packages.image');
+Route::get('/external/packages/{package}', [PackageController::class, 'external'])
+    ->where('package', '[a-z0-9-]+')->middleware('throttle:120,1');
+ 
+Route::middleware(['auth:sanctum', EnsureModuleAccess::class.':taxes'])->group(function () {
+    Route::get('/taxes', [TaxController::class, 'index']);
+    Route::post('/taxes', [TaxController::class, 'store']);
+    Route::get('/taxes/{tax}', [TaxController::class, 'show'])->whereNumber('tax');
+    Route::put('/taxes/{tax}', [TaxController::class, 'update'])->whereNumber('tax');
+    Route::delete('/taxes/{tax}', [TaxController::class, 'destroy'])->whereNumber('tax');
 });

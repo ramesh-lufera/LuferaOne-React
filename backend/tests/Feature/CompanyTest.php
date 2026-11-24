@@ -61,6 +61,18 @@ class CompanyTest extends TestCase
         $this->assertDatabaseCount('activity_logs', 0);
     }
 
+    public function test_site_title_can_be_saved_read_in_branding_and_cleared(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'admin']), 'sanctum');
+        $this->postJson('/api/company', $this->payload() + ['site_title' => ' Lufera One '])
+            ->assertCreated()->assertJsonPath('company.site_title', 'Lufera One');
+        $this->getJson('/api/auth/branding?include_title=1')->assertOk()->assertJsonPath('site_title', 'Lufera One');
+
+        $this->putJson('/api/company', $this->payload() + ['site_title' => ''])
+            ->assertOk()->assertJsonPath('company.site_title', null);
+        $this->assertDatabaseHas('companies', ['profile_key' => 'shared', 'site_title' => null]);
+    }
+
     public function test_invalid_fields_and_unsafe_uploads_are_rejected(): void
     {
         $this->actingAs(User::factory()->create(['role' => 'admin']), 'sanctum')->postJson('/api/company', array_replace($this->payload(), [

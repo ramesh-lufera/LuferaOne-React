@@ -54,11 +54,25 @@ class RoleAccessTest extends TestCase
         $this->assertDatabaseMissing('roles', ['id' => $id]);
     }
 
+    public function test_roles_catalog_includes_created_category_names_on_request(): void
+    {
+        $this->actingAs($this->admin(), 'sanctum');
+        $this->getJson('/api/roles?include_categories=1')->assertOk()->assertJsonPath('categories', []);
+        $this->postJson('/api/categories', ['name' => 'Hosting Plans', 'type' => 'product', 'requires_login' => false])->assertCreated();
+        $this->postJson('/api/categories', ['name' => 'Design Packages', 'type' => 'package', 'requires_login' => true])->assertCreated();
+
+        $this->getJson('/api/roles?include_categories=1')->assertOk()->assertJsonCount(2, 'categories')
+            ->assertJsonPath('categories.0.name', 'Design Packages')
+            ->assertJsonPath('categories.1.name', 'Hosting Plans');
+        $this->getJson('/api/roles')->assertOk()->assertJsonMissingPath('categories');
+    }
+
     public function test_validation_protects_builtin_roles_and_last_administrator(): void
     {
         $admin = $this->admin();
         $this->actingAs($admin, 'sanctum');
         $this->postJson('/api/roles', $this->payload(['modules' => ['unknown']]))->assertUnprocessable();
+        $this->postJson('/api/roles', $this->payload(['modules' => ['category:9999']]))->assertUnprocessable()->assertJsonValidationErrors('modules.0');
         $this->postJson('/api/roles', $this->payload(['modules' => ['*']]))->assertUnprocessable();
         $this->postJson('/api/roles', $this->payload(['name' => ' ADMIN ']))->assertUnprocessable();
         $id = DB::table('roles')->where('name', 'admin')->value('id');
@@ -70,6 +84,42 @@ class RoleAccessTest extends TestCase
         $this->putJson('/api/role-users/9999', ['role' => 'user'])->assertNotFound();
         $second = $this->admin();
         $this->putJson('/api/role-users/'.$second->id, ['role' => 'user'])->assertOk();
+    }
+
+    public function test_role_saves_category_selections_with_module_grants(): void
+    {
+        $this->actingAs($this->admin(), 'sanctum');
+        $this->postJson('/api/categories', ['name' => 'Hosting Plans', 'type' => 'product', 'requires_login' => false])->assertCreated();
+        $categoryId = DB::table('categories')->where('name', 'Hosting Plans')->value('id');
+        $modules = ['dashboard', 'category:'.$categoryId];
+
+        $this->postJson('/api/roles', $this->payload(['modules' => $modules]))->assertCreated();
+        $this->assertDatabaseHas('roles', ['name' => 'manager', 'modules' => json_encode($modules)]);
+    }
+
+    public function test_sidebar_categories_follow_the_signed_in_roles_selections(): void
+    {
+        $this->getJson('/api/sidebar-categories')->assertUnauthorized();
+        $this->actingAs($this->admin(), 'sanctum');
+        $this->postJson('/api/categories', ['name' => 'Hosting Plans', 'type' => 'product', 'requires_login' => false])->assertCreated();
+        $this->postJson('/api/categories', ['name' => 'Design Packages', 'type' => 'package', 'requires_login' => false])->assertCreated();
+        $hosting = DB::table('categories')->where('name', 'Hosting Plans')->first();
+        $design = DB::table('categories')->where('name', 'Design Packages')->first();
+
+        $this->getJson('/api/sidebar-categories')->assertOk()->assertJsonCount(2, 'categories');
+        $roleId = $this->postJson('/api/roles', $this->payload(['modules' => ['category:'.$hosting->id]]))->assertCreated()->json('id');
+        $manager = User::factory()->create(['role' => 'manager']);
+        $this->actingAs($manager, 'sanctum')->getJson('/api/sidebar-categories')->assertOk()->assertExactJson([
+            'categories' => [['id' => $hosting->id, 'name' => 'Hosting Plans', 'page_path' => '/categories/'.$hosting->page_slug]],
+        ]);
+        $this->getJson('/api/categories/'.$hosting->page_slug)->assertOk();
+        $this->getJson('/api/categories/'.$design->page_slug)->assertForbidden();
+        $this->getJson('/api/categories')->assertForbidden();
+
+        $this->actingAs(User::factory()->create(['role' => 'super_admin']), 'sanctum');
+        $this->getJson('/api/sidebar-categories')->assertOk()->assertJsonCount(2, 'categories');
+        $this->putJson('/api/roles/'.$roleId, $this->payload(['modules' => ['dashboard']]))->assertOk();
+        $this->actingAs($manager, 'sanctum')->getJson('/api/sidebar-categories')->assertOk()->assertExactJson(['categories' => []]);
     }
 
     public function test_super_admin_has_full_access_and_exclusive_control_of_super_admin_assignments(): void

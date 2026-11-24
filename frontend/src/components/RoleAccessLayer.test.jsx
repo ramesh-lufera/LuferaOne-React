@@ -41,9 +41,10 @@ const roles = [
 const roleData = {
   roles,
   modules: { dashboard: { label: 'Dashboard' }, company: { label: 'Company' } },
+  categories: [{ id: 12, name: 'Hosting Plans' }, { id: 15, name: 'Website Packages' }],
 };
 
-test('creates a role with selected modules and filters the role list', async () => {
+test('creates a role from the category list and filters the role list', async () => {
   api.mockResolvedValue(roleData);
   render(
     <MemoryRouter>
@@ -65,12 +66,13 @@ test('creates a role with selected modules and filters the role list', async () 
   fireEvent.click(dialog.getByLabelText('Inactive'));
   fireEvent.click(dialog.getByRole('button', { name: 'Next' }));
   expect(api.mock.calls.some(([, options]) => options?.method)).toBe(false);
-  fireEvent.click(dialog.getByLabelText('Company'));
+  expect(dialog.getByText('Hosting Plans')).toBeInTheDocument();
+  fireEvent.click(dialog.getByRole('checkbox', { name: 'Hosting Plans' }));
   fireEvent.click(dialog.getByRole('button', { name: 'Back' }));
   expect(dialog.getByLabelText('Role Name')).toHaveValue('operations');
   expect(dialog.getByLabelText('Inactive')).toBeChecked();
   fireEvent.click(dialog.getByRole('button', { name: 'Next' }));
-  expect(dialog.getByLabelText('Company')).toBeChecked();
+  expect(dialog.getByText('Hosting Plans')).toBeInTheDocument();
   fireEvent.click(dialog.getByRole('button', { name: 'Save' }));
   await waitFor(() =>
     expect(api).toHaveBeenCalledWith(
@@ -83,7 +85,7 @@ test('creates a role with selected modules and filters the role list', async () 
     name: 'operations',
     description: '',
     active: false,
-    modules: ['company'],
+    modules: ['category:12'],
   });
   expect(await screen.findByText('Role saved.')).toBeInTheDocument();
 });
@@ -150,7 +152,7 @@ test('assigns a saved role to an existing user', async () => {
   ).toBeInTheDocument();
 });
 
-test('edits role details and module permissions and refreshes the list', async () => {
+test('edits role details, retains module grants, and refreshes the list', async () => {
   let savedRoles = [...roles];
   api.mockImplementation(async (path, options) => {
     if (options?.method === 'PUT') {
@@ -181,9 +183,7 @@ test('edits role details and module permissions and refreshes the list', async (
   });
   fireEvent.click(dialog.getByLabelText('Inactive'));
   fireEvent.click(dialog.getByRole('button', { name: 'Next' }));
-  expect(dialog.getByLabelText('Company')).toBeChecked();
-  fireEvent.click(dialog.getByLabelText('Company'));
-  fireEvent.click(dialog.getByLabelText('Dashboard'));
+  expect(dialog.getByText('Website Packages')).toBeInTheDocument();
   fireEvent.click(dialog.getByRole('button', { name: 'Update' }));
   expect(await screen.findByText('Role updated.')).toBeInTheDocument();
   expect(await screen.findByText('Operations')).toBeInTheDocument();
@@ -195,7 +195,7 @@ test('edits role details and module permissions and refreshes the list', async (
         name: 'operations',
         description: 'Updated description',
         active: false,
-        modules: ['dashboard'],
+        modules: ['company'],
       }),
     }),
   );
@@ -330,34 +330,38 @@ test('assign role table searches users and changes page size using the shared co
   ).toBeInTheDocument();
 });
 
-test('permissions list follows the current sidebar and select-all excludes template modules', async () => {
-  api.mockResolvedValue({ ...roleData, modules: { ...roleData.modules, widgets: { label: 'Widgets' }, calendar: { label: 'Calendar' }, 'code-generator': { label: 'Code Generator' } } });
+test('permissions step can select and clear all category checkboxes', async () => {
+  api.mockResolvedValue(roleData);
   render(<MemoryRouter><RoleAccessLayer /></MemoryRouter>);
   await screen.findByText('Manager');
   fireEvent.click(screen.getByRole('button', { name: 'Add New Role' }));
   fireEvent.change(screen.getByLabelText('Role Name'), { target: { value: 'limited' } });
   fireEvent.click(screen.getByRole('button', { name: 'Next' }));
   const dialog = within(screen.getByRole('dialog'));
-  expect(dialog.getByLabelText('Dashboard')).toBeInTheDocument();
-  expect(dialog.getByLabelText('Company')).toBeInTheDocument();
-  for (const name of ['Widgets', 'Calendar', 'Code Generator']) expect(dialog.queryByLabelText(name)).not.toBeInTheDocument();
-  fireEvent.click(dialog.getByLabelText('Select all modules'));
-  fireEvent.click(dialog.getByRole('button', { name: 'Save' }));
-  await waitFor(() => expect(api.mock.calls.some(([, options]) => options?.method === 'POST')).toBe(true));
-  const call = api.mock.calls.find(([, options]) => options?.method === 'POST');
-  expect(JSON.parse(call[1].body).modules).toEqual(['dashboard', 'company']);
+  const hosting = dialog.getByRole('checkbox', { name: 'Hosting Plans' });
+  const websites = dialog.getByRole('checkbox', { name: 'Website Packages' });
+  const selectAll = dialog.getByRole('checkbox', { name: 'Select All Modules' });
+  expect(dialog.queryByText('Dashboard')).not.toBeInTheDocument();
+  expect(dialog.queryByText('Company')).not.toBeInTheDocument();
+  fireEvent.click(selectAll);
+  expect(hosting).toBeChecked();
+  expect(websites).toBeChecked();
+  fireEvent.click(selectAll);
+  expect(hosting).not.toBeChecked();
+  expect(websites).not.toBeChecked();
+  expect(api).toHaveBeenCalledWith('/roles?include_categories=1');
 });
 
-test('editing visible permissions preserves existing grants outside the sidebar', async () => {
-  api.mockResolvedValue({ ...roleData, roles: [roles[0], { ...roles[1], modules: ['company', 'widgets'] }], modules: { ...roleData.modules, widgets: { label: 'Widgets' } } });
+test('shows an empty category list and preserves existing grants when saving', async () => {
+  api.mockResolvedValue({ ...roleData, categories: [], roles: [roles[0], { ...roles[1], modules: ['company', 'widgets'] }], modules: { ...roleData.modules, widgets: { label: 'Widgets' } } });
   render(<MemoryRouter><RoleAccessLayer /></MemoryRouter>);
   await screen.findByText('Manager');
   fireEvent.click(screen.getByRole('button', { name: 'Edit manager' }));
   fireEvent.click(screen.getByRole('button', { name: 'Next' }));
   const dialog = within(screen.getByRole('dialog'));
-  fireEvent.click(dialog.getByLabelText('Select all modules'));
+  expect(dialog.getByText('No categories found.')).toBeInTheDocument();
   fireEvent.click(dialog.getByRole('button', { name: 'Update' }));
   await waitFor(() => expect(api.mock.calls.some(([, options]) => options?.method === 'PUT')).toBe(true));
   const call = api.mock.calls.find(([, options]) => options?.method === 'PUT');
-  expect(JSON.parse(call[1].body).modules).toEqual(['widgets', 'dashboard', 'company']);
+  expect(JSON.parse(call[1].body).modules).toEqual(['company', 'widgets']);
 });

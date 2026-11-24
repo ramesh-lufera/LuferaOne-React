@@ -5,7 +5,7 @@ import { Icon } from '@iconify/react/dist/iconify.js';
 import AccessNavigation from '../components/AccessNavigation';
 import AuthBrandingImage from '../components/AuthBrandingImage';
 import { useAccessUser } from '../helper/AccessContext';
-import { canAccessPath } from '../helper/moduleAccess';
+import { selectedCategoryModules } from '../helper/moduleAccess';
 import useCompanyBranding from '../helper/useCompanyBranding';
 import { categoriesChangedEvent, listSidebarCategories } from '../pages/categories/categories';
 import './Sidebar.css';
@@ -57,6 +57,7 @@ function SidebarCategories() {
 
 export default function ApplicationSidebar({ sidebarActive, mobileMenu, onClose, onLogout }) {
   const user = useAccessUser();
+  const categoryScope = ['admin', 'super_admin'].includes(user?.role) ? '*' : selectedCategoryModules(user).join(',');
   const images = useCompanyBranding();
   const { pathname } = useLocation();
   const activeGroup = groups.find(({ items }) => items.some(({ path, pending }) => !pending && path === pathname))?.label;
@@ -71,7 +72,7 @@ export default function ApplicationSidebar({ sidebarActive, mobileMenu, onClose,
     </Link></div>
     <div className="sidebar-menu-area"><ul className="sidebar-menu" id="sidebar-menu">
       <AccessNavigation><li className="sidebar-dashboard"><NavLink to="/" end className={activeClass}><Icon icon="solar:home-smile-angle-outline" className="menu-icon" /><span>Dashboard</span></NavLink></li></AccessNavigation>
-      {canAccessPath(user, '/categories') && <SidebarCategories />}
+      {categoryScope && <SidebarCategories key={categoryScope} />}
       {user && <>
         {groups.map(({ label, icon, items }, index) => <AccessNavigation key={label}>
           <li className={`dropdown${index === 0 ? ' sidebar-bottom-start' : ''}${expanded === label ? ' open' : ''}`}>

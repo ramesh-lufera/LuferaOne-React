@@ -2,141 +2,193 @@
   {
     "path": "/",
     "page": "HomePageOne",
+    "title": "Dashboard",
     "access": "protected"
   },
   {
     "path": "/activity-log",
     "page": "ActivityLogPage",
+    "title": "Activity Log",
     "access": "protected"
   },
   {
     "path": "/users-list",
     "page": "UsersListPage",
+    "title": "Users List",
     "access": "protected"
   },
   {
     "path": "/users-grid",
     "page": "UsersGridPage",
+    "title": "Users Grid",
     "access": "protected"
   },
   {
     "path": "/add-user",
     "page": "AddUserPage",
+    "title": "Add User",
     "access": "protected"
   },
   {
     "path": "/view-profile",
     "page": "ViewProfilePage",
+    "title": "View Profile",
     "access": "protected"
   },
   {
     "path": "/roles-permissions",
     "page": "RoleAccessPage",
+    "title": "Roles & Permissions",
     "access": "protected"
   },
   {
     "path": "/role-access",
     "page": "RoleAccessPage",
+    "title": "Roles & Permissions",
     "access": "protected"
   },
   {
     "path": "/assign-role",
     "page": "AssignRolePage",
+    "title": "Assign Role",
     "access": "protected"
   },
   {
     "path": "/company",
     "page": "CompanyPage",
+    "title": "Company",
     "access": "protected"
   },
   {
     "path": "/credentials",
     "page": "CredentialsPage",
+    "title": "Credentials",
     "access": "protected"
   },
   {
     "path": "/invoice-settings",
     "page": "InvoiceSettingsPage",
+    "title": "Invoice Settings",
     "access": "protected"
   },
   {
     "path": "/categories",
     "page": "CategoriesPage",
+    "title": "Categories",
     "access": "protected"
   },
   {
     "path": "/invoice-list",
     "page": "InvoiceListPage",
+    "title": "Invoice List",
     "access": "protected"
   },
   {
     "path": "/invoice-add",
     "page": "InvoiceAddPage",
+    "title": "Create Invoice",
     "access": "protected"
   },
   {
     "path": "/invoice-edit",
     "page": "InvoiceEditPage",
+    "title": "Edit Invoice",
     "access": "protected"
   },
   {
     "path": "/invoice-preview",
     "page": "InvoicePreviewPage",
+    "title": "Invoice Details",
     "access": "protected"
   },
   {
     "path": "/theme-colors",
     "page": "ThemeColorsPage",
+    "title": "Theme Colors",
     "access": "protected"
   },
   {
     "path": "/settings/privacy-policy",
     "page": "PrivacyPolicySettingsPage",
+    "title": "Privacy Policy Settings",
     "access": "protected"
   },
   {
     "path": "/settings/terms-conditions",
     "page": "TermsConditionSettingsPage",
+    "title": "Terms & Conditions Settings",
     "access": "protected"
   },
   {
     "path": "/privacy-policy",
     "page": "PrivacyPolicyPage",
+    "title": "Privacy Policy",
     "access": "legal"
   },
   {
     "path": "/terms-condition",
     "page": "TermsConditionPage",
+    "title": "Terms & Conditions",
     "access": "legal"
   },
   {
     "path": "/404",
     "page": "ErrorPage",
+    "title": "404",
     "access": "legal"
   },
   {
     "path": "/sign-in",
     "page": "SignInPage",
+    "title": "Sign In",
     "access": "public"
   },
   {
     "path": "/sign-up",
     "page": "SignUpPage",
+    "title": "Sign Up",
     "access": "public"
   },
   {
     "path": "/access-denied",
     "page": "AccessDeniedPage",
+    "title": "Access Denied",
     "access": "public"
   },
   {
     "path": "/sheets",
     "page": "SheetsPage",
+    "title": "Sheets",
     "access": "protected"
   },
   {
     "path": "/sheet",
     "page": "SheetEditorPage",
+    "title": "Sheet",
+    "access": "protected"
+  },
+  {
+    "path": "/packages",
+    "page": "PackagesPage",
+    "title": "Packages",
+    "access": "protected"
+  },
+  {
+    "path": "/packages/new",
+    "page": "PackageFormPage",
+    "title": "Create Package",
+    "access": "protected"
+  },
+  {
+    "path": "/package-edit",
+    "page": "PackageFormPage",
+    "title": "Edit Package",
+    "access": "protected"
+  },
+  {
+    "path": "/taxes",
+    "page": "TaxesPage",
+    "title": "Taxes",
     "access": "protected"
   }
 ]

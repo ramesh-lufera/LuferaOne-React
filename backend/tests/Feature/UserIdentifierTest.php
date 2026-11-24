@@ -41,10 +41,11 @@ class UserIdentifierTest extends TestCase
     public function test_signup_admin_creation_and_profile_expose_read_only_identifier(): void
     {
         $signup = ['name' => 'Signup User', 'email' => 'signup@example.test', 'phone' => '+91 9876543210', 'username' => 'signup.user', 'password' => 'Strong-Password-123!', 'terms' => true];
-        $response = $this->postJson('/api/register', $signup)->assertCreated();
-        $code = $response->json('user.user_code');
-        $this->assertMatchesRegularExpression('/^[A-Z]{3}[0-9]{3}$/', $code);
+        $this->postJson('/api/register', $signup)->assertAccepted();
+        $this->postJson($this->verificationPath())->assertOk();
         $user = User::where('email', $signup['email'])->firstOrFail();
+        $code = $user->user_code;
+        $this->assertMatchesRegularExpression('/^[A-Z]{3}[0-9]{3}$/', $code);
         $this->actingAs($user, 'sanctum');
         $this->getJson('/api/profile')->assertOk()->assertJsonPath('user.user_code', $code);
         $this->putJson('/api/profile', ['name' => $user->name, 'email' => $user->email, 'username' => $user->username, 'user_code' => 'NEW123'])->assertUnprocessable()->assertJsonValidationErrors('user_code');

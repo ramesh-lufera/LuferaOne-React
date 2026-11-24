@@ -3,9 +3,12 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Services\SignInCredentials;
 use Dotenv\Dotenv;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class CredentialsTest extends TestCase
@@ -44,10 +47,8 @@ class CredentialsTest extends TestCase
     private function payload(): array
     {
         return [
-            'googleClientId' => 'new-client.apps.googleusercontent.com',
-            'googleClientSecret' => 'new-google-secret',
-            'facebookAppId' => '123456789',
-            'facebookAppSecret' => 'new-facebook-secret',
+            'emailUsername' => 'mail@example.test',
+            'gmailAppPassword' => 'new-app-password',
         ];
     }
 
@@ -64,24 +65,30 @@ class CredentialsTest extends TestCase
         $this->assertSame($before, file_get_contents($this->environmentPath));
     }
 
-    public function test_page_loads_current_credentials_and_save_persists_sign_in_settings(): void
+    public function test_credentials_page_saves_and_reloads_only_the_updated_email_credentials(): void
     {
         $this->actingAs(User::factory()->create(['role' => 'admin']), 'sanctum');
         $this->getJson('/api/credentials')->assertOk()->assertJsonPath('credentials.googleClientId', 'old-client');
         Artisan::partialMock()->shouldReceive('call')->once()->with('config:clear')->andReturn(0);
-        $payload = [...$this->payload(), 'emailUsername' => 'ignored@example.test'];
-        $this->putJson('/api/credentials', $payload)->assertOk()->assertJsonPath('credentials', $this->payload());
+        $payload = [...$this->payload(), 'emailSenderName' => 'LuferaOne Accounts', 'googleClientId' => 'ignored', 'facebookAppSecret' => 'ignored'];
+        $this->putJson('/api/credentials', $payload)->assertOk()
+            ->assertJsonPath('credentials.emailUsername', $payload['emailUsername'])
+            ->assertJsonPath('credentials.gmailAppPassword', $payload['gmailAppPassword']);
         $stored = Dotenv::parse(file_get_contents($this->environmentPath));
         $this->assertSame('Original', $stored['APP_NAME']);
-        $this->assertSame($payload['googleClientId'], $stored['GOOGLE_CLIENT_ID']);
-        $this->assertSame($payload['googleClientSecret'], $stored['GOOGLE_CLIENT_SECRET']);
-        $this->assertSame($payload['facebookAppId'], $stored['FACEBOOK_APP_ID']);
-        $this->assertSame($payload['facebookAppSecret'], $stored['FACEBOOK_APP_SECRET']);
-        $this->assertArrayNotHasKey('emailUsername', $stored);
-        $this->getJson('/api/credentials')->assertOk()->assertJsonPath('credentials', $this->payload());
-        $this->getJson('/api/auth/settings')->assertOk()->assertJsonPath('googleClientId', $payload['googleClientId'])->assertJsonPath('facebookAppId', $payload['facebookAppId']);
-        $this->assertSame($payload['googleClientSecret'], config('services.google.client_secret'));
-        $this->assertSame($payload['facebookAppSecret'], config('services.facebook.app_secret'));
+        $this->assertSame('old-client', $stored['GOOGLE_CLIENT_ID']);
+        $this->assertSame('old-secret', $stored['GOOGLE_CLIENT_SECRET']);
+        $this->assertSame('old-app', $stored['FACEBOOK_APP_ID']);
+        $this->assertSame('old-facebook-secret', $stored['FACEBOOK_APP_SECRET']);
+        $this->assertSame($payload['emailUsername'], $stored['MAIL_USERNAME']);
+        $this->assertSame($payload['gmailAppPassword'], $stored['MAIL_PASSWORD']);
+        $this->assertSame('LuferaOne Accounts', $stored['MAIL_FROM_NAME']);
+        $this->getJson('/api/credentials')->assertOk()
+            ->assertJsonPath('credentials.emailSenderName', 'LuferaOne Accounts')
+            ->assertJsonPath('credentials.emailUsername', $payload['emailUsername'])
+            ->assertJsonPath('credentials.gmailAppPassword', $payload['gmailAppPassword']);
+        $this->getJson('/api/auth/settings')->assertOk()->assertJsonPath('googleClientId', 'old-client')->assertJsonPath('facebookAppId', 'old-app');
+        $this->assertSame($payload['gmailAppPassword'], config('mail.mailers.smtp.password'));
     }
 
     public function test_public_settings_expose_only_ids_and_version(): void
@@ -89,6 +96,21 @@ class CredentialsTest extends TestCase
         $response = $this->getJson('/api/auth/settings')->assertOk();
         $this->assertEqualsCanonicalizing(['googleClientId', 'facebookAppId', 'facebookGraphVersion'], array_keys($response->json()));
         $response->assertHeader('Cache-Control', 'no-store, private');
+    }
+
+    public function test_credentials_page_accepts_a_logo_with_its_multipart_save(): void
+    {
+        $disk = Storage::fake('local');
+        $this->actingAs(User::factory()->create(['role' => 'admin']), 'sanctum');
+        Artisan::partialMock()->shouldReceive('call')->once()->with('config:clear')->andReturn(0);
+        $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aQ1sAAAAASUVORK5CYII=');
+        $logo = UploadedFile::fake()->createWithContent('logo.png', $png);
+
+        $this->post('/api/credentials', [...$this->payload(), '_method' => 'PUT', 'emailLogo' => $logo], ['Accept' => 'application/json'])
+            ->assertOk()->assertJsonPath('credentials.hasEmailLogo', true);
+        $this->assertSame($logo->getContent(), $disk->get(SignInCredentials::EMAIL_LOGO_PATH));
+        $this->getJson('/api/credentials')->assertOk()
+            ->assertJsonPath('credentials.emailLogoPreview', 'data:image/png;base64,'.base64_encode($png));
     }
 
     public function test_file_configuration_changes_and_form_resets_do_not_generate_database_activity(): void
@@ -111,8 +133,10 @@ class CredentialsTest extends TestCase
         $this->actingAs(User::factory()->create(['role' => 'admin']), 'sanctum');
         $before = file_get_contents($this->environmentPath);
         $this->putJson('/api/credentials', [])->assertUnprocessable();
-        $this->putJson('/api/credentials', [...$this->payload(), 'googleClientSecret' => "secret\nAPP_DEBUG=true"])
-            ->assertUnprocessable()->assertJsonValidationErrors('googleClientSecret');
+        $this->putJson('/api/credentials', [...$this->payload(), 'gmailAppPassword' => "secret\nAPP_DEBUG=true"])
+            ->assertUnprocessable()->assertJsonValidationErrors('gmailAppPassword');
+        $this->putJson('/api/credentials', [...$this->payload(), 'emailUsername' => 'invalid'])
+            ->assertUnprocessable()->assertJsonValidationErrors('emailUsername');
         $this->assertSame($before, file_get_contents($this->environmentPath));
     }
 
@@ -120,9 +144,9 @@ class CredentialsTest extends TestCase
     {
         $this->actingAs(User::factory()->create(['role' => 'admin']), 'sanctum');
         Artisan::partialMock()->shouldReceive('call')->once()->with('config:clear')->andReturn(0);
-        $payload = [...$this->payload(), 'googleClientSecret' => 'secret$APP_NAME"\\#value'];
+        $payload = [...$this->payload(), 'gmailAppPassword' => 'secret$APP_NAME"\\#value'];
         $this->putJson('/api/credentials', $payload)->assertOk();
         $stored = Dotenv::parse(file_get_contents($this->environmentPath));
-        $this->assertSame($payload['googleClientSecret'], $stored['GOOGLE_CLIENT_SECRET']);
+        $this->assertSame($payload['gmailAppPassword'], $stored['MAIL_PASSWORD']);
     }
 }

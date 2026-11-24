@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Icon } from '@iconify/react/dist/iconify.js';
 import { Modal } from 'react-bootstrap';
 import { api } from '../services/api';
-import { sidebarPermissionModules } from '../helper/sidebarPermissions';
 import './RoleAccessLayer.css';
 import ModuleTable, {
   ModuleTablePagination,
@@ -11,6 +10,7 @@ import ModuleTable, {
 import ModuleTableCell from './ModuleTableCell';
 
 const emptyRole = { name: '', description: '', active: true, modules: [] };
+const categoryKey = (id) => `category:${id}`;
 
 const roleColumns = [
   { label: 'S.L', width: 64 },
@@ -24,7 +24,8 @@ const roleColumns = [
 export default function RoleAccessLayer() {
   const [roles, setRoles] = useState([]);
   const [modules, setModules] = useState({});
-  const selectableModules = sidebarPermissionModules(modules);
+  const [categories, setCategories] = useState([]);
+  const categoryNames = new Map(categories.map(({ id, name }) => [categoryKey(id), name]));
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [limit, setLimit] = useState(10);
@@ -42,9 +43,10 @@ export default function RoleAccessLayer() {
     setLoading(true);
     setError('');
     try {
-      const data = await api('/roles');
+      const data = await api('/roles?include_categories=1');
       setRoles(data.roles);
       setModules(data.modules);
+      setCategories(data.categories);
     } catch (error) {
       setError(error.message);
     } finally {
@@ -76,7 +78,7 @@ export default function RoleAccessLayer() {
           name: draft.name,
           description: draft.description,
           active: draft.active,
-          modules: draft.modules,
+          modules: draft.modules.filter((key) => !key.startsWith('category:') || categoryNames.has(key)),
         }),
       });
       setDraft(null);
@@ -213,7 +215,7 @@ export default function RoleAccessLayer() {
                       {role.modules.includes('*')
                         ? 'All modules'
                         : role.modules
-                            .map((key) => modules[key]?.label || key)
+                            .map((key) => categoryNames.get(key) || modules[key]?.label || key)
                             .join(', ') || 'No modules'}
                     </ModuleTableCell>
                   </td>
@@ -377,53 +379,47 @@ export default function RoleAccessLayer() {
                     </fieldset>
                   </div>
                 ) : (
-                  <fieldset>
-                    <legend className="visually-hidden">
-                      Assigned Modules
-                    </legend>
-                    <label className="role-wizard-choice role-wizard-select-all">
-                      <input
-                        type="checkbox"
-                        checked={
-                          Object.keys(selectableModules).length > 0 &&
-                          Object.keys(selectableModules).every((key) =>
-                            draft.modules.includes(key),
-                          )
-                        }
-                        onChange={(event) =>
-                          setDraft({
+                  loading ? <p role="status" className="mb-0">Loading categories…</p>
+                    : error ? <p className="mb-0">Categories unavailable.</p>
+                    : categories.length > 0 ? (
+                    <fieldset>
+                      <legend className="visually-hidden">Category permissions</legend>
+                      <label className="role-wizard-choice role-wizard-select-all">
+                        <input
+                          type="checkbox"
+                          checked={categories.every(({ id }) => draft.modules.includes(categoryKey(id)))}
+                          onChange={(event) => setDraft({
                             ...draft,
                             modules: [
-                              ...draft.modules.filter((key) => !Object.hasOwn(selectableModules, key)),
-                              ...(event.target.checked ? Object.keys(selectableModules) : []),
+                              ...draft.modules.filter((key) => !categoryNames.has(key)),
+                              ...(event.target.checked ? categoryNames.keys() : []),
                             ],
-                          })
-                        }
-                      />
-                      Select all modules
-                    </label>
-                    <div className="role-wizard-modules">
-                      {Object.entries(selectableModules).map(([key, module]) => (
-                        <label key={key} className="role-wizard-choice">
-                          <input
-                            type="checkbox"
-                            checked={draft.modules.includes(key)}
-                            onChange={(event) =>
-                              setDraft({
-                                ...draft,
-                                modules: event.target.checked
-                                  ? [...draft.modules, key]
-                                  : draft.modules.filter(
-                                      (value) => value !== key,
-                                    ),
-                              })
-                            }
-                          />
-                          {module.label}
-                        </label>
-                      ))}
-                    </div>
-                  </fieldset>
+                          })}
+                        />
+                        Select All Modules
+                      </label>
+                      <div className="role-wizard-categories">
+                        {categories.map(({ id, name }) => {
+                          const key = categoryKey(id);
+                          return (
+                            <label key={key} className="role-wizard-choice">
+                              <input
+                                type="checkbox"
+                                checked={draft.modules.includes(key)}
+                                onChange={(event) => setDraft({
+                                  ...draft,
+                                  modules: event.target.checked
+                                    ? [...draft.modules, key]
+                                    : draft.modules.filter((value) => value !== key),
+                                })}
+                              />
+                              {name}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </fieldset>
+                  ) : <p className="mb-0">No categories found.</p>
                 )}
               </fieldset>
             )}
@@ -453,7 +449,7 @@ export default function RoleAccessLayer() {
               key={step}
               type="submit"
               className={`btn role-wizard-submit ${draft?.id && step === 2 ? 'role-wizard-update' : ''}`}
-              disabled={saving}
+              disabled={saving || (step === 2 && (loading || Boolean(error)))}
             >
               {saving
                 ? 'Saving...'

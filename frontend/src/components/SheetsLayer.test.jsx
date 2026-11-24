@@ -46,7 +46,7 @@ test('opens a name-only popup, creates a sheet and reloads the table', async () 
   api.mockResolvedValueOnce(empty).mockResolvedValueOnce({ sheet: loaded.data[0], message: 'Sheet created successfully.' }).mockResolvedValueOnce(loaded);
   render(<MemoryRouter><SheetsLayer /></MemoryRouter>);
   await screen.findByText('No sheets found.');
-  fireEvent.click(screen.getByRole('button', { name: 'Create Sheet' }));
+  fireEvent.click(screen.getByRole('button', { name: '+ Create New Sheet' }));
   const dialog = within(screen.getByRole('dialog'));
   expect(dialog.getAllByRole('textbox')).toHaveLength(1);
   fireEvent.change(dialog.getByLabelText(/Sheet Name/), { target: { value: ' Sales ' } });
@@ -62,7 +62,7 @@ test('failed creation preserves the typed name and cancel does not create record
   api.mockResolvedValueOnce(empty).mockRejectedValueOnce(Object.assign(new Error('Invalid name'), { errors: { name: ['Name is invalid.'] } }));
   render(<MemoryRouter><SheetsLayer /></MemoryRouter>);
   await screen.findByText('No sheets found.');
-  fireEvent.click(screen.getByRole('button', { name: 'Create Sheet' }));
+  fireEvent.click(screen.getByRole('button', { name: '+ Create New Sheet' }));
   const dialog = within(screen.getByRole('dialog'));
   fireEvent.change(dialog.getByLabelText(/Sheet Name/), { target: { value: 'Sales' } });
   fireEvent.click(dialog.getByRole('button', { name: 'Create', exact: true }));

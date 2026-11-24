@@ -6,9 +6,10 @@ import ApplicationRoutes from './components/ApplicationRoutes';
 
 export default function App() {
   return <BrowserRouter>
-    <CompanyFavicon />
     <SavedModuleTheme />
     <RouteScrollToTop />
-    <ApplicationRoutes />
+    <CompanyFavicon>
+      <ApplicationRoutes />
+    </CompanyFavicon>
   </BrowserRouter>;
 }

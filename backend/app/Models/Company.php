@@ -10,7 +10,7 @@ class Company extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['full_name', 'email', 'phone_country_code', 'phone_number', 'website', 'country', 'city', 'state', 'zip_code', 'address', 'gstin'];
+    protected $fillable = ['full_name', 'email', 'phone_country_code', 'phone_number', 'website', 'site_title', 'country', 'city', 'state', 'zip_code', 'address', 'gstin'];
 
     public function creator(): BelongsTo
     {

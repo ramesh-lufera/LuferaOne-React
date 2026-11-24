@@ -33,7 +33,8 @@ class ActivityLogTest extends TestCase
 
     public function test_authentication_activities_use_server_identity_and_no_secrets(): void
     {
-        $this->postJson('/api/register', $this->registration() + ['role' => 'admin', 'user_id' => 999, 'occurred_at' => '2000-01-01'])->assertCreated();
+        $this->postJson('/api/register', $this->registration() + ['role' => 'admin', 'user_id' => 999, 'occurred_at' => '2000-01-01'])->assertAccepted();
+        $this->postJson($this->verificationPath())->assertOk();
         $user = User::where('email', 'actor@example.test')->firstOrFail();
         $this->assertSame('user', $user->role);
         $this->assertDatabaseHas('activity_logs', ['action' => 'Sign Up', 'user_id' => $user->id, 'user_name' => 'Actual Actor']);
@@ -89,7 +90,8 @@ class ActivityLogTest extends TestCase
 
     public function test_page_names_are_used_for_new_and_legacy_authentication_events(): void
     {
-        $this->postJson('/api/register', $this->registration())->assertCreated();
+        $this->postJson('/api/register', $this->registration())->assertAccepted();
+        $this->postJson($this->verificationPath())->assertOk();
         $this->assertDatabaseHas('activity_logs', ['action' => 'Sign Up', 'module' => 'Sign Up']);
         $actor = $this->admin();
         $legacy = app(ActivityLogger::class)->record($actor, 'Sign In', 'Authentication', '2');
@@ -206,7 +208,8 @@ class ActivityLogTest extends TestCase
     public function test_storage_failure_rolls_back_registration(): void
     {
         Schema::drop('activity_logs');
-        $this->postJson('/api/register', $this->registration())->assertServerError();
+        $this->postJson('/api/register', $this->registration())->assertAccepted();
+        $this->postJson($this->verificationPath())->assertServerError();
         $this->assertDatabaseMissing('users', ['email' => 'actor@example.test']);
     }
 

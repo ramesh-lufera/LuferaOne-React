@@ -3,8 +3,13 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Services\SignInCredentials;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Mail\Transport\ArrayTransport;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class RegistrationTest extends TestCase
@@ -26,12 +31,32 @@ class RegistrationTest extends TestCase
     public function test_registration_creates_user_and_hashes_password(): void
     {
         $response = $this->postJson('/api/register', $this->payload() + ['role' => 'admin', 'email_verified_at' => now()]);
-        $response->assertCreated()->assertJsonPath('user.email', 'register@example.test')->assertJsonMissingPath('user.password');
+        $response->assertAccepted()->assertJsonMissingPath('user');
+        $this->assertDatabaseCount('users', 0);
+        $response->assertJsonPath('message', 'Check your email to verify your account.');
+        $messages = Mail::mailer('array')->getSymfonyTransport()->messages();
+        $this->assertCount(1, $messages);
+        $email = $messages->first()->getOriginalMessage();
+        $this->assertSame('register@example.test', $email->getTo()[0]->getAddress());
+        $this->assertSame('Verify your email address for LuferaOne', $email->getSubject());
+        $this->assertStringContainsString('Verify your email address', $email->getTextBody());
+        $this->assertStringContainsString('/signup/verify#verify=', $email->getTextBody());
+        $this->get('/signup/verify')->assertOk()->assertSee('Verifying your email');
+        $verificationPath = $this->verificationPath();
+        $statusPath = $response->json('statusPath');
+        $this->getJson($statusPath)->assertOk()->assertExactJson(['verified' => false]);
+        $this->getJson($statusPath.'&changed=1')->assertForbidden();
+        $this->getJson($verificationPath)->assertMethodNotAllowed();
+        $this->assertDatabaseCount('users', 0);
+        $this->postJson($verificationPath)->assertOk()->assertJsonPath('message', 'Registration successful!');
+        $this->getJson($statusPath)->assertOk()->assertExactJson(['verified' => true]);
+        $this->postJson($verificationPath)->assertOk();
+        $this->assertDatabaseCount('users', 1);
         $user = User::where('email', 'register@example.test')->firstOrFail();
         $this->assertTrue(Hash::check('secure-password-123', $user->password));
         $this->assertNotSame('secure-password-123', $user->password);
         $this->assertNotNull($user->terms_accepted_at);
-        $this->assertNull($user->email_verified_at);
+        $this->assertNotNull($user->email_verified_at);
         $this->assertSame('+91 98765 43210', $user->phone);
         $this->assertSame('test.person', $user->username);
         $this->assertGuest();
@@ -41,6 +66,56 @@ class RegistrationTest extends TestCase
     {
         $this->postJson('/api/register', [])->assertUnprocessable()->assertJsonValidationErrors(['name', 'email', 'phone', 'username', 'password', 'terms']);
         $this->assertDatabaseCount('users', 0);
+        $this->assertCount(0, Mail::mailer('array')->getSymfonyTransport()->messages());
+    }
+
+    public function test_registration_uses_saved_gmail_credentials_when_the_default_mailer_logs(): void
+    {
+        $this->travelTo(now()->setYear(2031));
+        DB::table('theme_color_settings')->updateOrInsert(['id' => 1], [
+            'palette_id' => 'custom',
+            'color' => '#345678',
+            'focus' => '#234567',
+            'text' => '#fafafa',
+        ]);
+        $disk = Storage::fake('local');
+        $disk->put(SignInCredentials::EMAIL_LOGO_PATH, base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aQ1sAAAAASUVORK5CYII='));
+        config([
+            'mail.default' => 'log',
+            'mail.mailers.smtp.username' => 'sender@example.test',
+            'mail.mailers.smtp.password' => 'abcd efgh ijkl mnop',
+            'mail.from.name' => 'LuferaOne Accounts',
+        ]);
+        $transport = new ArrayTransport;
+        Mail::extend('smtp', function (array $settings) use ($transport): ArrayTransport {
+            $this->assertSame('smtp.gmail.com', $settings['host']);
+            $this->assertSame('smtps', $settings['scheme']);
+            $this->assertSame(465, $settings['port']);
+            $this->assertSame('sender@example.test', $settings['username']);
+            $this->assertSame('abcdefghijklmnop', $settings['password']);
+
+            return $transport;
+        });
+
+        $this->postJson('/api/register', $this->payload())->assertAccepted();
+
+        $this->assertCount(1, $transport->messages());
+        $email = $transport->messages()->first()->getOriginalMessage();
+        $this->assertSame('sender@example.test', $email->getFrom()[0]->getAddress());
+        $this->assertSame('LuferaOne Accounts', $email->getFrom()[0]->getName());
+        $this->assertSame('register@example.test', $email->getTo()[0]->getAddress());
+        $this->assertStringContainsString('Hello <strong>test.person</strong>', $email->getHtmlBody());
+        $this->assertStringContainsString('&copy; 2031 Lufera Infotech.', $email->getHtmlBody());
+        $this->assertStringContainsString('cid:', $email->getHtmlBody());
+        $this->assertStringContainsString('bgcolor="#345678" style="background-color:#345678;', $email->getHtmlBody());
+        $this->assertStringContainsString('color:#fafafa;font-size:15px;font-weight:bold;text-decoration:none;">Verify Email', $email->getHtmlBody());
+        $this->assertSame('image/png', $email->getAttachments()[0]->getMediaType().'/'.$email->getAttachments()[0]->getMediaSubtype());
+
+        $verificationPath = $this->verificationPath($email->getTextBody());
+        $this->postJson($verificationPath.'&changed=1')->assertForbidden();
+        $this->assertDatabaseCount('users', 0);
+        $this->postJson($verificationPath)->assertOk();
+        $this->assertNotNull(User::where('email', 'register@example.test')->firstOrFail()->email_verified_at);
     }
 
     public function test_invalid_values_are_rejected(): void
@@ -62,7 +137,8 @@ class RegistrationTest extends TestCase
     {
         $this->postJson('/api/register', array_replace($this->payload(), [
             'email' => ' REGISTER@EXAMPLE.TEST ', 'username' => ' TEST.PERSON ',
-        ]))->assertCreated();
+        ]))->assertAccepted();
+        $this->postJson($this->verificationPath())->assertOk();
         $this->assertDatabaseHas('users', ['email' => 'register@example.test', 'username' => 'test.person']);
     }
 
@@ -80,6 +156,20 @@ class RegistrationTest extends TestCase
             $this->postJson('/api/register', [])->assertUnprocessable();
         }
         $this->postJson('/api/register', [])->assertStatus(429);
+    }
+
+    public function test_signup_rate_limit_does_not_block_email_verification(): void
+    {
+        $this->postJson('/api/register', $this->payload())->assertAccepted();
+        $verificationPath = $this->verificationPath();
+        for ($attempt = 0; $attempt < 4; $attempt++) {
+            $this->postJson('/api/register', [])->assertUnprocessable();
+        }
+        $this->postJson('/api/register', [])->assertStatus(429);
+
+        $this->postJson($verificationPath)->assertOk();
+        $this->postJson($verificationPath)->assertOk();
+        $this->assertDatabaseCount('users', 1);
     }
 
     public function test_cors_allows_configured_frontend_and_rejects_other_origins(): void
