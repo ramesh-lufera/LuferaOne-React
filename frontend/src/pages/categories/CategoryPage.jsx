@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { Link, Navigate, useLocation, useParams } from 'react-router-dom';
 import { apiUrl } from '../../helper/auth';
+import usePageTabTitle from '../../helper/usePageTabTitle';
 import MasterLayout from '../../masterLayout/MasterLayout';
 import { api } from '../../services/api';
 import './CategoryPage.css';
@@ -17,7 +18,8 @@ export function CategoryDetails({ external = false, children }) {
   const [result, setResult] = useState(null);
   const [attempt, setAttempt] = useState(0);
   const [showApi, setShowApi] = useState(false);
-  const title = result?.filename === filename ? result.category?.name : null;
+  const categoryName = result?.filename === filename && result.attempt === attempt ? result.category?.name : null;
+  usePageTabTitle(categoryName);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -30,13 +32,6 @@ export function CategoryDetails({ external = false, children }) {
       });
     return () => controller.abort();
   }, [external, filename, attempt]);
-
-  useEffect(() => {
-    if (!title) return;
-    const previousTitle = document.title;
-    document.title = title;
-    return () => { document.title = previousTitle; };
-  }, [title]);
 
   if (result?.filename !== filename || result.attempt !== attempt) {
     return <div className="category-detail"><p role="status">Loading category…</p></div>;

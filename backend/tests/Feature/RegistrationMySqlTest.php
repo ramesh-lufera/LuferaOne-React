@@ -18,7 +18,8 @@ class RegistrationMySqlTest extends TestCase
         try {
             $suffix = bin2hex(random_bytes(8));
             $payload = ['name' => 'Registration Integration Test', 'email' => "registration-{$suffix}@example.test", 'phone' => '+91 98765 43210', 'username' => "test-{$suffix}", 'password' => 'secure-password-123', 'terms' => true];
-            $this->postJson('/api/register', $payload)->assertCreated()->assertJsonMissingPath('user.password');
+            $this->postJson('/api/register', $payload)->assertAccepted()->assertJsonMissingPath('user');
+            $this->postJson($this->verificationPath())->assertOk();
             $user = User::where('email', $payload['email'])->firstOrFail();
             $this->assertTrue(Hash::check($payload['password'], $user->password));
             $this->assertSame($payload['phone'], $user->phone);

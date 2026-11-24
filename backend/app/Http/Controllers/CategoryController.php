@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\SaveCategoryRequest;
 use App\Services\CategoryPageSlug;
+use App\Services\RoleAccess;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
@@ -42,9 +43,22 @@ class CategoryController extends Controller
         return response()->json($categories);
     }
 
-    public function show(string $category): JsonResponse
+    public function sidebar(Request $request, RoleAccess $access): JsonResponse
+    {
+        $user = $request->user();
+        $categories = DB::table('categories')
+            ->when(! in_array($user->role, ['super_admin', 'admin'], true), fn (Builder $query) => $query->whereIn('id', $access->selectedCategoryIds($user)))
+            ->orderByDesc('id')->get(['id', 'name', 'page_slug'])
+            ->map(fn (object $category): array => ['id' => $category->id, 'name' => $category->name, 'page_path' => $this->pagePath($category)]);
+
+        return response()->json(['categories' => $categories])->header('Cache-Control', 'private, no-store');
+    }
+
+    public function show(Request $request, RoleAccess $access, string $category): JsonResponse
     {
         $record = DB::table('categories')->where('page_slug', $category)->first();
+        $user = $request->user();
+        abort_unless($access->allows($user, 'categories') || ($record && $access->allows($user, 'category:'.$record->id)), 403, 'You do not have access to this category.');
         abort_unless($record, 404);
         $data = (array) $record;
         unset($data['featured_image_path']);
@@ -108,6 +122,9 @@ class CategoryController extends Controller
     {
         $record = DB::table('categories')->lockForUpdate()->find($category);
         abort_unless($record, 404);
+        if (DB::table('packages')->where('category_id', $record->id)->exists()) {
+            throw ValidationException::withMessages(['category' => 'This category has packages and cannot be deleted.']);
+        }
         DB::table('categories')->where('id', $record->id)->delete();
         $request->attributes->set('activity_entity_id', $record->id);
 

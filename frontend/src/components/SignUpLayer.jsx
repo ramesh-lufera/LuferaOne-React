@@ -2,9 +2,9 @@ import useCompanyBranding from '../helper/useCompanyBranding';
 import AuthBrandingImage from './AuthBrandingImage';
 import FacebookSignIn from "./FacebookSignIn";
 import GoogleSignIn from "./GoogleSignIn";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import "./SignUpLayer.css";
 
 const initialValues = { name: "", email: "", phone: "", username: "", password: "", terms: false };
@@ -22,10 +22,102 @@ const SignUpLayer = () => {
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState("");
   const [success, setSuccess] = useState(false);
+  const [statusPath, setStatusPath] = useState(null);
+  const { hash, pathname, search } = useLocation();
+  const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const submissionLock = useRef(false);
+  const verificationLock = useRef(false);
   const logoUrl = import.meta.env.VITE_SIGNUP_LOGO_URL;
+  const baseUrl = import.meta.env.VITE_API_URL?.replace(/\/+$/, "");
+
+  useEffect(() => {
+    if (!baseUrl || !/^\/api\/register\/status\/[a-f0-9-]{36}\?/.test(statusPath ?? "")) return;
+    const controller = new AbortController();
+    let checking = false;
+
+    async function checkStatus() {
+      if (checking || document.hidden || controller.signal.aborted) return;
+      checking = true;
+      try {
+        const response = await fetch(`${baseUrl}${statusPath.slice(4)}`, {
+          cache: "no-store",
+          headers: { Accept: "application/json" },
+          signal: controller.signal,
+        });
+        if (controller.signal.aborted) return;
+        if (response.status === 403 || response.status === 410) {
+          setStatusPath(null);
+          setSuccess(false);
+          setMessage("This verification link has expired. Please sign up again.");
+        } else if (response.ok) {
+          const { verified } = await response.json();
+          if (!controller.signal.aborted && verified) {
+            setStatusPath(null);
+            setSuccess(true);
+            setMessage("Registration successful!");
+          }
+        }
+      } catch {
+        // A temporary connection failure is retried on the next check.
+      } finally {
+        checking = false;
+      }
+    }
+
+    const interval = window.setInterval(checkStatus, 4000);
+    document.addEventListener("visibilitychange", checkStatus);
+    window.addEventListener("focus", checkStatus);
+    return () => {
+      controller.abort();
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", checkStatus);
+      window.removeEventListener("focus", checkStatus);
+    };
+  }, [baseUrl, statusPath]);
+
+  useEffect(() => {
+    const path = new URLSearchParams(hash.slice(1)).get("verify");
+    if (!path || verificationLock.current) return;
+    verificationLock.current = true;
+    submissionLock.current = true;
+    setSubmitting(true);
+    async function verifyEmail() {
+      try {
+        if (!baseUrl || !/^\/api\/register\/verify\/[a-f0-9-]{36}\?/.test(path)) {
+          throw new Error("This verification link is invalid.");
+        }
+        const response = await fetch(`${baseUrl}${path.slice(4)}`, {
+          method: "POST",
+          headers: { Accept: "application/json" },
+        });
+        if (!response.ok) {
+          const messages = {
+            403: "This verification link is invalid or has expired. Please sign up again.",
+            404: "The verification service is unavailable. Please try the same email link again later.",
+            405: "The verification service is unavailable. Please try the same email link again later.",
+            409: "An account already exists with this email address or username.",
+            410: "This verification link has expired. Please sign up again.",
+            429: "Too many verification attempts. Wait a minute, then open the same email link again.",
+          };
+          const message = messages[response.status] || "Unable to verify your email right now. Please try the same email link again later.";
+          throw new Error(message);
+        }
+        setSuccess(true);
+        setMessage("Registration successful!");
+        navigate({ pathname, search }, { replace: true });
+      } catch (error) {
+        setSuccess(false);
+        setMessage(error instanceof TypeError ? "Unable to connect to the verification service. Check your connection and open the same email link again." : error.message);
+      } finally {
+        setSubmitting(false);
+        submissionLock.current = false;
+        verificationLock.current = false;
+      }
+    }
+    void verifyEmail();
+  }, [baseUrl, hash, navigate, pathname, search]);
 
   function changeField(event) {
     const { name, value, checked, type } = event.target;
@@ -57,12 +149,12 @@ const SignUpLayer = () => {
     if (!/^\+?[0-9 ()-]+$/.test(normalized.phone) || phoneDigits.length < 7 || phoneDigits.length > 15) validation.phone = ["Enter a phone number with 7 to 15 digits."];
     if (!/^[a-z0-9_.-]{3,50}$/.test(normalized.username)) validation.username = ["Use 3–50 letters, numbers, dots, hyphens, or underscores."];
     if (Object.keys(validation).length) { setErrors(validation); return; }
+    setStatusPath(null);
     submissionLock.current = true;
     setSubmitting(true);
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 20000);
     try {
-      const baseUrl = import.meta.env.VITE_API_URL?.replace(/\/+$/, "");
       if (!baseUrl) throw new Error("Registration is unavailable. The API URL has not been configured.");
       const response = await fetch(`${baseUrl}/register`, {
         method: "POST",
@@ -76,13 +168,15 @@ const SignUpLayer = () => {
         setMessage("Please correct the highlighted fields.");
         return;
       }
+      if (response.status === 503) throw new Error("Unable to send the sign-up email. Please try again later.");
       if (!response.ok) throw new Error(response.status === 429 ? "Too many registration attempts. Please try again in a minute." : "Registration is temporarily unavailable. Please try again.");
       setSuccess(true);
-      setMessage(data.message || "Account created successfully. Please sign in.");
+      setMessage("Check your email to verify your account.");
+      setStatusPath(data.statusPath ?? null);
       setValues(initialValues);
       setShowPassword(false);
     } catch (error) {
-      setMessage(error.name === "AbortError" ? "The request timed out. Please try again. If your account was created, you can sign in." : error instanceof TypeError ? "Unable to connect. Check your connection and try again." : error.message);
+      setMessage(error.name === "AbortError" ? "The request timed out. Check your email for a verification link or try again." : error instanceof TypeError ? "Unable to connect. Check your connection and try again." : error.message);
     } finally {
       clearTimeout(timeout);
       submissionLock.current = false;
@@ -103,7 +197,7 @@ const SignUpLayer = () => {
           <h4 className="mb-12">Sign Up</h4>
           <p className="mb-32 text-secondary-light text-lg">Welcome back! Enter your details</p>
           <form onSubmit={submit} aria-busy={submitting}>
-            {message && <div className={`alert ${success ? "alert-success" : "alert-danger"}`} role={success ? "status" : "alert"}>{message}{success && <> <Link to="/sign-in">Sign In</Link></>}</div>}
+            {message && <div className={`alert ${success ? "alert-success" : "alert-danger"}`} role={success ? "status" : "alert"}>{message}</div>}
             <fieldset disabled={submitting} className="signup-fields">
               {fields.map((field) => (
                 <div className="mb-16" key={field.name}>

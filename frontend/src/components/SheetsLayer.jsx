@@ -80,7 +80,7 @@ export default function SheetsLayer() {
     {error && <div className="alert alert-danger" role="alert">{error} <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => setAttempt((value) => value + 1)}>Try again</button></div>}
     <div className="card h-100 p-0 radius-12">
       <ModuleTableToolbar id="sheet-limit" limit={limit} onLimitChange={(value) => { setLimit(value); setPage(1); }} search={search} searchLabel="Search sheets" onSearchChange={setSearch}
-        actions={<button type="button" className="btn btn-primary radius-8" onClick={() => { setEditing(null); setName(''); setFormError(''); setNotice(''); setShow(true); }}>Create Sheet</button>} />
+        actions={<button type="button" className="btn btn-primary radius-8" onClick={() => { setEditing(null); setName(''); setFormError(''); setNotice(''); setShow(true); }}>+ Create New Sheet</button>} />
       <div className="card-body p-24">
         <div className="sheet-view-toggle mb-24" role="group" aria-label="Sheet view">
           <button type="button" aria-pressed={view === 'cards'} onClick={() => setView('cards')} className={view === 'cards' ? 'btn btn-primary' : 'btn btn-outline-secondary'}>▦ Cards</button>

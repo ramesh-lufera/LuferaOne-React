@@ -21,4 +21,17 @@ class RoleAccess
 
         return in_array('*', $modules, true) || in_array($module, $modules, true);
     }
+
+    /** @return list<string> */
+    public function selectedCategoryIds(User $user): array
+    {
+        $ids = [];
+        foreach ($this->modules($user) as $module) {
+            if (preg_match('/^category:([1-9][0-9]*)$/D', $module, $matches)) {
+                $ids[] = $matches[1];
+            }
+        }
+
+        return $ids;
+    }
 }

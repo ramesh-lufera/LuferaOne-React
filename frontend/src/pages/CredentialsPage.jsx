@@ -23,7 +23,8 @@ const sections = [
     title: 'Email',
     fields: [
       { name: 'emailUsername', label: 'Username/Email', value: '', type: 'email' },
-      { name: 'gmailAppPassword', label: 'Gmail App Password', value: '' },
+      { name: 'gmailAppPassword', label: 'Gmail App Password', value: '', type: 'password' },
+      { name: 'emailSenderName', label: 'Sender Name', value: '', maxLength: 100 },
       { name: 'emailCommonLink', label: 'Email Common Link', value: '', type: 'url' },
       { name: 'emailImageLink', label: 'Email Image Link', value: '', type: 'url' },
     ],
@@ -39,7 +40,7 @@ const sections = [
 const initialValues = Object.fromEntries(
   sections.flatMap((section) => section.fields.map((field) => [field.name, field.value])),
 );
-const signInFields = ['googleClientId', 'googleClientSecret', 'facebookAppId', 'facebookAppSecret'];
+const editableFields = ['emailUsername', 'gmailAppPassword', 'emailSenderName'];
 
 export default function CredentialsPage() {
   const [values, setValues] = useState(initialValues);
@@ -49,6 +50,18 @@ export default function CredentialsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const [selectedLogo, setSelectedLogo] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState('');
+
+  useEffect(() => {
+    if (!selectedLogo) {
+      setPreviewUrl('');
+      return;
+    }
+    const url = URL.createObjectURL(selectedLogo);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [selectedLogo]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -68,19 +81,26 @@ export default function CredentialsPage() {
 
   const save = async (event) => {
     event.preventDefault();
+    const form = event.currentTarget;
+    const logoInput = form.elements.namedItem('emailLogo');
+    const logo = logoInput.files[0];
     setSaving(true);
     setMessage('');
     setError('');
     try {
-      const payload = Object.fromEntries(signInFields.map((field) => [field, values[field]]));
+      const payload = new FormData();
+      payload.append('_method', 'PUT');
+      editableFields.forEach((field) => payload.append(field, values[field]));
+      if (logo) payload.append('emailLogo', logo);
       const result = await api('/credentials', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        method: 'POST',
+        body: payload,
       });
       const saved = { ...initialValues, ...result.credentials };
       setValues(saved);
       setSavedValues(saved);
+      logoInput.value = '';
+      setSelectedLogo(null);
       setMessage(result.message);
     } catch (failure) {
       setError(failure.message);
@@ -91,6 +111,8 @@ export default function CredentialsPage() {
 
   const reset = (event) => {
     event.preventDefault();
+    event.currentTarget.elements.namedItem('emailLogo').value = '';
+    setSelectedLogo(null);
     setValues({ ...savedValues });
     setMessage('');
     setError('');
@@ -121,7 +143,9 @@ export default function CredentialsPage() {
                     className="form-control radius-8"
                     value={values[field.name]}
                     spellCheck={false}
-                    required={signInFields.includes(field.name)}
+                    maxLength={field.maxLength}
+                    disabled={!editableFields.includes(field.name)}
+                    required={editableFields.includes(field.name)}
                     onChange={(event) => {
                       setValues({ ...values, [field.name]: event.target.value });
                       setMessage('');
@@ -129,6 +153,14 @@ export default function CredentialsPage() {
                   />
                 </div>
               ))}
+              {section.title === 'Email' && (
+                <div className="credentials-field">
+                  <label htmlFor="credentials-emailLogo" className="form-label fw-semibold text-primary-light text-sm mb-8">Email Logo</label>
+                  <input id="credentials-emailLogo" name="emailLogo" type="file" className="form-control radius-8" accept="image/png,image/jpeg,image/gif" aria-describedby="email-logo-help" onChange={(event) => setSelectedLogo(event.target.files[0] ?? null)} />
+                  <small id="email-logo-help">{savedValues.hasEmailLogo ? 'Logo saved. Choose a file to replace it. ' : ''}PNG, JPEG, or GIF up to 512 KB.</small>
+                  {(previewUrl || savedValues.emailLogoPreview) && <img className="credentials-logo-preview" src={previewUrl || savedValues.emailLogoPreview} alt="Email logo preview" />}
+                </div>
+              )}
               </fieldset>
             </section>
           ))}

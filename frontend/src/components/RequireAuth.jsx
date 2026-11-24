@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { apiUrl, getToken, clearToken } from '../helper/auth';
 import { canAccessPath } from '../helper/moduleAccess';
+import usePageTabTitle from '../helper/usePageTabTitle';
 
 import {
   AccessContext,
@@ -15,6 +16,8 @@ export default function RequireAuth({ allowGuest = false }) {
   const [attempt, setAttempt] = useState(0);
   const verifiedToken = useRef(null);
   const { pathname } = useLocation();
+  const accessDenied = status === 'authenticated' && !canAccessPath(user, pathname);
+  usePageTabTitle(accessDenied ? 'Access Denied' : null);
   useEffect(() => {
     const controller = new AbortController();
     const token = getToken();
@@ -58,7 +61,7 @@ export default function RequireAuth({ allowGuest = false }) {
         <button onClick={() => setAttempt(attempt + 1)}>Try again</button>
       </div>
     );
-  if (!canAccessPath(user, pathname))
+  if (accessDenied)
     return (
       <div className="p-24" role="alert">
         <h1>Access denied</h1>

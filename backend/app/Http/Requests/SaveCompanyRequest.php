@@ -38,6 +38,7 @@ class SaveCompanyRequest extends FormRequest
             'phone_country_code' => ['required', 'regex:/^\+[1-9][0-9]{0,3}$/'],
             'phone_number' => ['required', 'string', 'max:30', 'regex:/^(?=(?:\D*\d){7,15}\D*$)[0-9 ()-]{7,30}$/'],
             'website' => ['nullable', 'url:http,https', 'max:2048'],
+            'site_title' => ['nullable', 'string', 'max:255'],
             'country' => ['required', 'string', 'max:100'], 'city' => ['required', 'string', 'max:100'], 'state' => ['required', 'string', 'max:100'],
             'zip_code' => ['required', 'string', 'max:20', 'regex:/^[a-zA-Z0-9 -]+$/'],
             'address' => ['required', 'string', 'max:2000'], 'gstin' => ['required', 'regex:/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/'],

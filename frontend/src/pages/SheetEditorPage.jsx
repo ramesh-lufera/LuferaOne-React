@@ -14,6 +14,7 @@ import SheetImportModal from '../components/SheetImportModal';
 import SheetRowMenu from '../components/SheetRowMenu';
 import SheetReminderModal from '../components/SheetReminderModal';
 import { api } from '../services/api';
+import usePageTabTitle from '../helper/usePageTabTitle';
 import '../components/Sheets.css';
 
 const defaultHeaders = ['Tasks', 'Column Field 1', 'Column Field 2', 'Column Field 3'];
@@ -42,6 +43,7 @@ export default function SheetEditorPage() {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
   const validId = /^[1-9]\d*$/.test(id || '');
   const [sheet, setSheet] = useState(null);
+  usePageTabTitle(String(sheet?.id) === id ? sheet.name : null);
   const [history, setHistory] = useState([initialRows()]);
   const [widthHistory, setWidthHistory] = useState([[180, 260, 260, 260]]);
   const [resizePreview, setResizePreview] = useState(null);

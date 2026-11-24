@@ -18,7 +18,8 @@ class ActivityLogMySqlTest extends TestCase
         try {
             $suffix = bin2hex(random_bytes(8));
             $email = "audit-{$suffix}@example.test";
-            $this->postJson('/api/register', ['name' => 'Audit Integration Test', 'email' => $email, 'username' => "audit-{$suffix}", 'phone' => '+91 98765 43210', 'password' => 'secure-password-123', 'terms' => true])->assertCreated();
+            $this->postJson('/api/register', ['name' => 'Audit Integration Test', 'email' => $email, 'username' => "audit-{$suffix}", 'phone' => '+91 98765 43210', 'password' => 'secure-password-123', 'terms' => true])->assertAccepted();
+            $this->postJson($this->verificationPath())->assertOk();
             $user = User::where('email', $email)->firstOrFail();
             $this->artisan('users:set-role', ['email' => $email, 'role' => 'auditor'])->assertSuccessful();
             $login = $this->postJson('/api/login', ['email' => $email, 'password' => 'secure-password-123'])->assertOk();

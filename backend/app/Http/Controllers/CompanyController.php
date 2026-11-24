@@ -40,6 +40,9 @@ class CompanyController extends Controller
         }
 
         $branding = ['images' => $images];
+        if ($request->boolean('include_title')) {
+            $branding['site_title'] = $company?->site_title;
+        }
         if ($request->boolean('include_contact')) {
             $branding['contact'] = $company?->only(['phone_country_code', 'phone_number', 'address']);
         }

@@ -11,7 +11,7 @@ use Illuminate\Validation\Rule;
 
 class RoleController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         $roles = DB::table('roles')->orderBy('id')->get()->map(function ($role) {
             $role->modules = json_decode($role->modules, true);
@@ -21,7 +21,12 @@ class RoleController extends Controller
             return $role;
         });
 
-        return response()->json(['roles' => $roles, 'modules' => config('modules')]);
+        $data = ['roles' => $roles, 'modules' => config('modules')];
+        if ($request->boolean('include_categories')) {
+            $data['categories'] = DB::table('categories')->orderBy('name')->orderBy('id')->get(['id', 'name']);
+        }
+
+        return response()->json($data);
     }
 
     public function store(Request $request): JsonResponse
@@ -100,13 +105,14 @@ class RoleController extends Controller
     private function validated(Request $request, ?int $role = null): array
     {
         $request->merge(['name' => mb_strtolower(trim((string) $request->input('name')))]);
+        $categoryKeys = DB::table('categories')->pluck('id')->map(fn ($id): string => 'category:'.$id)->all();
 
         return $request->validate([
             'name' => ['required', 'string', 'max:30', 'regex:/^[a-z][a-z0-9 _-]*$/', Rule::unique('roles', 'name')->ignore($role)],
             'description' => ['nullable', 'string', 'max:1000'],
             'active' => ['required', 'boolean'],
             'modules' => ['present', 'array'],
-            'modules.*' => ['string', 'distinct', Rule::in(array_keys(config('modules')))],
+            'modules.*' => ['string', 'distinct', Rule::in([...array_keys(config('modules')), ...$categoryKeys])],
         ]);
     }
 }
