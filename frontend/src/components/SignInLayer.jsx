@@ -14,7 +14,7 @@ const SignInLayer = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const returnTo = searchParams.get('returnTo') || '';
-  const destination = /^\/external\/categories\/[a-zA-Z0-9._-]+\/?$/.test(returnTo) ? returnTo : '/';
+  const destination = /^\/external\/(?:categories|packages)\/[a-zA-Z0-9._-]+\/?$/.test(returnTo) ? returnTo : '/';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);

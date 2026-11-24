@@ -51,9 +51,9 @@
         "pending": false
       },
       {
-        "path": "/404",
+        "path": "/packages",
         "label": "Package",
-        "pending": true
+        "pending": false
       },
       {
         "path": "/404",
@@ -134,9 +134,9 @@
         "pending": false
       },
       {
-        "path": "/404",
+        "path": "/taxes",
         "label": "Taxes",
-        "pending": true
+        "pending": false
       },
       {
         "path": "/settings/terms-conditions",

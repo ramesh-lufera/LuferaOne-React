@@ -68,7 +68,8 @@
         ],
         "pre-package-uninstall": [
             "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
-        ]
+        ],
+        "serve": "@php artisan serve:uploads"
     },
     "extra": {
         "laravel": {
