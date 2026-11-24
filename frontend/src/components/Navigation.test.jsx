@@ -10,16 +10,31 @@ import { AccessContext } from '../helper/AccessContext';
 import { completedPaths, navigationTarget } from '../helper/navigation';
 import routes from '../data/routes.json';
 import { moduleForPath } from '../helper/moduleAccess';
+import { listSidebarCategories } from '../pages/categories/categories';
 
 jest.mock('@iconify/react/dist/iconify.js', () => ({ Icon: function MockIcon() { return null; } }));
 jest.mock('../helper/auth', () => ({ signOut: jest.fn().mockResolvedValue() }));
 jest.mock('../helper/ThemeToggleButton', () => function MockTheme() { return null; });
 jest.mock('../helper/useCompanyBranding', () => jest.fn(() => ({})));
-beforeEach(() => { useCompanyBranding.mockReturnValue({}); });
+jest.mock('../pages/categories/categories', () => ({ categoriesChangedEvent: 'categories-changed', listSidebarCategories: jest.fn() }));
+beforeEach(() => { useCompanyBranding.mockReturnValue({}); listSidebarCategories.mockReset().mockResolvedValue([]); });
 afterEach(() => { cleanup(); useCompanyBranding.mockReturnValue({}); });
-function show(modules, path = '/') {
-  return render(<MemoryRouter initialEntries={[path]}><AccessContext.Provider value={{ name: 'Admin', role: 'admin', modules }}><MasterLayout><p>Module content</p></MasterLayout></AccessContext.Provider></MemoryRouter>);
+function show(modules, path = '/', role = 'admin') {
+  return render(<MemoryRouter initialEntries={[path]}><AccessContext.Provider value={{ name: 'Admin', role, modules }}><MasterLayout><p>Module content</p></MasterLayout></AccessContext.Provider></MemoryRouter>);
 }
+
+test('shows a selected category without requiring Categories management access', async () => {
+  listSidebarCategories.mockResolvedValue([{ id: 12, name: 'Hosting Plans', page_path: '/categories/hosting-plans' }]);
+  const view = show(['category:12'], '/categories/hosting-plans', 'manager');
+  const sidebar = within(view.container.querySelector('aside'));
+  expect(await sidebar.findByRole('link', { name: 'Hosting Plans' })).toHaveAttribute('aria-current', 'page');
+  expect(sidebar.queryByRole('link', { name: 'Category', exact: true })).not.toBeInTheDocument();
+});
+ 
+test('a management grant alone does not load sidebar category links for other roles', () => {
+  show(['categories'], '/', 'manager');
+  expect(listSidebarCategories).not.toHaveBeenCalled();
+});
 
 test('sidebar, account menu, and footer contain valid links with placeholders pointing to 404', () => {
   const view = show(['*']);
