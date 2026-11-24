@@ -61,6 +61,9 @@ test('completed protected routes all retain a module permission and route paths 
     expect(moduleForPath(route.path)).toBeDefined();
   }
   expect(navigationTarget('/invoice-preview?id=42')).toBe('/invoice-preview?id=42');
+  expect(navigationTarget('/taxes')).toBe('/taxes');
+  expect(navigationTarget('/packages')).toBe('/packages');
+  expect(navigationTarget('/packages/new?category=7&module=CRM')).toBe('/packages/new?category=7&module=CRM');
   expect(navigationTarget('/currencies')).toBe('/404');
 });
 
@@ -70,11 +73,13 @@ test('all screenshot menus are retained in order with future modules linked to 4
   const menu = sidebar.querySelector('#sidebar-menu');
   const labels = Array.from(menu.children).map((item) => item.querySelector('a')?.textContent);
   expect(labels).toEqual(['Dashboard', 'LuferaSheets', 'Billing', 'Inventory', 'Settings', 'Log-Out']);
-  for (const title of ['Form Builder', 'Subscriptions', 'Payment History', 'Add on Services', 'Package', 'Product', 'Backup', 'Bank Details', 'Buy For Customer', 'Currencies', 'Marketplace', 'Promotion', 'Taxes']) {
+  for (const title of ['Form Builder', 'Subscriptions', 'Payment History', 'Add on Services', 'Product', 'Backup', 'Bank Details', 'Buy For Customer', 'Currencies', 'Marketplace', 'Promotion']) {
     expect(within(sidebar).getByRole('link', { name: title })).toHaveAttribute('href', '/404');
   }
   expect(within(sidebar).getByRole('link', { name: 'Sheets' })).toHaveAttribute('href', '/sheets');
   expect(within(sidebar).getByRole('link', { name: 'Invoice' })).toHaveAttribute('href', '/invoice-list');
+  expect(within(sidebar).getByRole('link', { name: 'Taxes' })).toHaveAttribute('href', '/taxes');
+  expect(within(sidebar).getByRole('link', { name: 'Package' })).toHaveAttribute('href', '/packages');
   expect(within(sidebar).getByRole('link', { name: 'Category' })).toHaveAttribute('href', '/categories');
   expect(within(sidebar).getByRole('link', { name: 'Roles' })).toHaveAttribute('href', '/roles-permissions');
   expect(menu.firstElementChild).toHaveClass('sidebar-dashboard');

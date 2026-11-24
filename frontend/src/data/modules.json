@@ -90,6 +90,15 @@
     ]
   },
   {
+    "key": "packages",
+    "label": "Packages",
+    "paths": [
+      "/packages",
+      "/packages/new",
+      "/package-edit"
+    ]
+  },
+  {
     "key": "calendar",
     "label": "Calendar",
     "paths": [
@@ -530,6 +539,13 @@
     "paths": [
       "/sheets",
       "/sheet"
+    ]
+  },
+  {
+    "key": "taxes",
+    "label": "Taxes",
+    "paths": [
+      "/taxes"
     ]
   }
 ]

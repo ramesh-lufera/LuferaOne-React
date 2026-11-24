@@ -6,6 +6,10 @@ import ApplicationRoutes from './ApplicationRoutes';
 import routes from '../data/routes.json';
 import { getToken } from '../helper/auth';
 
+jest.mock('../pages/TaxesPage', () => function TaxesPageStub() { return <h1>TaxesPage</h1>; });
+jest.mock('../pages/PackagesPage', () => function PackagesPageStub() { return <h1>PackagesPage</h1>; });
+jest.mock('../pages/packages/PackageFormPage', () => function PackageFormPageStub() { return <h1>PackageFormPage</h1>; });
+jest.mock('../pages/packages/PackagePage', () => () => null);
 jest.mock('../pages/SheetEditorPage', () => function SheetEditorPageStub() { return <h1>SheetEditorPage</h1>; });
 jest.mock('../pages/SheetsPage', () => function SheetsPageStub() { return <h1>SheetsPage</h1>; });
 jest.mock('../helper/auth', () => ({ apiUrl: '/api', getToken: jest.fn(), clearToken: jest.fn() }));
