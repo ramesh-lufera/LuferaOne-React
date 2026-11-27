@@ -1,18 +1,24 @@
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
-
-if (!API_URL) {
-  throw new Error('EXPO_PUBLIC_API_URL is missing.');
-}
+const API_URL = process.env.EXPO_PUBLIC_API_URL?.trim().replace(/\/+$/, '');
 
 type ApiOptions = RequestInit & {
   token?: string;
 };
 
+export class ApiError extends Error {
+  constructor(
+    public readonly status: number,
+    message: string,
+    public readonly errors?: Record<string, string[]>,
+  ) {
+    super(message);
+  }
+}
+
 export async function apiRequest<T>(
   endpoint: string,
   options: ApiOptions = {}
 ): Promise<T> {
+  if (!API_URL) throw new Error('EXPO_PUBLIC_API_URL is missing.');
   const { token, headers, ...requestOptions } = options;
 
   const response = await fetch(`${API_URL}${endpoint}`, {
@@ -35,7 +41,8 @@ export async function apiRequest<T>(
     try {
       data = JSON.parse(responseText);
     } catch {
-      throw new Error(
+      throw new ApiError(
+        response.status,
         `Invalid server response: HTTP ${response.status}`
       );
     }
@@ -50,7 +57,11 @@ export async function apiRequest<T>(
         ? data.message
         : `API error: HTTP ${response.status}`;
 
-    throw new Error(message);
+    const errors = typeof data === 'object' && data !== null && 'errors' in data
+      && typeof data.errors === 'object' && data.errors !== null
+      ? data.errors as Record<string, string[]>
+      : undefined;
+    throw new ApiError(response.status, message, errors);
   }
 
   return data as T;

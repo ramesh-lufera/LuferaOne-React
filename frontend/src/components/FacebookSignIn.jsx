@@ -46,7 +46,7 @@ function loadFacebookLibrary(appId, version) {
   return facebookLibrary;
 }
 
-export default function FacebookSignIn({ mode = 'signin', remember = false, terms = false, disabled = false, onBusyChange, destination = '/' }) {
+export default function FacebookSignIn({ mode = 'signin', remember = false, terms = false, disabled = false, onBusyChange, onAuthenticated, destination = '/' }) {
   const navigate = useNavigate();
   const sdk = useRef(null);
   const active = useRef(false);
@@ -96,6 +96,10 @@ export default function FacebookSignIn({ mode = 'signin', remember = false, term
         throw new Error(result.errors?.facebook?.[0] || result.message || 'Unable to sign in with Facebook. Please try again.');
       }
       if (!active.current) return;
+      if (onAuthenticated) {
+        await onAuthenticated(result.token);
+        return;
+      }
       saveToken(result.token, options.current.remember);
       markTokenVerified(result.token);
       navigate(destination, { replace: true });

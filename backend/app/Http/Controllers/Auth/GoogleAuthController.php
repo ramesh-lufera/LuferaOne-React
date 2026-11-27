@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\GoogleIdentityVerifier;
+use App\Services\SignupEmail;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,6 +17,8 @@ use Illuminate\Validation\ValidationException;
 
 class GoogleAuthController extends Controller
 {
+    public function __construct(private SignupEmail $signupEmail) {}
+
     public function nonce(): JsonResponse
     {
         $nonce = bin2hex(random_bytes(32));
@@ -119,7 +122,12 @@ class GoogleAuthController extends Controller
         }, 3);
 
         $expiresAt = ! empty($data['remember']) ? now()->addDays(30) : now()->addHours(8);
-        $token = $user->createToken('google-sign-in', ['*'], $expiresAt)->plainTextToken;
+        $tokenName = $data['mode'] === 'signup' ? 'google-sign-up' : 'google-sign-in';
+        $token = $user->createToken($tokenName, ['*'], $expiresAt)->plainTextToken;
+
+        if ($user->wasRecentlyCreated) {
+            $this->signupEmail->welcomeAfterCommit($user, $request->header('Origin'));
+        }
 
         $request->attributes->set('activity_actor', $user);
         $request->attributes->set('activity_entity_id', $user->id);

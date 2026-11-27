@@ -48,6 +48,7 @@ class CredentialsController extends Controller
             'googleClientId' => config('services.google.client_id') ?: '',
             'facebookAppId' => config('services.facebook.app_id') ?: '',
             'facebookGraphVersion' => config('services.facebook.graph_version'),
+            'mobileWebOrigin' => config('cors.mobile_web_origin'),
         ])->header('Cache-Control', 'no-store');
     }
 }
