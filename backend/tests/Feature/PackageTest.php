@@ -44,6 +44,24 @@ class PackageTest extends TestCase
         $this->deleteJson('/api/packages/1')->assertForbidden();
     }
 
+    public function test_category_options_only_include_package_categories(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'admin']), 'sanctum');
+        $packageCategoryId = DB::table('categories')->insertGetId([
+            'name' => 'Packages', 'page_slug' => 'packages', 'type' => 'package',
+            'inclusions' => '[]', 'exclusions' => '[]', 'requires_login' => false,
+        ]);
+        foreach (['product', 'service'] as $type) {
+            DB::table('categories')->insert([
+                'name' => ucfirst($type), 'page_slug' => $type, 'type' => $type,
+                'inclusions' => '[]', 'exclusions' => '[]', 'requires_login' => false,
+            ]);
+        }
+
+        $this->getJson('/api/packages/categories')->assertOk()
+            ->assertExactJson(['categories' => [['id' => $packageCategoryId, 'name' => 'Packages']]]);
+    }
+
     public function test_package_save_creates_pages_and_signed_images(): void
     {
         Storage::fake('local');

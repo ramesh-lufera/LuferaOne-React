@@ -21,7 +21,7 @@ class PackageController extends Controller
 {
     public function categories(): JsonResponse
     {
-        return response()->json(['categories' => DB::table('categories')->select('id', 'name')->orderBy('name')->get()]);
+        return response()->json(['categories' => DB::table('categories')->where('type', 'package')->select('id', 'name')->orderBy('name')->get()]);
     }
 
     public function taxes(): JsonResponse

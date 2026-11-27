@@ -2,6 +2,7 @@
 
 return [
     'taxes' => ['label' => 'Taxes', 'paths' => ['/taxes']],
+    'products' => ['label' => 'Products', 'paths' => ['/products', '/products/new', '/product-edit']],
     'packages' => ['label' => 'Packages', 'paths' => ['/packages', '/packages/new', '/package-edit']],
     'sheets' => ['label' => 'Sheets', 'paths' => ['/sheets', '/sheet']],
     'terms-conditions' => ['label' => 'Terms and Conditions', 'paths' => ['/settings/terms-conditions']],

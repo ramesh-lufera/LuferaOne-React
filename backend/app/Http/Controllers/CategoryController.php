@@ -122,6 +122,9 @@ class CategoryController extends Controller
     {
         $record = DB::table('categories')->lockForUpdate()->find($category);
         abort_unless($record, 404);
+        if (DB::table('products')->where('category_id', $record->id)->exists()) {
+            throw ValidationException::withMessages(['category' => 'This category has products and cannot be deleted.']);
+        }
         if (DB::table('packages')->where('category_id', $record->id)->exists()) {
             throw ValidationException::withMessages(['category' => 'This category has packages and cannot be deleted.']);
         }

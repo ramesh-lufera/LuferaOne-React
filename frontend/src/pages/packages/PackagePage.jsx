@@ -1,6 +1,7 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
+import ExternalCatalogDetails from './ExternalCatalogDetails';
 import MasterLayout from '../../masterLayout/MasterLayout';
 import { api } from '../../services/api';
 import PackageGallery from './PackageGallery';
@@ -35,6 +36,7 @@ function PackageDetails({ external = false }) {
   }, [item]);
   if (result?.filename !== filename) return <p className="p-24" role="status">Loading package…</p>;
   if (result.error) return <div className="p-24" role="alert">{result.error.status === 404 ? 'Package not found.' : result.error.message} <button onClick={() => setAttempt((value) => value + 1)}>Try again</button></div>;
+  if (external) return <ExternalCatalogDetails item={item} kind="Package" />;
   const price = item.durations[duration];
   const money = (value) => Number(value).toLocaleString('en-IN', { style: 'currency', currency: 'INR' });
   const enquiry = `mailto:info@luferatech.com?subject=${encodeURIComponent(`Package enquiry: ${item.name}`)}`;
@@ -69,13 +71,12 @@ function PackageDetails({ external = false }) {
             <select id="package-duration" value={duration} onChange={(event) => setDuration(Number(event.target.value))}>{item.durations.map((row, i) => <option value={i} key={i}>{row.value} {row.unit}{Number(row.value) === 1 ? '' : 's'}</option>)}</select></div>
 
           </>}
-          <button className="package-enquire" href={enquiry}>Enquire now <span aria-hidden="true">↗</span></button>
+          <button className="package-enquire" href={enquiry}>Shop now <span aria-hidden="true">↗</span></button>
           </div>
-          <div className="package-product-meta"><h3>Package Info</h3><p><strong>Category:</strong> {item.category_name}</p><p><strong>Module:</strong> {item.module}</p></div>
         </div>
       </section>
       <section className="package-tabs">
-        <div role="tablist" aria-label="Package details">{['Description', 'Additional information'].map((label) => <button key={label} type="button" role="tab" id={`package-tab-${label.replaceAll(' ', '-')}`} aria-controls="package-tab-panel" aria-selected={tab === label} onClick={() => setTab(label)}>{label}</button>)}</div>
+        <div role="tablist" aria-label="Package details">{['Description', 'Features'].map((label) => <button key={label} type="button" role="tab" id={`package-tab-${label.replaceAll(' ', '-')}`} aria-controls="package-tab-panel" aria-selected={tab === label} onClick={() => setTab(label)}>{label}</button>)}</div>
         <div id="package-tab-panel" role="tabpanel" aria-labelledby={`package-tab-${tab.replaceAll(' ', '-')}`} tabIndex={0}>{tab === 'Description' ? <p className="package-description">{item.description}</p> : <div className="package-detail-features"><div><h3>Inclusive</h3><ul>{item.inclusions.map((text, i) => <li key={i}>✓ {text}</li>)}</ul></div><div><h3>Exclusive</h3><ul>{item.exclusions.map((text, i) => <li key={i}>× {text}</li>)}</ul></div></div>}</div>
       </section>
     </div>

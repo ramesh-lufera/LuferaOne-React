@@ -6,7 +6,11 @@ import ApplicationRoutes from './ApplicationRoutes';
 import routes from '../data/routes.json';
 import { getToken } from '../helper/auth';
 
+jest.mock('../pages/MarketplacePage', () => function MarketplacePageStub() { return <h1>MarketplacePage</h1>; });
 jest.mock('../pages/TaxesPage', () => function TaxesPageStub() { return <h1>TaxesPage</h1>; });
+jest.mock('../pages/ProductsPage', () => function ProductsPageStub() { return <h1>ProductsPage</h1>; });
+jest.mock('../pages/products/ProductFormPage', () => function ProductFormPageStub() { return <h1>ProductFormPage</h1>; });
+jest.mock('../pages/products/ProductPage', () => () => null);
 jest.mock('../pages/PackagesPage', () => function PackagesPageStub() { return <h1>PackagesPage</h1>; });
 jest.mock('../pages/packages/PackageFormPage', () => function PackageFormPageStub() { return <h1>PackageFormPage</h1>; });
 jest.mock('../pages/packages/PackagePage', () => () => null);
@@ -53,7 +57,7 @@ test.each(routes)('$path opens its registered completed page', async ({ path, pa
   expect(await screen.findByRole('heading', { name: page })).toBeInTheDocument();
 });
 
-test.each(['/currencies', '/marketplace', '/calendar', '/chat-message', '/index-2', '/forgot-password', '/error', '/unknown/deep/path'])('%s displays 404 instead of a demo or access-denied page', async (path) => {
+test.each(['/currencies', '/calendar', '/chat-message', '/index-2', '/forgot-password', '/error', '/unknown/deep/path'])('%s displays 404 instead of a demo or access-denied page', async (path) => {
   getToken.mockReturnValue(null);
   show(path);
   expect(await screen.findByRole('heading', { name: 'ErrorPage' })).toBeInTheDocument();

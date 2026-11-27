@@ -73,7 +73,7 @@
 .package-product-meta h3, .package-detail-features h3 { font-size: 18px !important; font-weight: 600; margin-bottom: 16px; color: var(--package-ink); }
 .package-product-meta p { display: flex; gap: 16px; font-size: 15px; line-height: 1.7; overflow-wrap: anywhere; margin-bottom: 7px; }
 .package-product-meta strong { min-width: 78px; font-weight: 500; color: var(--package-ink); }
-.package-tabs { margin-top: 90px; }
+.package-tabs { margin-top:20px; }
 .package-tabs [role=tablist] { display: flex; gap: 45px; border-bottom: 1px solid #c9d1d1; }
 .package-tabs [role=tab] { color: var(--package-muted); background: transparent; font-size: 18px; font-weight: 500; padding: 16px 0; border: 0; border-bottom: 2px solid transparent; cursor: pointer; }
 .package-tabs [aria-selected=true] { color: var(--package-ink); border-bottom-color: var(--package-ink); }
