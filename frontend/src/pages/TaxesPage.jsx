@@ -10,10 +10,8 @@ import './TaxesPage.css';
 
 const columns = [
   { label: 'Name', width: 220 },
-  { label: 'Region', width: 200 },
   { label: 'Rate (%)', width: 120 },
   { label: 'Type', width: 200 },
-  { label: 'Default', width: 100, align: 'center' },
   { label: 'Action', width: 128, align: 'center' },
 ];
 const empty = { data: [], last_page: 1, total: 0 };
@@ -57,7 +55,7 @@ export default function TaxesPage() {
     event.preventDefault();
     if (savePending.current) return;
     const form = new FormData(event.currentTarget);
-    const body = { name: form.get('name'), region: form.get('region'), rate: form.get('rate'), type: form.get('type'), is_default: form.has('is_default') };
+    const body = { name: form.get('name'), rate: form.get('rate'), type: form.get('type') };
     savePending.current = true;
     setSaving(true);
     setSaveErrors([]);
@@ -107,10 +105,8 @@ export default function TaxesPage() {
         <ModuleTable columns={columns}>
           {loading || !result.data.length ? <tr><td colSpan={columns.length}>{loading ? 'Loading taxes…' : error ? 'Taxes unavailable.' : 'No taxes found.'}</td></tr> : result.data.map((tax) => <tr key={tax.id}>
             <td><ModuleTableCell id={`tax-name-${tax.id}`}>{tax.name}</ModuleTableCell></td>
-            <td><ModuleTableCell id={`tax-region-${tax.id}`}>{tax.region}</ModuleTableCell></td>
             <td>{Number(tax.rate).toFixed(2)}%</td>
             <td>{typeLabels[tax.type]}</td>
-            <td className="text-center">{tax.is_default ? <span className="badge bg-success-focus text-success-main">Yes</span> : 'No'}</td>
             <td className="text-center"><div className="d-flex align-items-center gap-10 justify-content-center flex-nowrap">
               <button type="button" className="module-table-action bg-success-focus text-success-600 w-40-px h-40-px rounded-circle" aria-label={`Edit ${tax.name}`} aria-haspopup="dialog" onClick={() => openEditor(tax)}><Icon icon="lucide:edit" /></button>
               <button type="button" className="module-table-action bg-danger-focus text-danger-600 w-40-px h-40-px rounded-circle" aria-label={`Delete ${tax.name}`} aria-haspopup="dialog" onClick={() => { setDeleteError(''); setDeleteTarget(tax); }}><Icon icon="fluent:delete-24-regular" /></button>
@@ -127,13 +123,10 @@ export default function TaxesPage() {
           {saveErrors.length > 0 && <div className="alert alert-danger" role="alert"><ul className="mb-0 ps-3">{saveErrors.map((message, index) => <li key={index}>{message}</li>)}</ul></div>}
           <fieldset disabled={saving}>
             <div className="mb-20"><label className="form-label" htmlFor="tax-name">Tax Name</label><input id="tax-name" name="name" className="form-control" defaultValue={editor.name ?? ''} maxLength={255} required autoFocus /></div>
-            <div className="mb-20"><label className="form-label" htmlFor="tax-region">Country / Region</label><input id="tax-region" name="region" className="form-control" defaultValue={editor.region ?? 'India'} maxLength={120} required /></div>
             <div className="row g-3 mb-24">
               <div className="col-12 col-sm-6"><label className="form-label" htmlFor="tax-rate">Rate (%)</label><input id="tax-rate" name="rate" type="number" className="form-control" min="0" max="100" step="1" defaultValue={editor.rate ?? ''} required /></div>
               <div className="col-12 col-sm-6"><label className="form-label" htmlFor="tax-type">Type</label><select id="tax-type" name="type" className="form-select" defaultValue={editor.type ?? 'exclusive'}>{Object.entries(typeLabels).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></div>
             </div>
-            <label className="tax-default-check"><input type="checkbox" name="is_default" defaultChecked={editor.is_default ?? false} /> Set as default tax</label>
-            <p className="tax-default-help mb-0">Only one tax can be the default for each country / region. Saving a new default replaces the previous selection.</p>
           </fieldset>
         </Modal.Body>
         <Modal.Footer><button type="button" className="btn btn-secondary radius-8" disabled={saving} onClick={() => setEditor(null)}>Close</button><button type="submit" className="btn btn-primary radius-8" disabled={saving}>{saving ? 'Saving…' : 'Save Tax'}</button></Modal.Footer>
@@ -141,7 +134,7 @@ export default function TaxesPage() {
     </Modal>
     <Modal show={Boolean(deleteTarget)} onHide={() => { if (!deleting) setDeleteTarget(null); }} centered backdrop={deleting ? 'static' : true} keyboard={!deleting} aria-labelledby="tax-delete-title">
       <Modal.Header closeButton={!deleting}><Modal.Title as="h2" className="fs-5" id="tax-delete-title">Delete Tax</Modal.Title></Modal.Header>
-      <Modal.Body><p className="mb-0">Permanently delete <strong>{deleteTarget?.name}</strong> for {deleteTarget?.region}?</p>{deleteTarget?.is_default && <p className="mt-12 mb-0">This region will have no default tax until you select another.</p>}{deleteError && <p className="alert alert-danger mt-12 mb-0" role="alert">{deleteError}</p>}</Modal.Body>
+      <Modal.Body><p className="mb-0">Permanently delete <strong>{deleteTarget?.name}</strong>?</p>{deleteError && <p className="alert alert-danger mt-12 mb-0" role="alert">{deleteError}</p>}</Modal.Body>
       <Modal.Footer><button type="button" className="btn btn-outline-secondary" disabled={deleting} onClick={() => setDeleteTarget(null)}>Cancel</button><button type="button" className="btn btn-danger" disabled={deleting} onClick={deleteTax}>{deleting ? 'Deleting…' : 'Delete Tax'}</button></Modal.Footer>
     </Modal>
   </MasterLayout>;

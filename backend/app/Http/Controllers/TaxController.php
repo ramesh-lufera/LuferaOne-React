@@ -4,17 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\SaveTaxRequest;
 use Illuminate\Database\Query\Builder;
-use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class TaxController extends Controller
 {
-    private const COLUMNS = ['id', 'name', 'region', 'rate', 'type', 'is_default'];
+    private const COLUMNS = ['id', 'name', 'rate', 'type'];
 
     public function index(Request $request): JsonResponse
     {
@@ -26,7 +24,7 @@ class TaxController extends Controller
         $taxes = DB::table('taxes')->select(self::COLUMNS)
             ->when($data['search'] ?? '', function (Builder $query, string $search): void {
                 $query->where(function (Builder $query) use ($search): void {
-                    $query->whereLike('name', '%'.$search.'%')->orWhereLike('region', '%'.$search.'%')
+                    $query->whereLike('name', '%'.$search.'%')
                         ->orWhereLike('type', '%'.$search.'%');
                 });
             })->orderByDesc('id')->paginate($data['per_page'] ?? 10)
@@ -75,22 +73,12 @@ class TaxController extends Controller
     private function save(SaveTaxRequest $request, ?object $record = null): JsonResponse
     {
         $data = $request->validated();
-        $defaultRegion = $request->boolean('is_default') ? Str::lower($data['region']) : null;
-        if ($defaultRegion !== null) {
-            DB::table('taxes')->where('default_region', $defaultRegion)
-                ->when($record, fn (Builder $query): Builder => $query->where('id', '<>', $record->id))
-                ->update(['is_default' => false, 'default_region' => null, 'updated_at' => now()]);
-        }
-        $fields = [...$data, 'is_default' => $request->boolean('is_default'), 'default_region' => $defaultRegion, 'updated_at' => now()];
-        try {
-            if ($record) {
-                $id = $record->id;
-                DB::table('taxes')->where('id', $id)->update($fields);
-            } else {
-                $id = DB::table('taxes')->insertGetId($fields + ['created_at' => $fields['updated_at']]);
-            }
-        } catch (UniqueConstraintViolationException $exception) {
-            throw ValidationException::withMessages(['is_default' => 'The default tax for this region just changed. Please save again.']);
+        $fields = [...$data, 'updated_at' => now()];
+        if ($record) {
+            $id = $record->id;
+            DB::table('taxes')->where('id', $id)->update($fields);
+        } else {
+            $id = DB::table('taxes')->insertGetId($fields + ['created_at' => $fields['updated_at']]);
         }
         $request->attributes->set('activity_entity_id', $id);
 
@@ -99,6 +87,6 @@ class TaxController extends Controller
 
     private function details(object $record): array
     {
-        return [...(array) $record, 'is_default' => (bool) $record->is_default, 'rate' => number_format((float) $record->rate, 2, '.', '')];
+        return [...(array) $record, 'rate' => number_format((float) $record->rate, 2, '.', '')];
     }
 }

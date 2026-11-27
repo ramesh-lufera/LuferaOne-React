@@ -31,8 +31,11 @@ test('four thumbnails switch the cover and the popup slides through all images',
 
 test('existing packages without a gallery can still enlarge their cover image', async () => {
   render(<PackageGallery name="Legacy" cover="/cover.jpg" />);
+  expect(screen.queryByRole('button', { name: /Show preview image/ })).not.toBeInTheDocument();
+  expect(screen.getByAltText('Legacy — image 1').closest('.package-gallery')).toHaveClass('package-gallery-single');
   fireEvent.click(screen.getByRole('button', { name: 'Enlarge Legacy image' }));
   expect(await screen.findByRole('dialog')).toBeInTheDocument();
   expect(screen.getByAltText('Legacy — enlarged image 1')).toHaveAttribute('src', '/cover.jpg');
   expect(screen.queryByRole('button', { name: 'Next image' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /View gallery image/ })).not.toBeInTheDocument();
 });

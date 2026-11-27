@@ -1,0 +1,6 @@
+.catalog-table .module-table th { background: var(--neutral-50, #f5f6fa); padding: 20px 16px; }
+.catalog-table .module-table td { padding: 16px; height: 73px; vertical-align: middle; }
+.catalog-table .module-cell-content a { color: inherit; font-weight: 500; }
+.catalog-table .module-cell-content a:hover { color: var(--primary-600); }
+.catalog-status { display: inline-flex; align-items: center; justify-content: center; min-height: 39px; padding: 8px 16px; border-radius: 4px; background: #41b568; color: #fff; font-size: 14px; font-weight: 600; }
+

@@ -53,15 +53,20 @@ export function ImageField({ name, label, required = true, initialUrl, removeInd
   </div>;
 }
 
+export function durationUnitLabel(unit, value) {
+  return unit[0].toUpperCase() + unit.slice(1) + (Number(value) > 1 ? 's' : '');
+}
+
 export function RepeatedRows({ name, label, pricing = false, initialItems = [] }) {
   const [rows, setRows] = useState(() => Array.from({ length: Math.max(1, initialItems.length) }, (_, index) => index + 1));
   const next = useRef(rows.length + 1);
+  const [durationValues, setDurationValues] = useState(() => Object.fromEntries(initialItems.map((item, index) => [index + 1, item.value])));
   return <div className="package-repeated" role="group" aria-label={label}>
     <label className="form-label">{label} <span className="text-danger">*</span></label>
     {rows.map((id, index) => <div className={pricing ? 'package-price-row' : 'package-feature-row'} key={id}>
       {pricing ? <>
-        <input className="form-control" name={`${name}[${index}][value]`} type="number" min="1" max="10000" step="1" defaultValue={initialItems[id - 1]?.value ?? ''} placeholder="Value" aria-label={`Duration value ${index + 1}`} required />
-        <select className="form-select" name={`${name}[${index}][unit]`} aria-label={`Duration unit ${index + 1}`} required defaultValue={initialItems[id - 1]?.unit ?? ''}><option value="" disabled>Select Unit</option>{['day', 'week', 'month', 'year'].map((unit) => <option key={unit} value={unit}>{unit[0].toUpperCase() + unit.slice(1)}</option>)}</select>
+        <input className="form-control" name={`${name}[${index}][value]`} type="number" min="1" max="10000" step="1" defaultValue={initialItems[id - 1]?.value ?? ''} onChange={(event) => setDurationValues((current) => ({ ...current, [id]: event.target.value }))} placeholder="Value" aria-label={`Duration value ${index + 1}`} required />
+        <select className="form-select" name={`${name}[${index}][unit]`} aria-label={`Duration unit ${index + 1}`} required defaultValue={initialItems[id - 1]?.unit ?? ''}><option value="" disabled>Select Unit</option>{['day', 'week', 'month', 'year'].map((unit) => <option key={unit} value={unit}>{durationUnitLabel(unit, durationValues[id])}</option>)}</select>
         <input className="form-control" name={`${name}[${index}][price]`} type="number" min="0" max="99999999.99" step="0.01" defaultValue={initialItems[id - 1]?.price ?? ''} placeholder="Enter price" aria-label={`Price ${index + 1}`} required />
         <input className="form-control" name={`${name}[${index}][preview_price]`} type="number" min="0" max="99999999.99" step="0.01" defaultValue={initialItems[id - 1]?.preview_price ?? ''} placeholder="Enter preview price" aria-label={`Preview price ${index + 1}`} />
       </> : <input className="form-control" name={`${name}[]`} defaultValue={initialItems[id - 1] ?? ''} aria-label={`${label} ${index + 1}`} maxLength={255} required />}
@@ -129,10 +134,6 @@ function PackageEditor({ categories, taxes = [], record, categoryId, module }) {
     }
     if (record) body.set('_method', 'PUT');
     body.set('requires_login', body.has('requires_login') ? '1' : '0');
-    if (!body.getAll('addons[]').length) {
-      setErrors(['Select at least one add-on type.']);
-      return;
-    }
     pending.current = true;
     setSaving(true);
     setErrors([]);
@@ -168,22 +169,20 @@ function PackageEditor({ categories, taxes = [], record, categoryId, module }) {
           </div>)}
           <RepeatedRows name="durations" label="Duration & Price" pricing initialItems={record?.durations} />
           <div className="package-form-field"><div className="form-label">Features <span className="text-danger">*</span></div><div className="package-feature-columns"><RepeatedRows name="inclusions" label="Inclusive" initialItems={record?.inclusions} /><RepeatedRows name="exclusions" label="Exclusive" initialItems={record?.exclusions} /></div></div>
-          <div className="package-form-field"><p className="form-label" id="package-addons-label">Add-Ons <span className="text-danger">*</span></p><div className="package-checkboxes" role="group" aria-labelledby="package-addons-label">
-            {[['packages', 'Packages'], ['products', 'Products'], ['services', 'Add-on Services']].map(([value, label]) => <label key={value}><input type="checkbox" name="addons[]" value={value} defaultChecked={record?.addons?.includes(value) ?? false} /> {label}</label>)}
-          </div></div>
+          {record?.addons?.map((value) => <input key={value} type="hidden" name="addons[]" value={value} />)}
           <div className="package-form-field">
             <label className="form-label" htmlFor="package-tax">Tax</label>
             <select className="form-select" id="package-tax" name="tax_id" value={taxId} onChange={(event) => setTaxId(event.target.value)} aria-describedby="package-tax-help">
               <option value="">No tax</option>
               {record?.gst != null && !record.tax_id && <option value="legacy">Saved GST: {record.gst}% (legacy)</option>}
-              {taxes.map((tax) => <option key={tax.id} value={tax.id}>{tax.name} — {tax.region} — {tax.rate}% — {tax.type === 'inclusive' ? 'Inclusive' : 'Exclusive'}{tax.is_default ? ' (Default for region)' : ''}</option>)}
+              {taxes.map((tax) => <option key={tax.id} value={tax.id}>{tax.name} — {tax.rate}% — {tax.type === 'inclusive' ? 'Inclusive' : 'Exclusive'}</option>)}
             </select>
-            <p className="text-sm mt-8 mb-0" id="package-tax-help">All regions are available. Choose the tax for the package’s intended country / region. Regional defaults are marked; no tax is selected automatically.</p>
+            <p className="text-sm mt-8 mb-0" id="package-tax-help">Choose a tax for this package, or select No tax.</p>
             {!taxes.length && <p className="text-sm mt-8 mb-0">No tax records available. Create a tax in Settings → Taxes, then reload this form.</p>}
             {selectedTax && <p className="text-sm mt-8 mb-0">{selectedTax.type === 'inclusive' ? 'Inclusive: the entered package price already includes this tax.' : 'Exclusive: this tax is added to the entered package price.'} Changes to this tax record will also affect linked packages.</p>}
           </div>
           <div className="package-form-field"><p className="form-label">Is Login?</p><label className="package-checkboxes"><input type="checkbox" name="requires_login" defaultChecked={Boolean(record?.requires_login)} /> Require login to show package pricing</label></div>
-          <div className="text-center"><button className="btn btn-primary package-submit" disabled={saving}>{saving ? 'Saving…' : record ? 'Save Changes' : 'Submit'}</button> <Link className="btn btn-outline-secondary" to="/packages" aria-disabled={saving} onClick={(event) => { if (saving) event.preventDefault(); }}>Cancel</Link></div>
+          <div className="package-form-actions"><button className="btn btn-primary" disabled={saving}>{saving ? 'Saving…' : record ? 'Save Changes' : 'Submit'}</button> <Link className="btn btn-outline-secondary" to="/packages" aria-disabled={saving} onClick={(event) => { if (saving) event.preventDefault(); }}>Cancel</Link></div>
         </fieldset>
       </form>
   </>;

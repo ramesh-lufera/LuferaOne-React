@@ -277,7 +277,7 @@ class PackageTest extends TestCase
         $this->actingAs(User::factory()->create(['role' => 'admin']), 'sanctum');
         $taxId = $this->postJson('/api/taxes', ['name' => 'GST 18%', 'region' => 'India', 'rate' => 18, 'type' => 'exclusive', 'is_default' => true])->assertCreated()->json('id');
         $this->getJson('/api/packages/options/taxes')->assertOk()->assertJsonPath('taxes.0.id', $taxId)
-            ->assertJsonPath('taxes.0.region', 'India')->assertJsonPath('taxes.0.rate', '18.00')->assertJsonPath('taxes.0.is_default', true);
+            ->assertJsonPath('taxes.0.rate', '18.00')->assertJsonMissingPath('taxes.0.region')->assertJsonMissingPath('taxes.0.is_default');
         $payload = $this->payload(['tax_id' => $taxId, 'durations' => [['value' => 1, 'unit' => 'month', 'price' => 1000]]]);
         $id = $this->postJson('/api/packages', $payload)->assertCreated()->json('id');
         $this->assertNull(DB::table('packages')->find($id)->gst);

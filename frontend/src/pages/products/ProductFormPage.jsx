@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import MasterLayout from '../../masterLayout/MasterLayout';
 import ModulePageHeader from '../../components/ModulePageHeader';
-import { ImageField, RepeatedRows } from '../packages/PackageFormPage';
+import { ImageField, RepeatedRows, durationUnitLabel } from '../packages/PackageFormPage';
 import { api } from '../../services/api';
 import '../packages/PackagePage.css';
 
@@ -45,6 +45,7 @@ function ProductEditor({ categories, taxes, record, categoryId, module }) {
   const [errors, setErrors] = useState([]);
   const [saving, setSaving] = useState(false);
   const pending = useRef(false);
+  const [durationValue, setDurationValue] = useState(record?.duration_value ?? '');
   async function save(event) {
     event.preventDefault();
     if (pending.current) return;
@@ -67,17 +68,18 @@ function ProductEditor({ categories, taxes, record, categoryId, module }) {
       setSaving(false);
     }
   }
-  return <form className="package-form card p-24 radius-12" onSubmit={save}>
+  return <form className="package-form product-form card p-24 radius-12" onSubmit={save}>
     {errors.length > 0 && <div className="alert alert-danger" role="alert"><ul className="mb-0">{errors.map((error, i) => <li key={i}>{error}</li>)}</ul></div>}
     {!categories.length && <p className="alert alert-warning">Create a category with type Product before adding a product.</p>}
     <fieldset disabled={saving}>
       <div className="package-form-images"><ImageField name="product_image" label="Product Image" required={!record} initialUrl={record?.product_image_url} /><ImageField name="breadcrumb_image" label="Breadcrumb Image" required={!record} initialUrl={record?.breadcrumb_image_url} /></div>
+      <div className="package-form-field"><h2 className="text-lg">Product Gallery</h2><p>Add up to three gallery images.</p><div className="package-gallery-uploads">{[0, 1, 2].map((index) => <ImageField key={index} name={`gallery_images[${index}]`} label={`Gallery Image ${index + 1}`} required={false} initialUrl={record?.gallery_image_urls?.[index]} removeIndex={index} />)}</div></div>
       {[['name', 'Product name'], ['title', 'Title'], ['subtitle', 'Subtitle'], ['description', 'Description'], ['short_description', 'Short Description']].map(([name, label]) => <div className="package-form-field" key={name}>
         <label className="form-label" htmlFor={`product-${name}`}>{label} <span className="text-danger">*</span></label>
         {name.includes('description') ? <textarea className="form-control" id={`product-${name}`} name={name} rows={3} defaultValue={record?.[name] ?? ''} maxLength={name === 'description' ? 10000 : 2000} required /> : <input className="form-control" id={`product-${name}`} name={name} defaultValue={record?.[name] ?? ''} maxLength={255} required />}
       </div>)}
       {[['price', 'Price'], ['preview_price', 'Preview Price']].map(([name, label]) => <div className="package-form-field" key={name}><label className="form-label" htmlFor={`product-${name}`}>{label} <span className="text-danger">*</span></label><input className="form-control" id={`product-${name}`} name={name} type="number" min="0" max="99999999.99" step="0.01" defaultValue={record?.[name] ?? ''} required /></div>)}
-      <div className="package-form-field"><label className="form-label" htmlFor="product-duration">Duration <span className="text-danger">*</span></label><div className="package-form-images"><input className="form-control" id="product-duration" name="duration_value" type="number" min="1" max="10000" step="1" defaultValue={record?.duration_value ?? ''} required /><select className="form-select" name="duration_unit" aria-label="Duration unit" defaultValue={record?.duration_unit ?? 'day'} required>{[['day', 'Days'], ['week', 'Weeks'], ['month', 'Months'], ['year', 'Years']].map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div></div>
+      <div className="package-form-field"><label className="form-label" htmlFor="product-duration">Duration <span className="text-danger">*</span></label><div className="package-form-images"><input className="form-control" id="product-duration" name="duration_value" type="number" min="1" max="10000" step="1" value={durationValue} onChange={(event) => setDurationValue(event.target.value)} required /><select className="form-select" name="duration_unit" aria-label="Duration unit" defaultValue={record?.duration_unit ?? 'day'} required>{['day', 'week', 'month', 'year'].map((unit) => <option key={unit} value={unit}>{durationUnitLabel(unit, durationValue)}</option>)}</select></div></div>
       <input type="hidden" name="category_id" value={record?.category_id ?? categoryId} />
       {!record && <input type="hidden" name="module" value={module} />}
       <div className="package-form-field"><label className="form-label" htmlFor="product-category">Category <span className="text-danger">*</span></label><input className="form-control" id="product-category" name="category" defaultValue={record?.category ?? ''} maxLength={255} required /></div>
@@ -85,12 +87,9 @@ function ProductEditor({ categories, taxes, record, categoryId, module }) {
       <div className="package-form-field"><label className="form-label" htmlFor="product-tags">Tags <span className="text-danger">*</span></label><input className="form-control" id="product-tags" name="tags" maxLength={2000} defaultValue={record?.tags ?? ''} required /></div>
       <div className="package-form-field"><p className="form-label">Features <span className="text-danger">*</span></p><div className="package-feature-columns"><RepeatedRows name="inclusions" label="Inclusive" initialItems={record?.inclusions} /><RepeatedRows name="exclusions" label="Exclusive" initialItems={record?.exclusions} /></div></div>
       <div className="package-form-field"><p className="form-label">Feature item</p><label className="package-checkboxes"><input type="checkbox" name="is_featured" defaultChecked={Boolean(record?.is_featured)} /> Mark as featured product</label></div>
+      <div className="package-form-field"><label className="form-label" htmlFor="product-tax">Tax</label><select className="form-select" id="product-tax" name="tax_id" defaultValue={record?.tax_id ?? ''}><option value="">No tax</option>{taxes.map((tax) => <option key={tax.id} value={tax.id}>{tax.name} — {tax.rate}% — {tax.type === 'inclusive' ? 'Inclusive' : 'Exclusive'}</option>)}</select></div>
       <div className="package-form-field"><p className="form-label">Is Login?</p><label className="package-checkboxes"><input type="checkbox" name="requires_login" defaultChecked={Boolean(record?.requires_login)} /> Require login to purchase</label></div>
-      <details className="package-form-field"><summary className="form-label">Gallery and tax options</summary>
-        <div className="package-form-field"><h2 className="text-lg">Product Gallery</h2><p>Add up to three gallery images.</p><div className="package-gallery-uploads">{[0, 1, 2].map((index) => <ImageField key={index} name={`gallery_images[${index}]`} label={`Gallery Image ${index + 1}`} required={false} initialUrl={record?.gallery_image_urls?.[index]} removeIndex={index} />)}</div></div>
-        <label className="form-label" htmlFor="product-tax">Tax</label><select className="form-select" id="product-tax" name="tax_id" defaultValue={record?.tax_id ?? ''}><option value="">No tax</option>{taxes.map((tax) => <option key={tax.id} value={tax.id}>{tax.name} — {tax.region} — {tax.rate}% — {tax.type === 'inclusive' ? 'Inclusive' : 'Exclusive'}{tax.is_default ? ' (Default for region)' : ''}</option>)}</select>
-      </details>
-      <div className="text-center"><button className="btn btn-primary package-submit" disabled={saving || !categories.length}>{saving ? 'Saving…' : record ? 'Save Changes' : 'Submit'}</button> <Link className="btn btn-outline-secondary" to="/products" onClick={(event) => { if (saving) event.preventDefault(); }}>Cancel</Link></div>
+      <div className="product-form-actions"><button className="btn btn-primary" disabled={saving || !categories.length}>{saving ? 'Saving…' : record ? 'Save Changes' : 'Submit'}</button> <Link className="btn btn-outline-secondary" to="/products" onClick={(event) => { if (saving) event.preventDefault(); }}>Cancel</Link></div>
     </fieldset>
   </form>;
 }

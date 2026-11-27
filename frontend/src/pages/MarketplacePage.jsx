@@ -79,8 +79,8 @@ export default function MarketplacePage() {
     <div className="d-flex justify-content-end mb-16"><button type="button" className="btn btn-primary" onClick={() => open({ type: 'api' })}>API</button></div>
     {message && <p className="alert alert-success" role="status">{message}</p>}
     {error && <p className="alert alert-danger" role="alert">{error} <button type="button" onClick={() => setRefresh((value) => value + 1)}>Try again</button></p>}
-    <div className="nav nav-tabs mb-24" role="tablist" aria-label="Marketplace settings">
-      {[['sliders', 'Marketplace Slider'], ['banners', 'Marketplace Banner']].map(([value, label]) => <button type="button" key={value} role="tab" id={`marketplace-${value}-tab`} aria-controls="marketplace-panel" aria-selected={tab === value} className={`nav-link ${tab === value ? 'active' : ''}`} onClick={() => { setTab(value); setPage(1); setSearch(''); }}>{label}</button>)}
+    <div className="marketplace-settings-tabs mb-24" role="tablist" aria-label="Marketplace settings">
+      {[['sliders', 'Marketplace Slider'], ['banners', 'Marketplace Banner']].map(([value, label]) => <button type="button" key={value} role="tab" id={`marketplace-${value}-tab`} aria-controls="marketplace-panel" aria-selected={tab === value} className="marketplace-settings-tab" onClick={() => { setTab(value); setPage(1); setSearch(''); }}>{label}</button>)}
     </div>
     <section className="card" id="marketplace-panel" role="tabpanel" aria-labelledby={`marketplace-${tab}-tab`}>
       <ModuleTableToolbar id="marketplace-limit" limit={limit} onLimitChange={(value) => { setLimit(value); setPage(1); }} search={search} searchLabel="Search marketplace" searchMaxLength={255} onSearchChange={(value) => { setSearch(value); setPage(1); }} actions={<>

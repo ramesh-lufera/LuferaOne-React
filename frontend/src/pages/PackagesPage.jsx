@@ -7,13 +7,18 @@ import ModulePageHeader from '../components/ModulePageHeader';
 import ModuleTable, { ModuleTableToolbar, ModuleTablePagination } from '../components/ModuleTable';
 import ModuleTableCell from '../components/ModuleTableCell';
 import { api } from '../services/api';
+import './CatalogTable.css';
 
 const columns = [
-  { label: 'Package Name', width: 240 },
-  { label: 'Category', width: 200 },
-  { label: 'Module', width: 200 },
+  { label: 'Name', width: 340 },
+  { label: 'Title', width: 190 },
+  { label: 'Price', width: 160 },
+  { label: 'Duration', width: 150 },
+  { label: 'Status', width: 130, align: 'center' },
   { label: 'Action', width: 180, align: 'center' },
 ];
+const formatPrice = (value) => value == null ? '—' : Number(value).toLocaleString('en-IN', { style: 'currency', currency: 'INR' });
+const formatDuration = (value, unit) => value && unit ? `${value} ${unit[0].toUpperCase()}${unit.slice(1)}${Number(value) > 1 ? 's' : ''}` : '—';
 const empty = { data: [], last_page: 1, total: 0 };
 
 export default function PackagesPage() {
@@ -88,15 +93,17 @@ export default function PackagesPage() {
     {error && <div className="alert alert-danger" role="alert">{error} <button type="button" onClick={() => setRefresh((v) => v + 1)}>Try again</button></div>}
     <div className="card p-0 radius-12">
       <ModuleTableToolbar id="packages-limit" limit={limit} onLimitChange={(v) => { setLimit(v); setPage(1); }} search={search} searchLabel="Search packages" searchMaxLength={255} onSearchChange={(v) => { setSearch(v); setPage(1); }} actions={<button className="btn btn-primary radius-8" aria-haspopup="dialog" onClick={() => setShow(true)}>+ Add New Package</button>} />
-      <div className="card-body p-24">
+      <div className="card-body p-24 catalog-table">
         <ModuleTable columns={columns}>
-          {loading || !result.data.length ? <tr><td colSpan={4}>{loading ? 'Loading packages…' : error ? 'Packages unavailable.' : 'No packages found.'}</td></tr> : result.data.map((item) => <tr key={item.id}>
-            <td><ModuleTableCell id={`package-${item.id}`}>{item.name}</ModuleTableCell></td>
-            <td><ModuleTableCell id={`package-category-${item.id}`}>{item.category_name}</ModuleTableCell></td>
-            <td><ModuleTableCell id={`package-module-${item.id}`}>{item.module}</ModuleTableCell></td>
+          {loading || !result.data.length ? <tr><td colSpan={6}>{loading ? 'Loading packages…' : error ? 'Packages unavailable.' : 'No packages found.'}</td></tr> : result.data.flatMap((item) => (item.durations?.length ? item.durations : [null]).map((duration, index) => ({ ...item, duration, rowKey: `${item.id}-${index}` }))).map((item) => <tr key={item.rowKey}>
+            <td><ModuleTableCell id={`package-${item.rowKey}`}><Link to={item.page_path}>{item.name}</Link></ModuleTableCell></td>
+            <td><ModuleTableCell id={`package-title-${item.rowKey}`}>{item.title || '—'}</ModuleTableCell></td>
+            <td>{formatPrice(item.duration?.price)}</td>
+            <td>{formatDuration(item.duration?.value, item.duration?.unit)}</td>
+            <td className="text-center"><span className="catalog-status">Active</span></td>
             <td className="text-center"><div className="d-flex align-items-center gap-10 justify-content-center flex-nowrap">
               <Link className="module-table-action bg-primary-50 text-primary-600 w-40-px h-40-px rounded-circle" to={item.page_path} aria-label={`View ${item.name}`}><Icon icon="lucide:eye" /></Link>
-              <Link className="module-table-action bg-success-focus text-success-600 w-40-px h-40-px rounded-circle" to={`/package-edit?package=${encodeURIComponent(item.page_slug)}`} aria-label={`Edit ${item.name}`}><Icon icon="lucide:edit" /></Link>
+              <Link className="module-table-action bg-warning-focus text-warning-600 w-40-px h-40-px rounded-circle" to={`/package-edit?package=${encodeURIComponent(item.page_slug)}`} aria-label={`Edit ${item.name}`}><Icon icon="lucide:edit" /></Link>
               <button type="button" className="module-table-action bg-danger-focus text-danger-600 w-40-px h-40-px rounded-circle" aria-label={`Delete ${item.name}`} aria-haspopup="dialog" onClick={() => { setDeleteError(''); setDeleteTarget(item); }}><Icon icon="fluent:delete-24-regular" /></button>
             </div></td>
           </tr>)}

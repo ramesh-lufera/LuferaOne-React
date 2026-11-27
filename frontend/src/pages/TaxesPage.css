@@ -6,8 +6,4 @@
 .tax-editor-dialog .modal-footer { padding: 16px; }
 .tax-editor-dialog .form-label { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
 .tax-editor-dialog .form-control, .tax-editor-dialog .form-select { min-height: 44px; }
-.tax-default-check { display: flex; align-items: center; gap: 12px; cursor: pointer; }
-.tax-default-check input[type="checkbox"] { -webkit-appearance: checkbox; appearance: auto; width: 18px; height: 18px; margin: 0; flex-shrink: 0; accent-color: var(--primary-600, #188c8e); cursor: pointer; }
-.tax-default-check input:focus-visible { outline: 2px solid var(--primary-600, #188c8e); outline-offset: 3px; }
-.tax-default-help { margin-top: 16px; font-size: 13px; color: var(--text-secondary-light, #666); line-height: 1.6; }
 @media (max-width: 575px) { .tax-editor-dialog { margin: 16px; } }
