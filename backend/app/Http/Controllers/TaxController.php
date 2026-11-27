@@ -60,6 +60,9 @@ class TaxController extends Controller
     {
         $record = DB::table('taxes')->lockForUpdate()->find($tax);
         abort_unless($record, 404);
+        if (DB::table('products')->where('tax_id', $record->id)->exists()) {
+            throw ValidationException::withMessages(['tax' => 'This tax is used by a product. Choose another tax or No tax on those products before deleting it.']);
+        }
         if (DB::table('packages')->where('tax_id', $record->id)->exists()) {
             throw ValidationException::withMessages(['tax' => 'This tax is used by a package. Choose another tax or No tax on those packages before deleting it.']);
         }

@@ -3,6 +3,7 @@
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\Auth\FacebookAuthController;
 use App\Http\Controllers\Auth\GoogleAuthController;
+use App\Http\Controllers\Auth\MobileSignInController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
@@ -10,8 +11,10 @@ use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CredentialsController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoiceSettingsController;
+use App\Http\Controllers\MarketplaceController;
 use App\Http\Controllers\PackageController;
 use App\Http\Controllers\PrivacyPolicyController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SheetAttachmentController;
 use App\Http\Controllers\SheetCommentController;
@@ -87,6 +90,13 @@ Route::post('/auth/google/code', [GoogleAuthController::class, 'code'])
 // Facebook Authentication
 Route::post('/auth/facebook', FacebookAuthController::class)
     ->middleware('throttle:10,1,facebook-login');
+    
+Route::post('/auth/mobile/start', [MobileSignInController::class, 'start'])
+    ->middleware('throttle:10,1,mobile-sign-in-start');
+Route::post('/auth/mobile/authorize', [MobileSignInController::class, 'authorize'])
+    ->middleware(['auth:sanctum', 'throttle:10,1,mobile-sign-in-authorize']);
+Route::post('/auth/mobile/exchange', [MobileSignInController::class, 'exchange'])
+    ->middleware('throttle:20,1,mobile-sign-in-exchange');
 
 // Activity Logs
 Route::middleware(['auth:sanctum', 'can:view-activity-logs'])->group(function () {
@@ -212,7 +222,22 @@ Route::get('/packages/{package}/images/{image}', [PackageController::class, 'ima
     ->middleware(['signed', 'throttle:120,1'])->name('packages.image');
 Route::get('/external/packages/{package}', [PackageController::class, 'external'])
     ->where('package', '[a-z0-9-]+')->middleware('throttle:120,1');
- 
+
+Route::middleware(['auth:sanctum', EnsureModuleAccess::class.':products'])->group(function () {
+    Route::get('/products/categories', [ProductController::class, 'categories']);
+    Route::get('/products/options/taxes', [ProductController::class, 'taxes']);
+    Route::get('/products', [ProductController::class, 'index']);
+    Route::post('/products', [ProductController::class, 'store']);
+    Route::put('/products/{product}', [ProductController::class, 'update'])->whereNumber('product');
+    Route::delete('/products/{product}', [ProductController::class, 'destroy'])->whereNumber('product');
+    Route::get('/products/{product}', [ProductController::class, 'show'])->where('product', '[a-z0-9-]+');
+});
+Route::get('/products/{product}/images/{image}', [ProductController::class, 'image'])
+    ->where('product', '[a-z0-9-]+')->whereIn('image', ['product_image', 'breadcrumb_image', 'gallery_0', 'gallery_1', 'gallery_2', 'gallery_3'])
+    ->middleware(['signed', 'throttle:120,1'])->name('products.image');
+Route::get('/external/products/{product}', [ProductController::class, 'external'])
+    ->where('product', '[a-z0-9-]+')->middleware('throttle:120,1');
+
 Route::middleware(['auth:sanctum', EnsureModuleAccess::class.':taxes'])->group(function () {
     Route::get('/taxes', [TaxController::class, 'index']);
     Route::post('/taxes', [TaxController::class, 'store']);
@@ -220,3 +245,17 @@ Route::middleware(['auth:sanctum', EnsureModuleAccess::class.':taxes'])->group(f
     Route::put('/taxes/{tax}', [TaxController::class, 'update'])->whereNumber('tax');
     Route::delete('/taxes/{tax}', [TaxController::class, 'destroy'])->whereNumber('tax');
 });
+
+Route::middleware(['auth:sanctum', EnsureModuleAccess::class.':marketplace'])->prefix('settings/marketplace')->group(function () {
+    Route::get('/', [MarketplaceController::class, 'index']);
+    Route::post('/sliders', [MarketplaceController::class, 'storeSlider']);
+    Route::put('/sliders/order', [MarketplaceController::class, 'reorder']);
+    Route::put('/sliders/{slider}', [MarketplaceController::class, 'updateSlider'])->whereNumber('slider');
+    Route::delete('/sliders/{slider}', [MarketplaceController::class, 'destroySlider'])->whereNumber('slider');
+    Route::post('/banners', [MarketplaceController::class, 'storeBanner']);
+    Route::put('/banners/{banner}', [MarketplaceController::class, 'updateBanner'])->whereNumber('banner');
+    Route::delete('/banners/{banner}', [MarketplaceController::class, 'destroyBanner'])->whereNumber('banner');
+});
+Route::get('/external/marketplace', [MarketplaceController::class, 'publicIndex'])->middleware('throttle:120,1');
+Route::get('/marketplace/banners/{banner}/images/{slide}', [MarketplaceController::class, 'image'])
+    ->whereNumber('banner')->whereIn('slide', ['0', '1', '2'])->middleware(['signed', 'throttle:120,1'])->name('marketplace.image');

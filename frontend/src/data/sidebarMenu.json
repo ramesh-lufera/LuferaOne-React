@@ -56,9 +56,9 @@
         "pending": false
       },
       {
-        "path": "/404",
+        "path": "/products",
         "label": "Product",
-        "pending": true
+        "pending": false
       }
     ]
   },
@@ -113,9 +113,9 @@
         "pending": false
       },
       {
-        "path": "/404",
+        "path": "/marketplace",
         "label": "Marketplace",
-        "pending": true,
+        "pending": false,
         "permissionKey": "marketplace"
       },
       {

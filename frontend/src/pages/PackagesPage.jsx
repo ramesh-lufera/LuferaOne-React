@@ -95,7 +95,7 @@ export default function PackagesPage() {
             <td><ModuleTableCell id={`package-category-${item.id}`}>{item.category_name}</ModuleTableCell></td>
             <td><ModuleTableCell id={`package-module-${item.id}`}>{item.module}</ModuleTableCell></td>
             <td className="text-center"><div className="d-flex align-items-center gap-10 justify-content-center flex-nowrap">
-              <Link className="module-table-action bg-primary-focus text-primary-600 w-40-px h-40-px rounded-circle" to={item.page_path} aria-label={`View ${item.name}`}><Icon icon="lucide:eye" /></Link>
+              <Link className="module-table-action bg-primary-50 text-primary-600 w-40-px h-40-px rounded-circle" to={item.page_path} aria-label={`View ${item.name}`}><Icon icon="lucide:eye" /></Link>
               <Link className="module-table-action bg-success-focus text-success-600 w-40-px h-40-px rounded-circle" to={`/package-edit?package=${encodeURIComponent(item.page_slug)}`} aria-label={`Edit ${item.name}`}><Icon icon="lucide:edit" /></Link>
               <button type="button" className="module-table-action bg-danger-focus text-danger-600 w-40-px h-40-px rounded-circle" aria-label={`Delete ${item.name}`} aria-haspopup="dialog" onClick={() => { setDeleteError(''); setDeleteTarget(item); }}><Icon icon="fluent:delete-24-regular" /></button>
             </div></td>

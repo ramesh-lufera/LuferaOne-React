@@ -9,12 +9,13 @@ import { saveToken, getToken, clearToken, markTokenVerified, apiUrl } from "../h
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import "./SignInLayer.css";
 
-const SignInLayer = () => {
+// eslint-disable-next-line react/prop-types
+const SignInLayer = ({ onAuthenticated, returnPath } = {}) => {
   const images = useCompanyBranding();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const returnTo = searchParams.get('returnTo') || '';
-  const destination = /^\/external\/(?:categories|packages)\/[a-zA-Z0-9._-]+\/?$/.test(returnTo) ? returnTo : '/';
+  const returnTo = returnPath || searchParams.get('returnTo') || '';
+  const destination = returnTo === '/external/marketplace' ? returnTo : /^\/external\/(?:categories|packages|products)\/[a-zA-Z0-9._-]+\/?$/.test(returnTo) ? returnTo : '/';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -39,7 +40,8 @@ const SignInLayer = () => {
         const data = await response.json();
         if (active && data.user) {
           markTokenVerified(token);
-          navigate(destination, { replace: true });
+          if (onAuthenticated) onAuthenticated();
+          else navigate(destination, { replace: true });
         }
       }
     }).catch(() => {
@@ -48,7 +50,7 @@ const SignInLayer = () => {
       if (active) setRestoringSession(false);
     });
     return () => { active = false; controller.abort(); };
-  }, [destination, navigate]);
+  }, [destination, navigate, onAuthenticated]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -68,7 +70,8 @@ const SignInLayer = () => {
       }
       saveToken(data.token, remember);
       markTokenVerified(data.token);
-      navigate(destination, { replace: true });
+      if (onAuthenticated) onAuthenticated();
+      else navigate(destination, { replace: true });
     } catch {
       setError('Unable to connect to the server. Please try again.');
     } finally {

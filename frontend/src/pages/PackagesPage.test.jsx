@@ -68,19 +68,21 @@ test('submits image uploads and repeatable rows, then opens the generated page',
   expect(await screen.findByRole('heading', { name: 'Saved package page' })).toBeInTheDocument();
 });
 
-test('public package page shows content and a sign in link when pricing is locked', async () => {
+test('public package page shows content without the purchase section', async () => {
   api.mockResolvedValue({ package: {
     name: 'Starter', title: 'Starter package', subtitle: 'For teams', description: 'Full description', short_description: 'Short description',
     category_name: 'LuferaOne', module: 'CRM', page_path: '/packages/starter', addons: ['packages'], durations: [],
     inclusions: ['Support'], exclusions: ['Hardware'], pricing_locked: true,
   } });
   show('/external/packages/starter');
-  const login = await screen.findByRole('link', { name: 'Sign in to view pricing' });
-  expect(login).toHaveAttribute('href', '/sign-in?returnTo=%2Fexternal%2Fpackages%2Fstarter');
+  await screen.findByText('Full description');
+  expect(screen.queryByRole('link', { name: 'Shop now' })).not.toBeInTheDocument();
   expect(screen.getByText('Full description')).toBeInTheDocument();
   expect(screen.queryByLabelText('Duration')).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole('tab', { name: 'Additional information' }));
-  expect(screen.getByText('✓ Support')).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Features' })).toBeInTheDocument();
+  expect(screen.getByText('Support')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Contact Us' }));
+  expect(await screen.findByRole('dialog')).toBeInTheDocument();
 });
 
 const savedPackage = {
@@ -223,12 +225,15 @@ test('editing preselects the saved tax and permits clearing it', async () => {
   expect(api.mock.calls.find(([path]) => path === '/packages/12')[1].body.get('tax_id')).toBe('');
 });
 
-test('public package page shows the price without GST or tax details', async () => {
+test('public package page omits pricing and gallery', async () => {
   api.mockResolvedValue({ package: { ...savedPackage, pricing_locked: false, gst: null, tax: taxOptions[0],
     durations: [{ value: 1, unit: 'month', price: '1000', tax_amount: '180.00', total_amount: '1180.00' }],
   } });
   show('/external/packages/starter');
-  expect(await screen.findByText('₹1,000.00')).toBeInTheDocument();
+  await screen.findByRole('heading', { name: 'Description' });
+  expect(screen.queryByText('₹1,000.00')).not.toBeInTheDocument();
+  expect(screen.queryByLabelText('Duration')).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /Zoom/ })).not.toBeInTheDocument();
   expect(screen.queryByText(/GST|Tax:|Total:/)).not.toBeInTheDocument();
 });
 

@@ -25,6 +25,7 @@ const normalizePath = (path) => {
 
 export const moduleForPath = (path) => {
   const normalized = normalizePath(path);
+  if (/^\/products\/[a-z0-9-]+$/.test(normalized)) return 'products';
   if (/^\/packages\/[a-z0-9-]+$/.test(normalized)) return 'packages';
   if (categoryPath.test(normalized)) return 'categories';
   return modules.find((module) => module.paths.includes(normalized))?.key;

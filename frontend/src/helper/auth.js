@@ -1,15 +1,12 @@
 export const apiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000/api').replace(/\/$/, '');
-const tokenKey = 'lufera_auth_token';
+import { getToken, clearToken as clearStoredToken, saveToken as saveStoredToken } from './authStorage';
+export { getToken };
+export const clearToken = () => { verifiedToken = null; clearStoredToken(); };
+export const saveToken = (token, remember) => { verifiedToken = null; saveStoredToken(token, remember); };
 let verifiedToken = null;
 let verifiedAt = 0;
 export const markTokenVerified = (token) => { verifiedToken = token; verifiedAt = Date.now(); };
 export const hasVerifiedToken = () => Boolean(verifiedToken && verifiedToken === getToken() && Date.now() - verifiedAt < 10000);
-export const getToken = () => sessionStorage.getItem(tokenKey) || localStorage.getItem(tokenKey);
-export const clearToken = () => { verifiedToken = null; sessionStorage.removeItem(tokenKey); localStorage.removeItem(tokenKey); };
-export const saveToken = (token, remember) => {
-  clearToken();
-  (remember ? localStorage : sessionStorage).setItem(tokenKey, token);
-};
 
 export const signOut = async () => {
   const token = getToken();

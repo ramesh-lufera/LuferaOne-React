@@ -6,7 +6,7 @@ import ModulePageHeader from '../../components/ModulePageHeader';
 import { api } from '../../services/api';
 import './PackagePage.css';
 
-function ImageField({ name, label, required = true, initialUrl, removeIndex }) {
+export function ImageField({ name, label, required = true, initialUrl, removeIndex }) {
   const input = useRef(null);
   const [file, setFile] = useState(null);
   const [removed, setRemoved] = useState(false);
@@ -53,7 +53,7 @@ function ImageField({ name, label, required = true, initialUrl, removeIndex }) {
   </div>;
 }
 
-function RepeatedRows({ name, label, pricing = false, initialItems = [] }) {
+export function RepeatedRows({ name, label, pricing = false, initialItems = [] }) {
   const [rows, setRows] = useState(() => Array.from({ length: Math.max(1, initialItems.length) }, (_, index) => index + 1));
   const next = useRef(rows.length + 1);
   return <div className="package-repeated" role="group" aria-label={label}>

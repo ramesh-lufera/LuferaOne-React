@@ -44,7 +44,7 @@ test('sidebar, account menu, and footer contain valid links with placeholders po
     expect(completedPaths).toContain(href);
   }
   expect(screen.getByRole('link', { name: 'Currencies' })).toHaveAttribute('href', '/404');
-  expect(screen.getByRole('link', { name: 'Marketplace' })).toHaveAttribute('href', '/404');
+  expect(screen.getByRole('link', { name: 'Marketplace' })).toHaveAttribute('href', '/marketplace');
   expect(screen.queryByText('Inbox')).not.toBeInTheDocument();
   expect(screen.queryByPlaceholderText('Search')).not.toBeInTheDocument();
   expect(screen.queryByText('Widgets')).not.toBeInTheDocument();
@@ -88,12 +88,13 @@ test('all screenshot menus are retained in order with future modules linked to 4
   const menu = sidebar.querySelector('#sidebar-menu');
   const labels = Array.from(menu.children).map((item) => item.querySelector('a')?.textContent);
   expect(labels).toEqual(['Dashboard', 'LuferaSheets', 'Billing', 'Inventory', 'Settings', 'Log-Out']);
-  for (const title of ['Form Builder', 'Subscriptions', 'Payment History', 'Add on Services', 'Product', 'Backup', 'Bank Details', 'Buy For Customer', 'Currencies', 'Marketplace', 'Promotion']) {
+  for (const title of ['Form Builder', 'Subscriptions', 'Payment History', 'Add on Services', 'Backup', 'Bank Details', 'Buy For Customer', 'Currencies', 'Promotion']) {
     expect(within(sidebar).getByRole('link', { name: title })).toHaveAttribute('href', '/404');
   }
   expect(within(sidebar).getByRole('link', { name: 'Sheets' })).toHaveAttribute('href', '/sheets');
   expect(within(sidebar).getByRole('link', { name: 'Invoice' })).toHaveAttribute('href', '/invoice-list');
   expect(within(sidebar).getByRole('link', { name: 'Taxes' })).toHaveAttribute('href', '/taxes');
+  expect(within(sidebar).getByRole('link', { name: 'Product' })).toHaveAttribute('href', '/products');
   expect(within(sidebar).getByRole('link', { name: 'Package' })).toHaveAttribute('href', '/packages');
   expect(within(sidebar).getByRole('link', { name: 'Category' })).toHaveAttribute('href', '/categories');
   expect(within(sidebar).getByRole('link', { name: 'Roles' })).toHaveAttribute('href', '/roles-permissions');

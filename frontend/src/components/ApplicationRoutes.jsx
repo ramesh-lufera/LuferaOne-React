@@ -7,7 +7,12 @@ import AccessDeniedPage from '../pages/AccessDeniedPage';
 import ActivityLogPage from '../pages/ActivityLogPage';
 import AddUserPage from '../pages/AddUserPage';
 import AssignRolePage from '../pages/AssignRolePage';
+import MarketplacePage from '../pages/MarketplacePage';
+import ExternalMarketplacePage from '../pages/ExternalMarketplacePage';
 import TaxesPage from '../pages/TaxesPage';
+import ProductsPage from '../pages/ProductsPage';
+import ProductFormPage from '../pages/products/ProductFormPage';
+import ProductPage from '../pages/products/ProductPage';
 import PackagesPage from '../pages/PackagesPage';
 import PackageFormPage from '../pages/packages/PackageFormPage';
 import PackagePage from '../pages/packages/PackagePage';
@@ -23,6 +28,7 @@ import InvoiceEditPage from '../pages/InvoiceEditPage';
 import InvoiceListPage from '../pages/InvoiceListPage';
 import InvoicePreviewPage from '../pages/InvoicePreviewPage';
 import InvoiceSettingsPage from '../pages/InvoiceSettingsPage';
+import MobileSignInPage from '../pages/MobileSignInPage';
 import PrivacyPolicyPage from '../pages/PrivacyPolicyPage';
 import PrivacyPolicySettingsPage from '../pages/PrivacyPolicySettingsPage';
 import RoleAccessPage from '../pages/RoleAccessPage';
@@ -35,7 +41,7 @@ import UsersGridPage from '../pages/UsersGridPage';
 import UsersListPage from '../pages/UsersListPage';
 import ViewProfilePage from '../pages/ViewProfilePage';
 
-const pages = { TaxesPage, PackagesPage, PackageFormPage, SheetEditorPage, SheetsPage, AccessDeniedPage, ActivityLogPage, AddUserPage, AssignRolePage, CategoriesPage, CompanyPage, CredentialsPage, ErrorPage, HomePageOne, InvoiceAddPage, InvoiceEditPage, InvoiceListPage, InvoicePreviewPage, InvoiceSettingsPage, PrivacyPolicyPage, PrivacyPolicySettingsPage, RoleAccessPage, SignInPage, SignUpPage, TermsConditionPage, TermsConditionSettingsPage, ThemeColorsPage, UsersGridPage, UsersListPage, ViewProfilePage };
+const pages = { MarketplacePage, ProductsPage, ProductFormPage, TaxesPage, PackagesPage, PackageFormPage, SheetEditorPage, SheetsPage, AccessDeniedPage, ActivityLogPage, AddUserPage, AssignRolePage, CategoriesPage, CompanyPage, CredentialsPage, ErrorPage, HomePageOne, InvoiceAddPage, InvoiceEditPage, InvoiceListPage, InvoicePreviewPage, InvoiceSettingsPage, PrivacyPolicyPage, PrivacyPolicySettingsPage, RoleAccessPage, SignInPage, SignUpPage, TermsConditionPage, TermsConditionSettingsPage, ThemeColorsPage, UsersGridPage, UsersListPage, ViewProfilePage };
 
 export default function ApplicationRoutes() {
   const renderRoutes = (access) => routes.filter((route) => route.access === access).map(({ path, page }) => {
@@ -45,12 +51,16 @@ export default function ApplicationRoutes() {
   return <Routes>
     <Route element={<RequireAuth />}>
       {renderRoutes('protected')}
+      <Route path="/products/:filename" element={<ProductPage />} />
       <Route path="/packages/:filename" element={<PackagePage />} />
       <Route path="/categories/:filename" element={<CategoryPage />} />
     </Route>
     <Route element={<RequireAuth allowGuest />}>{renderRoutes('legal')}</Route>
+    <Route path="/external/products/:filename" element={<ProductPage external />} />
     <Route path="/external/packages/:filename" element={<PackagePage external />} />
     <Route path="/external/categories/:filename" element={<ExternalCategoryPage />} />
+    <Route path="/mobile-sign-in" element={<MobileSignInPage />} />
+    <Route path="/external/marketplace" element={<ExternalMarketplacePage />} />
     {renderRoutes('public')}
     <Route path="*" element={<Navigate to="/404" replace />} />
   </Routes>;

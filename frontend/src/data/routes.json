@@ -190,5 +190,28 @@
     "page": "TaxesPage",
     "title": "Taxes",
     "access": "protected"
+  },
+  {
+    "path": "/products",
+    "page": "ProductsPage",
+    "title": "Products",
+    "access": "protected"
+  },
+  {
+    "path": "/products/new",
+    "page": "ProductFormPage",
+    "title": "Add Product",
+    "access": "protected"
+  },
+  {
+    "path": "/product-edit",
+    "page": "ProductFormPage",
+    "title": "Edit Product",
+    "access": "protected"
+  },
+  {
+    "path": "/marketplace",
+    "page": "MarketplacePage",
+    "access": "protected"
   }
 ]

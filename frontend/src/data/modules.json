@@ -547,5 +547,14 @@
     "paths": [
       "/taxes"
     ]
+  },
+  {
+    "key": "products",
+    "label": "Products",
+    "paths": [
+      "/products",
+      "/products/new",
+      "/product-edit"
+    ]
   }
 ]
