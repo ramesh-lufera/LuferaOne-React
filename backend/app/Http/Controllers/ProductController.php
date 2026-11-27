@@ -26,9 +26,9 @@ class ProductController extends Controller
 
     public function taxes(): JsonResponse
     {
-        $taxes = DB::table('taxes')->select('id', 'name', 'region', 'rate', 'type', 'is_default')
-            ->orderBy('region')->orderByDesc('is_default')->orderBy('name')->get()
-            ->map(fn (object $tax): array => [...(array) $tax, 'is_default' => (bool) $tax->is_default, 'rate' => number_format((float) $tax->rate, 2, '.', '')]);
+        $taxes = DB::table('taxes')->select('id', 'name', 'rate', 'type')
+            ->orderBy('name')->get()
+            ->map(fn (object $tax): array => [...(array) $tax, 'rate' => number_format((float) $tax->rate, 2, '.', '')]);
 
         return response()->json(['taxes' => $taxes]);
     }
@@ -41,7 +41,7 @@ class ProductController extends Controller
             'per_page' => ['sometimes', 'integer', Rule::in([10, 20, 50])],
         ]);
         $products = DB::table('products')->join('categories', 'categories.id', '=', 'products.category_id')
-            ->select('products.id', 'products.name', 'products.price', 'products.page_slug', 'categories.name as category_name')
+            ->select('products.id', 'products.name', 'products.title', 'products.duration_value', 'products.duration_unit', 'products.price', 'products.preview_price', 'products.page_slug', 'categories.name as category_name')
             ->when($data['search'] ?? '', function (Builder $query, string $search): void {
                 $query->where(function (Builder $query) use ($search): void {
                     $query->whereLike('products.name', '%'.$search.'%')->orWhereLike('products.tags', '%'.$search.'%')->orWhereLike('categories.name', '%'.$search.'%');
@@ -171,7 +171,7 @@ class ProductController extends Controller
         foreach (['inclusions', 'exclusions'] as $key) {
             $data[$key] = json_decode($data[$key], true, flags: JSON_THROW_ON_ERROR);
         }
-        $tax = $record->tax_id ? DB::table('taxes')->select('id', 'name', 'region', 'rate', 'type')->find($record->tax_id) : null;
+        $tax = $record->tax_id ? DB::table('taxes')->select('id', 'name', 'rate', 'type')->find($record->tax_id) : null;
         $data['tax'] = $tax ? [...(array) $tax, 'rate' => number_format((float) $tax->rate, 2, '.', '')] : null;
         $data['durations'] = [['value' => $record->duration_value, 'unit' => $record->duration_unit, 'price' => $record->price, 'preview_price' => $record->preview_price]];
         if ($tax) {

@@ -3,10 +3,12 @@ import { render, screen, fireEvent, waitFor, cleanup, within } from '@testing-li
 import '@testing-library/jest-dom';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import PackagesPage from './PackagesPage';
-import PackageFormPage from './packages/PackageFormPage';
+import PackageFormPage, { RepeatedRows } from './packages/PackageFormPage';
 import PackagePage from './packages/PackagePage';
 import { api } from '../services/api';
+import CatalogApiDetails from '../components/CatalogApiDetails';
 
+jest.mock('../helper/auth', () => ({ apiUrl: '/api' }));
 jest.mock('../services/api', () => ({ api: jest.fn() }));
 // eslint-disable-next-line react/prop-types
 jest.mock('../masterLayout/MasterLayout', () => function MasterLayoutStub({ children }) { return <main>{children}</main>; });
@@ -56,7 +58,7 @@ test('submits image uploads and repeatable rows, then opens the generated page',
   expect(screen.getByLabelText('Duration value 2')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Remove Duration & Price 2' }));
   expect(screen.queryByLabelText('Duration value 2')).not.toBeInTheDocument();
-  fireEvent.click(screen.getByLabelText('Packages'));
+  expect(screen.queryByRole('group', { name: /Add-Ons/ })).not.toBeInTheDocument();
   fireEvent.click(screen.getByLabelText('Require login to show package pricing'));
   fireEvent.submit(screen.getByRole('button', { name: 'Submit' }).closest('form'));
   await waitFor(() => expect(api).toHaveBeenCalledWith('/packages', expect.objectContaining({ method: 'POST' })));
@@ -64,7 +66,7 @@ test('submits image uploads and repeatable rows, then opens the generated page',
   expect(body.get('category_id')).toBe('7');
   expect(body.get('module')).toBe('CRM');
   expect(body.get('requires_login')).toBe('1');
-  expect(body.getAll('addons[]')).toEqual(['packages']);
+  expect(body.getAll('addons[]')).toEqual([]);
   expect(await screen.findByRole('heading', { name: 'Saved package page' })).toBeInTheDocument();
 });
 
@@ -106,13 +108,13 @@ test('edit action loads every saved field, retains images, and allows retrying a
     return Promise.resolve({ data: [savedPackage], total: 1, last_page: 1 });
   });
   show();
-  fireEvent.click(await screen.findByRole('link', { name: 'Edit Starter' }));
+  fireEvent.click((await screen.findAllByRole('link', { name: 'Edit Starter' }))[0]);
   expect(await screen.findByDisplayValue('Starter title')).toBeInTheDocument();
   expect(screen.getByLabelText(/Package name/)).toHaveValue('Starter');
   expect(screen.getByLabelText(/Module/)).toHaveValue('CRM');
   expect(screen.getByLabelText('Duration value 2')).toHaveValue(1);
   expect(screen.getByLabelText('Inclusive 2')).toHaveValue('Updates');
-  expect(screen.getByLabelText('Add-on Services')).toBeChecked();
+  expect(screen.queryByLabelText('Add-on Services')).not.toBeInTheDocument();
   expect(screen.getByLabelText('Require login to show package pricing')).toBeChecked();
   expect(screen.getByLabelText('Tax')).toHaveValue('legacy');
   expect(screen.getByLabelText('Package Image')).not.toBeRequired();
@@ -150,12 +152,12 @@ test('delete can be cancelled, retries errors, and refreshes the package list af
     return Promise.resolve({ data: deleted ? [] : [savedPackage], total: deleted ? 0 : 1, last_page: 1 });
   });
   show();
-  fireEvent.click(await screen.findByRole('button', { name: 'Delete Starter' }));
+  fireEvent.click((await screen.findAllByRole('button', { name: 'Delete Starter' }))[0]);
   let dialog = await screen.findByRole('dialog', { name: 'Delete Package' });
   fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   expect(deleteCount).toBe(0);
-  fireEvent.click(screen.getByRole('button', { name: 'Delete Starter' }));
+  fireEvent.click(screen.getAllByRole('button', { name: 'Delete Starter' })[0]);
   dialog = await screen.findByRole('dialog', { name: 'Delete Package' });
   fireEvent.click(within(dialog).getByRole('button', { name: 'Delete Package' }));
   expect(await screen.findByText('Delete failed. Please retry.')).toBeInTheDocument();
@@ -173,12 +175,12 @@ test('deleting the last package on a later page returns to the preceding page', 
     return Promise.resolve({ data: page === 2 && !deleted ? [savedPackage] : [{ ...savedPackage, id: 13, name: 'Other' }], total: deleted ? 10 : 11, last_page: deleted ? 1 : 2 });
   });
   show();
-  await screen.findByRole('link', { name: 'Edit Other' });
+  (await screen.findAllByRole('link', { name: 'Edit Other' }))[0];
   fireEvent.click(screen.getByRole('button', { name: 'Page 2' }));
-  fireEvent.click(await screen.findByRole('button', { name: 'Delete Starter' }));
+  fireEvent.click((await screen.findAllByRole('button', { name: 'Delete Starter' }))[0]);
   const dialog = await screen.findByRole('dialog');
   fireEvent.click(within(dialog).getByRole('button', { name: 'Delete Package' }));
-  expect(await screen.findByRole('link', { name: 'Edit Other' })).toBeInTheDocument();
+  expect((await screen.findAllByRole('link', { name: 'Edit Other' }))[0]).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Page 1' })).toHaveAttribute('aria-current', 'page');
 });
 
@@ -187,7 +189,7 @@ const taxOptions = [
   { id: 10, name: 'VAT included', region: 'United Kingdom', rate: '20.00', type: 'inclusive', is_default: false },
 ];
 
-test('package tax selector lists saved records from all regions and submits the chosen tax ID', async () => {
+test('package tax selector lists saved records and submits the chosen tax ID', async () => {
   api.mockImplementation((path) => {
     if (path === '/packages/categories') return Promise.resolve({ categories });
     if (path === '/packages/options/taxes') return Promise.resolve({ taxes: taxOptions });
@@ -196,11 +198,11 @@ test('package tax selector lists saved records from all regions and submits the 
   show('/packages/new?category=7&module=CRM');
   const selector = await screen.findByLabelText('Tax');
   expect(selector).toHaveValue('');
-  expect(screen.getByRole('option', { name: /GST 18%.*India.*Exclusive.*Default for region/ })).toBeInTheDocument();
-  expect(screen.getByRole('option', { name: /VAT included.*United Kingdom.*Inclusive/ })).toBeInTheDocument();
+  expect(screen.getByRole('option', { name: /GST 18%.*Exclusive/ })).toBeInTheDocument();
+  expect(screen.getByRole('option', { name: /VAT included.*Inclusive/ })).toBeInTheDocument();
   fireEvent.change(selector, { target: { value: '10' } });
   expect(screen.getByText(/Inclusive: the entered package price already includes this tax/)).toBeInTheDocument();
-  fireEvent.click(screen.getByLabelText('Packages'));
+  expect(screen.queryByRole('group', { name: /Add-Ons/ })).not.toBeInTheDocument();
   fireEvent.submit(screen.getByRole('button', { name: 'Submit' }).closest('form'));
   await screen.findByRole('heading', { name: 'Saved package page' });
   const body = api.mock.calls.find(([path]) => path === '/packages')[1].body;
@@ -248,4 +250,43 @@ test('oversized gallery images show a clear error before upload and a valid repl
   fireEvent.change(input, { target: { files: [new File(['image'], 'small.png', { type: 'image/png' })] } });
   expect(input).toBeValid();
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+});
+
+test('duration units pluralize independently for each package pricing row', () => {
+  render(<RepeatedRows name="durations" label="Duration & Price" pricing initialItems={[{ value: 1, unit: 'day' }, { value: 2, unit: 'month' }]} />);
+  const first = screen.getByLabelText('Duration unit 1');
+  const second = screen.getByLabelText('Duration unit 2');
+  expect(within(first).getByRole('option', { name: 'Day' })).toHaveValue('day');
+  expect(within(second).getByRole('option', { name: 'Months' })).toHaveValue('month');
+  fireEvent.change(screen.getByLabelText('Duration value 1'), { target: { value: '3' } });
+  expect(within(first).getByRole('option', { name: 'Days' })).toHaveValue('day');
+  fireEvent.change(screen.getByLabelText('Duration value 2'), { target: { value: '1' } });
+  expect(within(second).getByRole('option', { name: 'Month' })).toHaveValue('month');
+  expect(first).toHaveValue('day');
+  expect(second).toHaveValue('month');
+});
+
+test('table displays a row for each package price and duration', async () => {
+  api.mockResolvedValue({ data: [{ ...savedPackage, durations: [{ value: 1, unit: 'month', price: '7499' }, { value: 2, unit: 'year', price: '74999' }] }], total: 1, last_page: 1 });
+  show();
+  expect(await screen.findByText('1 Month')).toBeInTheDocument();
+  expect(screen.getByText('2 Years')).toBeInTheDocument();
+  expect(screen.getByText('₹7,499.00')).toBeInTheDocument();
+  expect(screen.getAllByText('Active')).toHaveLength(2);
+  expect(screen.getAllByRole('link', { name: 'Edit Starter' })).toHaveLength(2);
+  expect(screen.getAllByRole('columnheader').map((header) => header.textContent)).toEqual(['Name', 'Title', 'Price', 'Duration', 'Status', 'Action']);
+});
+
+test.each(['Package', 'Product'])('API popup provides working links and copies the %s landing URL', async (kind) => {
+  const resource = kind === 'Package' ? 'packages' : 'products';
+  Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: jest.fn().mockResolvedValue(undefined) } });
+  render(<CatalogApiDetails kind={kind} item={{ page_path: `/${resource}/starter` }} />);
+  fireEvent.click(screen.getByRole('button', { name: 'API' }));
+  const dialog = await screen.findByRole('dialog', { name: 'API Details' });
+  const url = `${window.location.origin}/external/${resource}/starter`;
+  expect(within(dialog).getByLabelText('Landing URL')).toHaveValue(url);
+  expect(within(dialog).getByLabelText('API URL')).toHaveValue(`/api/external/${resource}/starter`);
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Copy Landing URL' }));
+  await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledWith(url));
+  expect(await within(dialog).findByRole('status')).toHaveTextContent('Copied');
 });

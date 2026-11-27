@@ -38,7 +38,7 @@ class SavePackageRequest extends FormRequest
             'inclusions.*' => ['required', 'string', 'max:255'],
             'exclusions' => ['required', 'array', 'list', 'min:1', 'max:50'],
             'exclusions.*' => ['required', 'string', 'max:255'],
-            'addons' => ['required', 'array', 'list', 'min:1', 'max:3'],
+            'addons' => ['sometimes', 'array', 'list', 'max:3'],
             'addons.*' => ['required', 'distinct', Rule::in(['packages', 'products', 'services'])],
             'tax_id' => ['sometimes', 'nullable', 'integer', 'exists:taxes,id'],
             'gst' => ['nullable', 'integer', Rule::in([0, 5, 12, 18, 28])],

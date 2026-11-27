@@ -26,9 +26,9 @@ class PackageController extends Controller
 
     public function taxes(): JsonResponse
     {
-        $taxes = DB::table('taxes')->select('id', 'name', 'region', 'rate', 'type', 'is_default')
-            ->orderBy('region')->orderByDesc('is_default')->orderBy('name')->get()
-            ->map(fn (object $tax): array => [...(array) $tax, 'is_default' => (bool) $tax->is_default, 'rate' => number_format((float) $tax->rate, 2, '.', '')]);
+        $taxes = DB::table('taxes')->select('id', 'name', 'rate', 'type')
+            ->orderBy('name')->get()
+            ->map(fn (object $tax): array => [...(array) $tax, 'rate' => number_format((float) $tax->rate, 2, '.', '')]);
 
         return response()->json(['taxes' => $taxes]);
     }
@@ -41,13 +41,13 @@ class PackageController extends Controller
             'per_page' => ['sometimes', 'integer', Rule::in([10, 20, 50])],
         ]);
         $packages = DB::table('packages')->join('categories', 'categories.id', '=', 'packages.category_id')
-            ->select('packages.id', 'packages.name', 'packages.module', 'packages.page_slug', 'categories.name as category_name')
+            ->select('packages.id', 'packages.name', 'packages.title', 'packages.durations', 'packages.module', 'packages.page_slug', 'categories.name as category_name')
             ->when($data['search'] ?? '', function (Builder $query, string $search): void {
                 $query->where(function (Builder $query) use ($search): void {
                     $query->whereLike('packages.name', '%'.$search.'%')->orWhereLike('packages.module', '%'.$search.'%')->orWhereLike('categories.name', '%'.$search.'%');
                 });
             })->orderByDesc('packages.id')->paginate($data['per_page'] ?? 10)
-            ->through(fn (object $record): array => [...(array) $record, 'page_path' => '/packages/'.$record->page_slug]);
+            ->through(fn (object $record): array => [...(array) $record, 'durations' => json_decode($record->durations, true, flags: JSON_THROW_ON_ERROR), 'page_path' => '/packages/'.$record->page_slug]);
 
         return response()->json($packages);
     }
@@ -117,7 +117,7 @@ class PackageController extends Controller
         ksort($galleryPaths);
         $fields['gallery_image_paths'] = json_encode(array_values($galleryPaths), JSON_THROW_ON_ERROR);
         foreach (['durations', 'inclusions', 'exclusions', 'addons'] as $key) {
-            $fields[$key] = json_encode($data[$key], JSON_THROW_ON_ERROR);
+            $fields[$key] = json_encode($data[$key] ?? ($key === 'addons' && $record ? json_decode($record->addons, true, flags: JSON_THROW_ON_ERROR) : []), JSON_THROW_ON_ERROR);
         }
         $fields['requires_login'] = $request->boolean('requires_login');
         $fields['page_slug'] = $record?->page_slug ?? $slugs->available($data['name']);
@@ -170,7 +170,7 @@ class PackageController extends Controller
         foreach (['durations', 'inclusions', 'exclusions', 'addons'] as $key) {
             $data[$key] = json_decode($data[$key], true, flags: JSON_THROW_ON_ERROR);
         }
-        $tax = $record->tax_id ? DB::table('taxes')->select('id', 'name', 'region', 'rate', 'type')->find($record->tax_id) : null;
+        $tax = $record->tax_id ? DB::table('taxes')->select('id', 'name', 'rate', 'type')->find($record->tax_id) : null;
         $data['tax'] = $tax ? [...(array) $tax, 'rate' => number_format((float) $tax->rate, 2, '.', '')] : null;
         if ($tax) {
             $data['durations'] = array_map(fn (array $duration): array => $this->taxedPrice($duration, $tax), $data['durations']);

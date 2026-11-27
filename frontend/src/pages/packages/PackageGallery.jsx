@@ -24,15 +24,15 @@ export default function PackageGallery({ name, cover, gallery = [] }) {
   }, [show, count]);
 
   if (!count) return null;
-  return <div className="package-gallery">
-    <div className="package-thumbnails" aria-label="Package image previews">
+  return <div className={`package-gallery${count < 2 ? ' package-gallery-single' : ''}`}>
+    {count > 1 && <div className="package-thumbnails" aria-label="Package image previews">
       {images.map((url, index) => {
         const imageIndex = index;
         return <button key={url} type="button" className="package-thumbnail" aria-label={`Show preview image ${index + 1}`} aria-pressed={selected === imageIndex} onClick={() => setSelected(imageIndex)}>
           <img src={url} alt="" />
         </button>;
       })}
-    </div>
+    </div>}
     <button type="button" className="package-main-image" aria-label={`Enlarge ${name} image`} aria-haspopup="dialog" onClick={() => setShow(true)}>
       <img src={images[selected]} alt={`${name} — image ${selected + 1}`} />
       <span className="package-zoom-icon" aria-hidden="true"><i className="ri-zoom-in-line" /></span>
@@ -56,7 +56,7 @@ export default function PackageGallery({ name, cover, gallery = [] }) {
           </>}
         </div>
         <p className="package-lightbox-count" role="status">{selected + 1} / {count}</p>
-        <div className="package-lightbox-thumbnails">{images.map((url, index) => <button type="button" key={url} aria-label={`View gallery image ${index + 1}`} aria-pressed={selected === index} onClick={() => setSelected(index)}><img src={url} alt="" /></button>)}</div>
+        {count > 1 && <div className="package-lightbox-thumbnails">{images.map((url, index) => <button type="button" key={url} aria-label={`View gallery image ${index + 1}`} aria-pressed={selected === index} onClick={() => setSelected(index)}><img src={url} alt="" /></button>)}</div>}
       </Modal.Body>
     </Modal>
   </div>;

@@ -8,6 +8,7 @@ import ProductPage from './products/ProductPage';
 import { api } from '../services/api';
 import { canAccessPath } from '../helper/moduleAccess';
 
+jest.mock('../helper/auth', () => ({ apiUrl: '/api' }));
 jest.mock('../services/api', () => ({ api: jest.fn() }));
 // eslint-disable-next-line react/prop-types
 jest.mock('../masterLayout/MasterLayout', () => function MasterLayoutStub({ children }) { return <main>{children}</main>; });

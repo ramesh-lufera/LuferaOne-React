@@ -4,6 +4,7 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import ExternalCatalogDetails from './ExternalCatalogDetails';
 import MasterLayout from '../../masterLayout/MasterLayout';
 import { api } from '../../services/api';
+import CatalogApiDetails from '../../components/CatalogApiDetails';
 import PackageGallery from './PackageGallery';
 import './PackagePage.css';
 
@@ -43,8 +44,8 @@ function PackageDetails({ external = false }) {
 
   return <article className={`package-detail ${external ? 'package-detail-external' : ''}`}>
     {!external && state?.message && <p className="alert alert-success m-16" role="status">{state.message}</p>}
-    {!external && <div className="package-manage"><Link to="/packages">← Packages</Link><Link to={`/package-edit?package=${encodeURIComponent(filename)}`}>Edit Package</Link><Link to={`/external${item.page_path}`}>Open external page ↗</Link></div>}
     <header className="package-hero">
+      <CatalogApiDetails item={item} kind="Package" />
       <img src={item.breadcrumb_image_url} alt="" />
       <div className="package-hero-content"><h1>{item.name}</h1>
         <nav className="package-breadcrumb" aria-label="Breadcrumb">
@@ -62,7 +63,7 @@ function PackageDetails({ external = false }) {
           <h2>{item.title}</h2>
           <p className="package-subtitle">{item.subtitle}</p>
           {item.pricing_locked ? <Link className="package-sign-in" to={`/sign-in?returnTo=${encodeURIComponent(pathname)}`}>Sign in to view pricing</Link> : <>
-            <p className="package-price"><span>{money(price.price)}</span> {Number(price.preview_price) > Number(price.price) && <del>{money(price.preview_price)}</del>}</p>
+            <p className="package-price"><span>{money(price.price)}</span> {price.preview_price != null && price.preview_price !== '' && <del>{money(price.preview_price)}</del>}</p>
           </>}
           <p className="package-short-description">{item.short_description}</p>
           <div className="package-purchase">

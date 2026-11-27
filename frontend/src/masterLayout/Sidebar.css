@@ -13,7 +13,7 @@
   flex-direction: column;
   min-height: 100%;
 }
-.application-sidebar .sidebar-dashboard { margin-bottom: 16px; }
+/* .application-sidebar .sidebar-dashboard { margin-bottom: 16px; } */
 .application-sidebar .sidebar-bottom-start {
   margin-top: auto;
   padding-top: 8px;

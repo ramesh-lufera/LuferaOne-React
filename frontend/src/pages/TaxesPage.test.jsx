@@ -11,7 +11,7 @@ jest.mock('../masterLayout/MasterLayout', () => function MasterLayoutStub({ chil
 jest.mock('@iconify/react/dist/iconify.js', () => ({ Icon: () => null }));
 jest.mock('@iconify/react', () => ({ Icon: () => null }));
 afterEach(() => { cleanup(); jest.clearAllMocks(); });
-const tax = { id: 1, name: 'GST 18%', region: 'India', rate: '18.00', type: 'exclusive', is_default: true };
+const tax = { id: 1, name: 'GST 18%', rate: '18.00', type: 'exclusive' };
 const list = (data = [tax]) => ({ data, total: data.length, last_page: 1, from: data.length ? 1 : 0, to: data.length });
 function show() { render(<MemoryRouter><TaxesPage /></MemoryRouter>); }
 
@@ -25,15 +25,15 @@ test('opens the reference form, saves a tax, and refreshes the visible records',
   await screen.findByText('No taxes found.');
   fireEvent.click(screen.getByRole('button', { name: /Add New Tax/ }));
   const dialog = await screen.findByRole('dialog', { name: 'Add New Tax' });
-  expect(within(dialog).getByLabelText('Country / Region')).toHaveValue('India');
+  expect(within(dialog).queryByLabelText('Country / Region')).not.toBeInTheDocument();
+  expect(within(dialog).queryByLabelText('Set as default tax')).not.toBeInTheDocument();
   fireEvent.change(screen.getByLabelText('Tax Name'), { target: { value: 'GST 18%' } });
   fireEvent.change(screen.getByLabelText('Rate (%)'), { target: { value: '18' } });
-  fireEvent.click(screen.getByLabelText('Set as default tax'));
   fireEvent.click(screen.getByRole('button', { name: 'Save Tax' }));
   expect(await screen.findByText('Tax saved successfully.')).toBeInTheDocument();
   expect(await screen.findByRole('button', { name: 'Edit GST 18%' })).toBeInTheDocument();
   const call = api.mock.calls.find(([, options]) => options?.method === 'POST');
-  expect(JSON.parse(call[1].body)).toEqual({ name: 'GST 18%', region: 'India', rate: '18', type: 'exclusive', is_default: true });
+  expect(JSON.parse(call[1].body)).toEqual({ name: 'GST 18%', rate: '18', type: 'exclusive' });
 });
 
 test('prefills edit fields and preserves input after a validation error for retry', async () => {
@@ -49,7 +49,6 @@ test('prefills edit fields and preserves input after a validation error for retr
   fireEvent.click(await screen.findByRole('button', { name: 'Edit GST 18%' }));
   expect(await screen.findByRole('dialog', { name: 'Edit Tax' })).toBeInTheDocument();
   expect(screen.getByLabelText('Tax Name')).toHaveValue('GST 18%');
-  expect(screen.getByLabelText('Set as default tax')).toBeChecked();
   fireEvent.change(screen.getByLabelText('Type'), { target: { value: 'inclusive' } });
   fireEvent.change(screen.getByLabelText('Rate (%)'), { target: { value: '12.5' } });
   fireEvent.click(screen.getByRole('button', { name: 'Save Tax' }));
