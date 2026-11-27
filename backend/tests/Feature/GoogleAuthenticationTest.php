@@ -8,6 +8,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class GoogleAuthenticationTest extends TestCase
@@ -62,6 +63,12 @@ class GoogleAuthenticationTest extends TestCase
         $this->assertNotNull($user->terms_accepted_at);
         $this->withToken($response->json('token'))->getJson('/api/user')->assertOk();
         $this->assertSame(8 * 3600, (int) $user->tokens()->first()->created_at->diffInSeconds($user->tokens()->first()->expires_at));
+        $messages = Mail::mailer('array')->getSymfonyTransport()->messages();
+        $this->assertCount(1, $messages);
+        $welcome = $messages->first()->getOriginalMessage();
+        $this->assertSame('Welcome to LuferaOne!', $welcome->getSubject());
+        $this->assertSame('google-user@gmail.com', $welcome->getTo()[0]->getAddress());
+        $this->assertStringContainsString('Welcome, Google Test User!', $welcome->getHtmlBody());
     }
 
     public function test_custom_button_code_exchange_authenticates_without_a_browser_id_token(): void
@@ -116,6 +123,7 @@ class GoogleAuthenticationTest extends TestCase
         $this->assertSame($password, $user->fresh()->password);
         $this->postJson('/api/auth/google', $this->payload())->assertOk();
         $this->assertSame($secondPhoto, $user->fresh()->google_photo_url);
+        $this->assertCount(1, Mail::mailer('array')->getSymfonyTransport()->messages());
     }
 
     public function test_invalid_google_photo_does_not_overwrite_existing_photo(): void
@@ -146,6 +154,7 @@ class GoogleAuthenticationTest extends TestCase
         $this->assertSame($password, $user->fresh()->password);
         $token = $user->tokens()->first();
         $this->assertSame(30 * 86400, (int) $token->created_at->diffInSeconds($token->expires_at));
+        $this->assertCount(0, Mail::mailer('array')->getSymfonyTransport()->messages());
     }
 
     public function test_returning_google_subject_signs_in_without_creating_another_user(): void

@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Mockery;
+use Symfony\Component\Mailer\Exception\TransportException;
+use Symfony\Component\Mailer\Transport\Smtp\SmtpTransport;
 use Tests\TestCase;
 
 class RegistrationTest extends TestCase
@@ -52,6 +55,13 @@ class RegistrationTest extends TestCase
         $this->getJson($statusPath)->assertOk()->assertExactJson(['verified' => true]);
         $this->postJson($verificationPath)->assertOk();
         $this->assertDatabaseCount('users', 1);
+        $messages = Mail::mailer('array')->getSymfonyTransport()->messages();
+        $this->assertCount(2, $messages);
+        $welcome = $messages->last()->getOriginalMessage();
+        $this->assertSame('Welcome to LuferaOne!', $welcome->getSubject());
+        $this->assertSame('register@example.test', $welcome->getTo()[0]->getAddress());
+        $this->assertStringContainsString('Welcome, Test Person!', $welcome->getHtmlBody());
+        $this->assertStringContainsString('Go to Login: http://localhost:5173/sign-in', $welcome->getTextBody());
         $user = User::where('email', 'register@example.test')->firstOrFail();
         $this->assertTrue(Hash::check('secure-password-123', $user->password));
         $this->assertNotSame('secure-password-123', $user->password);
@@ -116,6 +126,12 @@ class RegistrationTest extends TestCase
         $this->assertDatabaseCount('users', 0);
         $this->postJson($verificationPath)->assertOk();
         $this->assertNotNull(User::where('email', 'register@example.test')->firstOrFail()->email_verified_at);
+        $this->assertCount(2, $transport->messages());
+        $welcome = $transport->messages()->last()->getOriginalMessage();
+        $this->assertSame('LuferaOne Accounts', $welcome->getFrom()[0]->getName());
+        $this->assertStringContainsString('cid:', $welcome->getHtmlBody());
+        $this->assertStringContainsString('&copy; 2031 Lufera Infotech.', $welcome->getHtmlBody());
+        $this->assertStringContainsString('bgcolor="#345678"', $welcome->getHtmlBody());
     }
 
     public function test_invalid_values_are_rejected(): void
@@ -124,6 +140,40 @@ class RegistrationTest extends TestCase
             'name' => '   ', 'email' => 'invalid', 'phone' => '-------', 'username' => 'bad name', 'password' => 'short', 'terms' => false,
         ]))->assertUnprocessable()->assertJsonValidationErrors(['name', 'email', 'phone', 'username', 'password', 'terms']);
         $this->assertDatabaseCount('users', 0);
+    }
+
+    public function test_registration_retries_a_transient_smtp_connection_failure_and_sends_once(): void
+    {
+        config([
+            'mail.mailers.smtp.username' => 'sender@example.test',
+            'mail.mailers.smtp.password' => 'test-app-password',
+        ]);
+        $transport = Mockery::mock(SmtpTransport::class);
+        $transport->shouldReceive('start')->once()->ordered()->andThrow(new TransportException('Connection timed out.'));
+        $transport->shouldReceive('start')->once()->ordered();
+        $transport->shouldReceive('send')->once()->ordered()->andReturnNull();
+        Mail::extend('smtp', fn () => $transport);
+
+        $this->postJson('/api/register', $this->payload())->assertAccepted()->assertJsonStructure(['statusPath']);
+        $this->assertDatabaseCount('pending_registrations', 1);
+        $this->assertDatabaseCount('users', 0);
+    }
+
+    public function test_registration_does_not_retry_an_smtp_authentication_rejection(): void
+    {
+        config([
+            'mail.mailers.smtp.username' => 'sender@example.test',
+            'mail.mailers.smtp.password' => 'test-app-password',
+        ]);
+        $transport = Mockery::mock(SmtpTransport::class);
+        $transport->shouldReceive('start')->once()->andThrow(new TransportException('Authentication rejected.', 535));
+        $transport->shouldNotReceive('send');
+        Mail::extend('smtp', fn () => $transport);
+
+        $this->postJson('/api/register', $this->payload())
+            ->assertServiceUnavailable()
+            ->assertJsonPath('message', 'Unable to send the sign-up email. Please try again later.');
+        $this->assertDatabaseCount('pending_registrations', 0);
     }
 
     public function test_non_string_phone_is_a_validation_error(): void

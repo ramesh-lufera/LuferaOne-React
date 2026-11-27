@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class FacebookAuthenticationTest extends TestCase
@@ -44,6 +45,12 @@ class FacebookAuthenticationTest extends TestCase
                 ->assertJsonPath('user.username', $index === 0 ? 'facebook-user' : 'facebook-user-2')
                 ->assertJsonPath('user.facebook_photo_url', $this->profile['picture']['data']['url'])->assertJsonMissingPath('user.password');
             $this->withToken($response->json('token'))->getJson('/api/user')->assertOk();
+            $messages = Mail::mailer('array')->getSymfonyTransport()->messages();
+            $this->assertCount($index + 1, $messages);
+            $welcome = $messages->last()->getOriginalMessage();
+            $this->assertSame('Welcome to LuferaOne!', $welcome->getSubject());
+            $this->assertSame($this->profile['email'], $welcome->getTo()[0]->getAddress());
+            $this->assertStringContainsString('Welcome, Facebook Test User!', $welcome->getHtmlBody());
         }
         $this->assertDatabaseCount('users', 2);
         $user = User::firstOrFail();
@@ -62,6 +69,7 @@ class FacebookAuthenticationTest extends TestCase
         }
         $this->assertSame($this->profile['id'], $user->fresh()->facebook_id);
         $this->assertDatabaseCount('users', 1);
+        $this->assertCount(0, Mail::mailer('array')->getSymfonyTransport()->messages());
     }
 
     public function test_repeat_login_keeps_unchanged_rows_and_refreshes_changed_photo_only(): void
@@ -75,6 +83,7 @@ class FacebookAuthenticationTest extends TestCase
         $this->assertSame($this->profile['picture']['data']['url'], $user->fresh()->facebook_photo_url);
         $this->assertSame($original['password'], $user->fresh()->password);
         $this->assertDatabaseCount('users', 1);
+        $this->assertCount(0, Mail::mailer('array')->getSymfonyTransport()->messages());
     }
 
     public function test_expired_wrong_app_and_invalid_facebook_tokens_are_rejected_before_profile_access(): void

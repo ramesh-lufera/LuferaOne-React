@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\FacebookIdentityVerifier;
+use App\Services\SignupEmail;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,6 +15,8 @@ use Illuminate\Validation\ValidationException;
 
 class FacebookAuthController extends Controller
 {
+    public function __construct(private SignupEmail $signupEmail) {}
+
     public function __invoke(Request $request, FacebookIdentityVerifier $verifier): JsonResponse
     {
         abort_unless(in_array($request->header('Origin'), config('cors.allowed_origins', []), true)
@@ -73,7 +76,12 @@ class FacebookAuthController extends Controller
         }
 
         $expiresAt = ! empty($data['remember']) ? now()->addDays(30) : now()->addHours(8);
-        $token = $user->createToken('facebook-sign-in', ['*'], $expiresAt)->plainTextToken;
+        $tokenName = $data['mode'] === 'signup' ? 'facebook-sign-up' : 'facebook-sign-in';
+        $token = $user->createToken($tokenName, ['*'], $expiresAt)->plainTextToken;
+
+        if ($user->wasRecentlyCreated) {
+            $this->signupEmail->welcomeAfterCommit($user, $request->header('Origin'));
+        }
 
         $request->attributes->set('activity_actor', $user);
         $request->attributes->set('activity_entity_id', $user->id);

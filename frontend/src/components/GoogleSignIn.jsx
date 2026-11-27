@@ -22,7 +22,7 @@ function loadGoogleLibrary() {
   return googleLibrary;
 }
 
-export default function GoogleSignIn({ mode = 'signin', remember = false, terms = false, disabled = false, onBusyChange, destination = '/' }) {
+export default function GoogleSignIn({ mode = 'signin', remember = false, terms = false, disabled = false, onBusyChange, onAuthenticated, destination = '/' }) {
   const navigate = useNavigate();
   const client = useRef(null);
   const options = useRef({ remember, terms, disabled, onBusyChange });
@@ -80,6 +80,10 @@ export default function GoogleSignIn({ mode = 'signin', remember = false, terms 
             const result = await response.json();
             if (!response.ok || !result.token || !result.user?.id) throw new Error(result.errors?.credential?.[0] || result.errors?.terms?.[0] || result.message || 'Unable to sign in with Google.');
             if (!active) return;
+            if (onAuthenticated) {
+              await onAuthenticated(result.token);
+              return;
+            }
             saveToken(result.token, options.current.remember);
             markTokenVerified(result.token);
             navigate(destination, { replace: true });
@@ -98,7 +102,7 @@ export default function GoogleSignIn({ mode = 'signin', remember = false, terms 
       if (active) setError(failure.name === 'AbortError' ? 'Google sign-in timed out. Please try again.' : failure.message);
     }).finally(() => clearTimeout(timeout));
     return () => { active = false; controller.abort(); clearTimeout(timeout); client.current = null; };
-  }, [clientId, mode, attempt, destination, navigate]);
+  }, [clientId, mode, attempt, destination, navigate, onAuthenticated]);
 
   const signIn = () => {
     if (disabled || inFlight.current) return;
